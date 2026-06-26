@@ -1,0 +1,395 @@
+using System;
+using System.Globalization;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using EsgSignalCreator;
+using EsgSignalCreator.Capability;
+using EsgSignalCreator.Dsp;
+using EsgSignalCreator.Instruments;
+using EsgSignalCreator.Model;
+using EsgSignalCreator.Personalities;
+using EsgSignalCreator.Project;
+using EsgSignalCreator.Ui.Canvas;
+using EsgSignalCreator.Ui.Instrument;
+using EsgSignalCreator.Ui.Pipeline;
+using EsgSignalCreator.Ui.Plots;
+using EsgSignalCreator.Ui.Sources;
+using EsgSignalCreator.Validation;
+using EsgSignalCreator.Visa;
+
+namespace EsgSignalCreator.Ui
+{
+    /// <summary>
+    /// The Signal Studio shell (UX brief §3): top action bar, a left project tree, a centre with the
+    /// signal-flow canvas + active source panel, a right dock of verification plots + results, and a
+    /// status bar — driving the deliberate Calculate → Download → Play pipeline (§8).
+    /// </summary>
+    public sealed class StudioForm : Form
+    {
+        private readonly SignalFlowStrip _canvas = new SignalFlowStrip();
+        private readonly ComboBox _sourcePicker = new ComboBox { Dock = DockStyle.Top, DropDownStyle = ComboBoxStyle.DropDownList };
+        private readonly Panel _sourceHost = new Panel { Dock = DockStyle.Fill };
+        private readonly InstrumentSettingsPanel _settings = new InstrumentSettingsPanel { Dock = DockStyle.Fill };
+        private readonly ScpiConsolePanel _console = new ScpiConsolePanel { Dock = DockStyle.Fill };
+        private readonly NotificationsDock _notifications = new NotificationsDock { Dock = DockStyle.Fill };
+        private readonly PlotPane _plotIq = new PlotPane { Dock = DockStyle.Fill };
+        private readonly PlotPane _plotSpectrum = new PlotPane { Dock = DockStyle.Fill };
+        private readonly PlotPane _plotThird = new PlotPane { Dock = DockStyle.Fill };
+        private readonly Label _readout = new Label { Dock = DockStyle.Fill, Text = "No waveform calculated.", Padding = new Padding(6) };
+        private readonly ProgressBar _progress = new ProgressBar { Dock = DockStyle.Bottom, Height = 16, Maximum = 100 };
+        private readonly PlayStateIndicator _play = new PlayStateIndicator { Dock = DockStyle.Bottom };
+
+        private readonly ToolStripButton _calcBtn;
+        private readonly ToolStripButton _downloadBtn;
+        private readonly ToolStripButton _playBtn;
+        private readonly ToolStripButton _stopBtn;
+        private readonly ToolStripButton _allBtn;
+        private readonly ToolStripLabel _online = new ToolStripLabel("Offline") { ForeColor = System.Drawing.Color.Firebrick };
+        private readonly ToolStripStatusLabel _status = new ToolStripStatusLabel("Ready.");
+        private readonly ToolStripStatusLabel _statusModel = new ToolStripStatusLabel("No instrument");
+
+        private readonly Panel _centerCards = new Panel { Dock = DockStyle.Fill };
+        private readonly Panel _sourceCard = new Panel { Dock = DockStyle.Fill };
+        private readonly Panel _instrumentCard = new Panel { Dock = DockStyle.Fill, Visible = false };
+        private readonly Panel _consoleCard = new Panel { Dock = DockStyle.Fill, Visible = false };
+        private readonly Panel _notificationsCard = new Panel { Dock = DockStyle.Fill, Visible = false };
+
+        private readonly SplitContainer _outerSplit;
+        private readonly SplitContainer _rightSplit;
+        private readonly InstrumentProfile _profile = InstrumentProfiles.Load("E4438C");
+        private EsgInstrument _instrument;
+        private EsgController _esg;
+        private ISignalSourcePanel _sourcePanel;
+        private WaveformModel _waveform;
+
+        public StudioForm()
+        {
+            Text = "ESG Signal Studio";
+            Width = 1200;
+            Height = 760;
+            StartPosition = FormStartPosition.CenterScreen;
+
+            // ---- top action bar ----
+            var bar = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden };
+            bar.Items.Add(new ToolStripLabel("Target: E4438C"));
+            bar.Items.Add(new ToolStripSeparator());
+            var connect = new ToolStripButton("Connect…"); connect.Click += (s, e) => Connect();
+            bar.Items.Add(connect);
+            bar.Items.Add(_online);
+            bar.Items.Add(new ToolStripSeparator());
+            _calcBtn = Button("Calculate", async (s, e) => await Calculate());
+            _downloadBtn = Button("Download", (s, e) => Download());
+            _playBtn = Button("Play", (s, e) => Play());
+            _stopBtn = Button("Stop", (s, e) => Stop());
+            _allBtn = Button("Calc → DL → Play", async (s, e) => { if (await Calculate() && Download()) Play(); });
+            bar.Items.Add(_calcBtn); bar.Items.Add(_downloadBtn); bar.Items.Add(_playBtn); bar.Items.Add(_stopBtn);
+            bar.Items.Add(new ToolStripSeparator()); bar.Items.Add(_allBtn);
+            bar.Items.Add(new ToolStripSeparator());
+            var save = new ToolStripButton("Save…"); save.Click += (s, e) => SaveProject();
+            var open = new ToolStripButton("Open…"); open.Click += (s, e) => OpenProject();
+            bar.Items.Add(save); bar.Items.Add(open);
+
+            // ---- status bar ----
+            var statusStrip = new StatusStrip();
+            statusStrip.Items.Add(_status);
+            statusStrip.Items.Add(new ToolStripStatusLabel { Spring = true });
+            statusStrip.Items.Add(_statusModel);
+
+            // ---- left tree ----
+            var tree = new TreeView { Dock = DockStyle.Fill };
+            tree.Nodes.Add("source", "Source");
+            tree.Nodes.Add("instrument", "Instrument settings");
+            tree.Nodes.Add("console", "SCPI console");
+            tree.Nodes.Add("notifications", "Notifications");
+            tree.SelectedNode = tree.Nodes[0];
+            tree.AfterSelect += (s, e) => ShowCard(e.Node.Name);
+
+            // ---- centre cards ----
+            _sourcePicker.SelectedIndexChanged += (s, e) => SelectPersonality();
+            foreach (PersonalityDescriptor d in PersonalityRegistry.All) _sourcePicker.Items.Add(d);
+            var sourceInner = new Panel { Dock = DockStyle.Fill };
+            sourceInner.Controls.Add(_sourceHost);
+            sourceInner.Controls.Add(_sourcePicker);
+            _sourceCard.Controls.Add(sourceInner);
+            _sourceCard.Controls.Add(_canvas);
+            _instrumentCard.Controls.Add(_settings);
+            _consoleCard.Controls.Add(_console);
+            _notificationsCard.Controls.Add(_notifications);
+            _centerCards.Controls.Add(_sourceCard);
+            _centerCards.Controls.Add(_instrumentCard);
+            _centerCards.Controls.Add(_consoleCard);
+            _centerCards.Controls.Add(_notificationsCard);
+
+            // ---- right dock: three plots + readout + progress + play state ----
+            _plotSpectrum.SelectedView = PlotPane.ViewType.Spectrum;
+            _plotThird.SelectedView = PlotPane.ViewType.Constellation;
+            var plots = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 4 };
+            plots.RowStyles.Add(new RowStyle(SizeType.Percent, 34));
+            plots.RowStyles.Add(new RowStyle(SizeType.Percent, 33));
+            plots.RowStyles.Add(new RowStyle(SizeType.Percent, 33));
+            plots.RowStyles.Add(new RowStyle(SizeType.Absolute, 64));
+            plots.Controls.Add(_plotIq, 0, 0);
+            plots.Controls.Add(_plotSpectrum, 0, 1);
+            plots.Controls.Add(_plotThird, 0, 2);
+            var readoutHost = new Panel { Dock = DockStyle.Fill };
+            readoutHost.Controls.Add(_readout);
+            readoutHost.Controls.Add(_play);
+            readoutHost.Controls.Add(_progress);
+            plots.Controls.Add(readoutHost, 0, 3);
+
+            // ---- splitters ---- (SplitterDistance is set in OnLoad, once the form has a real size)
+            _rightSplit = new SplitContainer { Dock = DockStyle.Fill };
+            _rightSplit.Panel1.Controls.Add(_centerCards);
+            _rightSplit.Panel2.Controls.Add(plots);
+            _outerSplit = new SplitContainer { Dock = DockStyle.Fill };
+            _outerSplit.Panel1.Controls.Add(tree);
+            _outerSplit.Panel2.Controls.Add(_rightSplit);
+
+            Controls.Add(_outerSplit);
+            Controls.Add(bar);
+            Controls.Add(statusStrip);
+
+            _notifications.JumpToFieldRequested += (s, field) => _status.Text = "Field: " + field;
+            if (_sourcePicker.Items.Count > 0) _sourcePicker.SelectedIndex = 0;
+            UpdatePipelineEnabled();
+        }
+
+        protected override void OnLoad(EventArgs e)
+        {
+            base.OnLoad(e);
+            // Now the form is sized; set splitter positions safely (clamped to the panels).
+            SetSplitter(_outerSplit, 190);
+            SetSplitter(_rightSplit, _rightSplit.Width - 360);
+        }
+
+        private static void SetSplitter(SplitContainer split, int distance)
+        {
+            int min = split.Panel1MinSize;
+            int max = split.Width - split.Panel2MinSize - split.SplitterWidth;
+            if (max < min) return;
+            split.SplitterDistance = Math.Min(Math.Max(distance, min), max);
+        }
+
+        private static ToolStripButton Button(string text, EventHandler onClick)
+        {
+            var b = new ToolStripButton(text) { DisplayStyle = ToolStripItemDisplayStyle.Text };
+            b.Click += onClick;
+            return b;
+        }
+
+        private void ShowCard(string name)
+        {
+            _sourceCard.Visible = name == "source";
+            _instrumentCard.Visible = name == "instrument";
+            _consoleCard.Visible = name == "console";
+            _notificationsCard.Visible = name == "notifications";
+        }
+
+        private void SelectPersonality()
+        {
+            var d = _sourcePicker.SelectedItem as PersonalityDescriptor;
+            if (d == null) return;
+            SetActiveSourcePanel(PersonalityRegistry.CreatePanel(d.Id));
+        }
+
+        private void SetActiveSourcePanel(ISignalSourcePanel panel)
+        {
+            _sourceHost.Controls.Clear();
+            _sourcePanel = panel;
+            Control c = panel.AsControl();
+            c.Dock = DockStyle.Fill;
+            _sourceHost.Controls.Add(c);
+            panel.CalculateRequested += async (s, e) => await Calculate();
+        }
+
+        // ---- pipeline ----
+
+        private async Task<bool> Calculate()
+        {
+            if (_sourcePanel == null) { _status.Text = "Pick a source first."; return false; }
+            SetBusy(true);
+            _play.State = PlayState.Busy;
+            try
+            {
+                IWaveformPersonality p = _sourcePanel.BuildPersonality();
+                var progress = new Progress<int>(v => { if (v >= 0 && v <= 100) _progress.Value = v; });
+                WaveformModel wf = await Task.Run(() => p.Calculate(progress));
+                _waveform = wf;
+                _plotIq.Show(wf);
+                _plotSpectrum.Show(wf);
+                _plotThird.Show(wf);
+                RunValidation(wf);
+                UpdateReadout(wf);
+                _status.Text = "Calculated " + wf.Length.ToString("n0", CultureInfo.InvariantCulture) + " samples.";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Calculate failed: " + ex.Message));
+                _status.Text = "Calculate failed.";
+                return false;
+            }
+            finally
+            {
+                _progress.Value = 0;
+                _play.State = PlayState.Idle;
+                SetBusy(false);
+                UpdatePipelineEnabled();
+            }
+        }
+
+        private bool Download()
+        {
+            if (_waveform == null) { _status.Text = "Calculate a waveform first."; return false; }
+            if (_esg == null) { _status.Text = "Connect to an instrument first."; return false; }
+            try
+            {
+                string seg = SegmentName();
+                _esg.DownloadWaveform(seg, _waveform);
+                _status.Text = "Downloaded '" + seg + "'.";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Download failed: " + ex.Message));
+                _status.Text = "Download failed.";
+                return false;
+            }
+        }
+
+        private void Play()
+        {
+            if (_esg == null || _waveform == null) { _status.Text = "Nothing to play."; return; }
+            try
+            {
+                _esg.PlayWaveform(SegmentName(), _waveform.SampleRateHz);
+                _esg.SetRfOutput(true);
+                _play.State = PlayState.Playing;
+                _status.Text = "Playing.";
+            }
+            catch (Exception ex)
+            {
+                _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Play failed: " + ex.Message));
+            }
+        }
+
+        private void Stop()
+        {
+            if (_esg == null) return;
+            try { _esg.SetArbState(false); _esg.SetRfOutput(false); }
+            catch (Exception ex) { _notifications.Append(new ValidationResult(ValidationSeverity.Warning, "Stop: " + ex.Message)); }
+            _play.State = PlayState.Idle;
+            _status.Text = "Stopped.";
+        }
+
+        private string SegmentName()
+        {
+            var b = _sourcePanel as SourcePanelBase;
+            string s = b != null ? b.SegmentName : "SEG1";
+            return string.IsNullOrEmpty(s) ? "SEG1" : s;
+        }
+
+        private void RunValidation(WaveformModel wf)
+        {
+            double carrier = _profile != null ? (_profile.MinFrequencyHz + _profile.MaxFrequencyHz) / 2 : 1e9;
+            var results = WaveformValidator.Validate(wf, _profile, wf.SampleRateHz, carrier);
+            _notifications.Show(results);
+        }
+
+        private void UpdateReadout(WaveformModel wf)
+        {
+            double durationUs = wf.Length / wf.SampleRateHz * 1e6;
+            double papr = Ccdf.PaprDb(ToD(wf.I), ToD(wf.Q));
+            _readout.Text = string.Format(CultureInfo.InvariantCulture,
+                "Samples: {0:n0}   Sample clock: {1:0.###} MHz   Duration: {2:0.###} µs\r\nPAPR: {3:0.##} dB   Download: {4:n0} bytes",
+                wf.Length, wf.SampleRateHz / 1e6, durationUs, papr, (long)wf.Length * 4);
+        }
+
+        // ---- connection ----
+
+        private void Connect()
+        {
+            EsgInstrument inst = ConnectionManagerForm.Connect(this);
+            if (inst == null) return;
+            _instrument = inst;
+            _esg = new EsgController(inst.Transport);
+            _settings.Attach(_esg);
+            _console.Attach(inst.Transport);
+            _online.Text = "Online";
+            _online.ForeColor = System.Drawing.Color.ForestGreen;
+            try
+            {
+                InstrumentIdentity id = inst.Identify();
+                _statusModel.Text = id.Model + "  " + id.FirmwareRevision;
+            }
+            catch { _statusModel.Text = inst.ResourceName; }
+            UpdatePipelineEnabled();
+        }
+
+        // ---- project I/O ----
+
+        private void SaveProject()
+        {
+            if (_sourcePanel == null) return;
+            using (var dlg = new SaveFileDialog { Filter = "Signal Studio project (*.ssproj)|*.ssproj", DefaultExt = "ssproj" })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                object cfg = _sourcePanel.GetConfig();
+                var proj = new SsProject
+                {
+                    PersonalityId = _sourcePanel.PersonalityId,
+                    ConfigTypeName = cfg.GetType().AssemblyQualifiedName,
+                    ConfigJson = ProjectStore.SerializeConfig(cfg)
+                };
+                ProjectStore.Save(dlg.FileName, proj);
+                _status.Text = "Saved " + dlg.FileName;
+            }
+        }
+
+        private void OpenProject()
+        {
+            using (var dlg = new OpenFileDialog { Filter = "Signal Studio project (*.ssproj)|*.ssproj" })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    SsProject proj = ProjectStore.Load(dlg.FileName);
+                    ISignalSourcePanel panel = PersonalityRegistry.CreatePanel(proj.PersonalityId);
+                    object cfg = ProjectStore.DeserializeConfig(proj.ConfigJson, proj.ConfigTypeName);
+                    panel.LoadConfig(cfg);
+                    SetActiveSourcePanel(panel);
+                    _status.Text = "Opened " + dlg.FileName;
+                }
+                catch (Exception ex)
+                {
+                    _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Open failed: " + ex.Message));
+                }
+            }
+        }
+
+        // ---- helpers ----
+
+        private void SetBusy(bool busy)
+        {
+            _calcBtn.Enabled = !busy;
+            _allBtn.Enabled = !busy;
+            Cursor = busy ? Cursors.WaitCursor : Cursors.Default;
+        }
+
+        private void UpdatePipelineEnabled()
+        {
+            bool online = _esg != null;
+            bool haveWf = _waveform != null;
+            _downloadBtn.Enabled = online && haveWf;
+            _playBtn.Enabled = online && haveWf;
+            _stopBtn.Enabled = online;
+        }
+
+        private static double[] ToD(float[] x)
+        {
+            var d = new double[x.Length];
+            for (int n = 0; n < x.Length; n++) d[n] = x[n];
+            return d;
+        }
+    }
+}
