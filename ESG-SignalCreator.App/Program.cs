@@ -1,16 +1,33 @@
 using System;
 using System.Windows.Forms;
+using EsgSignalCreator.Ui;
 
 namespace EsgSignalCreator
 {
     internal static class Program
     {
         [STAThread]
-        private static void Main()
+        private static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+
+            // Surface unhandled errors instead of dying silently.
+            Application.ThreadException += (s, e) => ShowFatal(e.Exception);
+            AppDomain.CurrentDomain.UnhandledException += (s, e) => ShowFatal(e.ExceptionObject as Exception);
+
+            // The new Signal Studio shell is the default; pass --classic to launch the
+            // original single-window MainForm.
+            bool classic = Array.Exists(args ?? new string[0],
+                a => string.Equals(a, "--classic", StringComparison.OrdinalIgnoreCase));
+            Application.Run(classic ? (Form)new MainForm() : new StudioForm());
+        }
+
+        private static void ShowFatal(Exception ex)
+        {
+            if (ex == null) return;
+            MessageBox.Show(ex.Message, "ESG Signal Studio — error",
+                MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
     }
 }

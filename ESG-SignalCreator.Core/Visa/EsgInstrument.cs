@@ -54,6 +54,10 @@ namespace EsgSignalCreator.Visa
             _io = transport ?? throw new ArgumentNullException(nameof(transport));
         }
 
+        /// <summary>The wrapped transport, for components that need raw <see cref="IInstrument"/>
+        /// access (e.g. building an <c>EsgController</c> or attaching a SCPI console).</summary>
+        public IInstrument Transport => _io;
+
         /// <summary>The wrapped transport's resource description (e.g. "GPIB0::19::INSTR").</summary>
         public string ResourceName => _io.ResourceName;
 

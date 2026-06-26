@@ -40,7 +40,9 @@ namespace EsgSignalCreator.Ui.Plots
             reset.Click += (s, e) => ResetZoom();
             top.Controls.Add(reset);
 
-            _chart = new Chart { Dock = DockStyle.Fill };
+            // The MS Chart throws "Height must be greater than 0px" if it is ever laid out at zero
+            // size (which happens transiently during form construction); a small minimum avoids it.
+            _chart = new Chart { Dock = DockStyle.Fill, MinimumSize = new Size(10, 10) };
             var area = new ChartArea("main");
             area.AxisX.MajorGrid.LineColor = Color.Gainsboro;
             area.AxisY.MajorGrid.LineColor = Color.Gainsboro;
