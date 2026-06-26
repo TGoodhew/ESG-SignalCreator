@@ -1,29 +1,44 @@
 # ESG-SignalCreator
 
-A Windows desktop application for driving Agilent/Keysight **ESG-series RF signal
-generators** (e.g. the **E4438C**, E4400-series). It provides direct SCPI control
-of the instrument and a built-in I/Q waveform builder that generates baseband
-signals, previews them, and downloads them to the instrument's dual ARB player.
+A Windows desktop application — **ESG Signal Studio** — for driving Agilent/Keysight
+**ESG-series RF signal generators** (e.g. the **E4438C**, E4400-series). It builds
+baseband I/Q waveforms on the PC, previews and validates them, and downloads them to
+the instrument's dual ARB player over a deliberate **Calculate → Download → Play**
+pipeline. It is a modern reimplementation of the legacy *Signal Studio for E4438C*
+(see the requirement docs in [docs/](docs/)).
 
-Built with C# / WinForms targeting **.NET Framework 4.7.2**.
+Built with C# / WinForms targeting **.NET Framework 4.7.2**, split into a UI-free
+core library, the WinForms app, and an xUnit test project.
 
 ## Features
 
-- **Two transport options** — connect over **NI-VISA** (resource string) or
-  **NI-488.2 (GPIB)** (board + primary address), with instrument discovery.
-- **Basic RF control** — set carrier frequency (Hz/kHz/MHz/GHz) and amplitude
-  (dBm), toggle modulation and RF output, read back settings, `*RST`/`*CLS`,
-  `*IDN?`, and a free-form SCPI send/query console.
-- **I/Q ARB signal builder** — generate one of several baseband signals:
-  - Single tone (frequency-offset CW)
-  - AM (rate + depth %)
-  - FM (rate + deviation Hz)
-  - PM (rate + deviation degrees)
-- **Live preview** — time-domain I/Q plot plus a baseband magnitude spectrum
-  (via an internal FFT) before anything is sent to the instrument.
-- **Download & play** — streams the waveform into volatile ARB memory (`WFM1`)
-  as interleaved 16-bit big-endian two's-complement samples, selects it, sets the
-  sample clock and runtime scaling, and starts the ARB on the chosen carrier.
+- **Signal-flow shell** — a top action bar, a left project tree, a signal-flow
+  block canvas (`Source → … → Output`), a personality picker with a live
+  configuration panel, and a right dock of up to three verification plots.
+- **Signal personalities** — pluggable sources that produce normalized I/Q:
+  - **CW / single tone** (frequency-offset, seamless-looping)
+  - **Multitone** (tone table, auto-spacing, random/equal/Newman phasing, live PAPR)
+  - **Custom digital modulation** (BPSK/QPSK/8PSK/16–256-QAM/MSK, PN9/15/23 data,
+    RRC/RC/Gaussian pulse shaping)
+  - **AWGN** (band-limited Gaussian noise with crest-factor clipping)
+  - **Import I/Q** (CSV/TSV, raw interleaved int16, WAV)
+- **Verification plots** — I/Q vs time, FFT spectrum, constellation, and CCDF, each
+  with a view dropdown and rubber-band zoom.
+- **Deliberate pipeline** — **Calculate** generates I/Q off the UI thread with a
+  progress bar, plots, and a live dependency check; **Download** turns the ARB off,
+  encodes to interleaved 16-bit big-endian two's-complement, frames an IEEE-488.2
+  definite-length block and writes it to volatile `WFM1`; **Play/Stop** arms the ARB
+  and RF with a four-state play indicator. A one-click **Calc → DL → Play** runs all
+  three.
+- **Validation** — a live checker (minimum samples, even/granularity, memory cap vs
+  the connected baseband option, sample-clock and carrier limits, DAC over-range
+  heuristic) surfaced in a Notifications dock.
+- **Instrument control** — connect over **NI-VISA** or **NI-488.2 (GPIB)** with
+  discovery and `*IDN?`/`*OPT?`; an instrument-settings panel (frequency, amplitude,
+  RF/modulation, ARB sample clock, runtime scaling) with read-back; and a raw-SCPI
+  console with a timestamped log.
+- **Projects** — save/open the active source + settings as a `*.ssproj` JSON file.
+- Pass **`--classic`** on the command line to launch the original single-window UI.
 
 ## Requirements
 
@@ -33,30 +48,34 @@ Built with C# / WinForms targeting **.NET Framework 4.7.2**.
   - **NI-VISA** — IVI VISA.NET Shared Components + `NationalInstruments.Visa`
   - **NI-488.2** — `NationalInstruments.NI4882` (MeasurementStudio)
 
-The project references these assemblies via `HintPath` entries in
-[ESG-SignalCreator.csproj](ESG-SignalCreator/ESG-SignalCreator.csproj); adjust the
-paths if your installation differs. The waveform builder and preview work without
-any instrument connected.
+The core library references these assemblies via `HintPath` entries in
+[ESG-SignalCreator.Core.csproj](ESG-SignalCreator.Core/ESG-SignalCreator.Core.csproj);
+adjust the paths if your installation differs. Authoring, preview, validation and
+project save/load all work without any instrument connected.
 
 ## Building
 
 ```powershell
 # From a Developer Command Prompt / PowerShell with MSBuild on PATH
-msbuild ESG-SignalCreator.sln /p:Configuration=Release
+msbuild ESG-SignalCreator.sln -t:Restore,Build /p:Configuration=Release
 ```
 
-Or open `ESG-SignalCreator.sln` in Visual Studio and build.
+Or open `ESG-SignalCreator.sln` in Visual Studio and build. Run the tests with
+`dotnet test` or VS Test Explorer (`-t:Restore` matters — the test project uses
+NuGet `PackageReference`s).
 
 ## Usage
 
-1. Pick an interface (**NI-VISA** or **NI-488.2**), click **Refresh** to discover
-   instruments, select one, and **Connect**. The `*IDN?` response is logged.
-2. Use the RF controls to set frequency/amplitude and toggle output, or send raw
-   SCPI from the console.
-3. In the **ARB Signal Builder**, choose a signal type, set its parameters and the
-   sample clock (≤ 100 MHz for the E4438C), and click **Generate** to preview.
-4. With an instrument connected, click **Download & Play** to load and run the
-   waveform; **ARB Off** stops it.
+1. Click **Connect…**, pick **NI-VISA** or **NI-488.2**, discover/select the
+   instrument and connect (`*IDN?`/`*OPT?` are shown).
+2. In the **Source** view, choose a personality from the picker and edit its
+   parameters (sample rate, length as time/samples/symbols, and the personality's
+   own settings).
+3. Click **Calculate** to generate and preview the waveform; check the
+   **Notifications** for any validation warnings.
+4. Click **Download** then **Play** (or the combined **Calc → DL → Play**) to load
+   and run the waveform; **Stop** turns the ARB off. The instrument-settings and
+   SCPI-console views are available from the left tree.
 
 ## Project layout
 
@@ -64,17 +83,21 @@ The solution is split into a UI-free core library, the WinForms app, and a test 
 
 | Path | Purpose |
 |------|---------|
-| [ESG-SignalCreator.Core/](ESG-SignalCreator.Core/) | Class library — no UI dependency. Transport, ARB encoding, DSP, and signal models. |
+| [ESG-SignalCreator.Core/](ESG-SignalCreator.Core/) | Class library — no UI dependency. Transport, ARB encoding, DSP, personalities, validation. |
 | [Core/EsgController.cs](ESG-SignalCreator.Core/EsgController.cs) | High-level SCPI helpers (frequency, power, ARB download/playback) |
 | [Core/Instruments/](ESG-SignalCreator.Core/Instruments/) | `IInstrument` transport abstraction; VISA and GPIB (488.2) implementations |
+| [Core/Visa/](ESG-SignalCreator.Core/Visa/) | `EsgInstrument` facade + `*IDN?`/`*OPT?` parsing |
 | [Core/Arb/](ESG-SignalCreator.Core/Arb/) | IEEE-488.2 block framing and the int16/interleave/big-endian ARB encoder |
 | [Core/Model/](ESG-SignalCreator.Core/Model/) | `WaveformModel` — the neutral I/Q output of every signal personality |
-| [Core/Personalities/](ESG-SignalCreator.Core/Personalities/) | `IWaveformPersonality` plug-in contract |
-| [Core/Waveform/](ESG-SignalCreator.Core/Waveform/) | I/Q waveform helper and the (legacy) signal generator |
-| [Core/Capability/](ESG-SignalCreator.Core/Capability/) | Per-target capability profiles (embedded JSON) for validation / offline mode |
-| [Core/Dsp/Fft.cs](ESG-SignalCreator.Core/Dsp/Fft.cs) | FFT used for the spectrum preview |
-| [ESG-SignalCreator.App/](ESG-SignalCreator.App/) | WinForms application (`MainForm`, entry point) — references Core |
-| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (block framing, encoder, capability profiles, generator) |
+| [Core/Personalities/](ESG-SignalCreator.Core/Personalities/) | `IWaveformPersonality` contract + CW, Multitone, CustomMod, AWGN, Import-IQ |
+| [Core/Dsp/](ESG-SignalCreator.Core/Dsp/) | FFT, FIR (RRC/RC/Gaussian), windows, CCDF/PAPR, resampling |
+| [Core/Validation/](ESG-SignalCreator.Core/Validation/) | `WaveformValidator` dependency checker |
+| [Core/Capability/](ESG-SignalCreator.Core/Capability/) | Per-target capability profiles (embedded JSON) |
+| [Core/Timing/](ESG-SignalCreator.Core/Timing/) | `SampleCountSolver` (time/samples/symbols → sample count) |
+| [Core/Project/](ESG-SignalCreator.Core/Project/) | `SsProject` + `ProjectStore` (`.ssproj` save/load) |
+| [App/Ui/](ESG-SignalCreator.App/Ui/) | `StudioForm` shell, signal-flow canvas, source panels, plot panes, instrument UI |
+| [ESG-SignalCreator.App/](ESG-SignalCreator.App/) | WinForms application — references Core (entry point `Program.cs`) |
+| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (121: framing, encoder, DSP, personalities, validation, project, …) |
 
 Run the tests with `dotnet test` or VS Test Explorer.
 
