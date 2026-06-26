@@ -73,9 +73,8 @@ namespace EsgSignalCreator.Visa
         public void SetCenterFrequencyHz(double hertz) =>
             _io.Write(":SENSe:FREQuency:CENTer " + hertz.ToString("G17", CultureInfo.InvariantCulture) + " Hz");
 
-        /// <summary>Set the analyzer frequency span (<c>:SENSe:FREQuency:SPAN</c>), in hertz.</summary>
-        public void SetSpanHz(double hertz) =>
-            _io.Write(":SENSe:FREQuency:SPAN " + hertz.ToString("G17", CultureInfo.InvariantCulture) + " Hz");
+        // NOTE: the E4406A has no global :SENSe:FREQuency:SPAN — span is per-measurement
+        // (:SENSe:SPECtrum:FREQuency:SPAN, :SENSe:CHPower:FREQuency:SPAN, …), set by each measurement.
 
         /// <summary>Set the input attenuation (<c>:SENSe:POWer:RF:ATTenuation</c>), in dB.</summary>
         public void SetInputAttenuationDb(double db) =>

@@ -9,9 +9,11 @@ namespace EsgSignalCreator.Measure
     /// Acquires a spectrum, runs a marker MAXimum (peak) search, and reads the marker X/Y values.
     /// </summary>
     /// <remarks>
-    /// The exact marker SCPI nodes/roots (<c>:CALCulate:SPECtrum:MARKer:*</c>) are to be confirmed
-    /// against the unit (see §5.4/§10 of the requirements doc). This mirrors the established
-    /// 8563E marker workflow (MKPK HI &#8594; MKF? / MKA?): peak-search, then query frequency and amplitude.
+    /// Marker SCPI confirmed against a real E4406A (FW A.08.10) from the Programmer's Guide
+    /// "Using Markers" example: markers are numbered and must be assigned to a trace first —
+    /// <c>:CALCulate:SPECtrum:MARKer1:TRACe ASP</c> (average spectrum) → <c>:MARKer1:MAXimum</c>
+    /// (peak search) → <c>:MARKer1:X?</c> (absolute frequency, Hz) / <c>:MARKer1:Y?</c> (dBm).
+    /// Mirrors the established 8563E MKPK → MKF?/MKA? workflow.
     /// </remarks>
     public static class SpectrumMarker
     {
@@ -25,16 +27,22 @@ namespace EsgSignalCreator.Measure
             if (vsa == null) throw new ArgumentNullException(nameof(vsa));
 
             var basic = new BasicMeasurement(vsa);
-            basic.Setup(centerHz, spanHz);
+            basic.Setup(centerHz);
+
+            // Span is per-measurement on the E4406A (no global :SENSe:FREQuency:SPAN).
+            if (spanHz > 0)
+                vsa.Write(":SENSe:SPECtrum:FREQuency:SPAN " +
+                          spanHz.ToString("G17", System.Globalization.CultureInfo.InvariantCulture) + " Hz");
 
             // Acquire the spectrum (initiate + return) so the marker has live trace data to search.
             double[] raw = basic.Read("SPECtrum");
 
-            // Marker peak (maximum) search, then read marker X (frequency) and Y (amplitude).
-            vsa.Write(":CALCulate:SPECtrum:MARKer:MAXimum");
+            // Assign marker 1 to the average spectrum trace, peak-search, then read X (Hz) / Y (dBm).
+            vsa.Write(":CALCulate:SPECtrum:MARKer1:TRACe ASP");
+            vsa.Write(":CALCulate:SPECtrum:MARKer1:MAXimum");
 
-            double freq = FirstOrNaN(VsaScalarParser.ParseScalars(vsa.Query(":CALCulate:SPECtrum:MARKer:X?")));
-            double amp = FirstOrNaN(VsaScalarParser.ParseScalars(vsa.Query(":CALCulate:SPECtrum:MARKer:Y?")));
+            double freq = FirstOrNaN(VsaScalarParser.ParseScalars(vsa.Query(":CALCulate:SPECtrum:MARKer1:X?")));
+            double amp = FirstOrNaN(VsaScalarParser.ParseScalars(vsa.Query(":CALCulate:SPECtrum:MARKer1:Y?")));
 
             return new SpectrumResult
             {

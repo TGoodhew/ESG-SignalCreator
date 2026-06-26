@@ -24,11 +24,12 @@ namespace EsgSignalCreator.Verify
         public bool Armed { get; set; } = false;
 
         /// <summary>
-        /// Maximum safe RF input power at the analyzer, in dBm. Defaults to a conservative
-        /// 0.0 dBm; confirm against the specific analyzer unit's specifications.
+        /// Maximum safe RF input power at the analyzer, in dBm. The E4406A type-N RF input is rated
+        /// for a maximum input of +35 dBm (CW); this defaults to +30 dBm as a 5 dB damage backstop.
+        /// Confirm against the specific analyzer unit's specifications.
         /// </summary>
         [DataMember]
-        public double AnalyzerMaxSafeInputDbm { get; set; } = 0.0;
+        public double AnalyzerMaxSafeInputDbm { get; set; } = 30.0;
 
         /// <summary>
         /// Inline path loss between the ESG output and the analyzer input, in dB (e.g. a fixed

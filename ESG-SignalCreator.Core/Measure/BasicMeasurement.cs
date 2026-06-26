@@ -19,13 +19,15 @@ namespace EsgSignalCreator.Measure
 
         public VsaInstrument Vsa => _vsa;
 
-        /// <summary>Put the analyzer into Basic single-measurement mode at the given center (and span if &gt; 0).</summary>
-        public void Setup(double centerHz, double spanHz = 0)
+        /// <summary>
+        /// Put the analyzer into Basic single-measurement mode at the given center frequency. Span is
+        /// per-measurement on the E4406A, so each concrete measurement sets its own span after this.
+        /// </summary>
+        public void Setup(double centerHz)
         {
             _vsa.SelectBasicMode();
             _vsa.SetSingleMeasurement();
             _vsa.SetCenterFrequencyHz(centerHz);
-            if (spanHz > 0) _vsa.SetSpanHz(spanHz);
         }
 
         public double[] Read(string root, int n = 1) => VsaScalarParser.ParseScalars(_vsa.Query(VsaCommands.Read(root, n)));

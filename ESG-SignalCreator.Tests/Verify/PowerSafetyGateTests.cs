@@ -79,7 +79,8 @@ namespace EsgSignalCreator.Tests.Verify
             var cfg = new RfPathSafety();
 
             Assert.False(cfg.Armed);
-            Assert.Equal(0.0, cfg.AnalyzerMaxSafeInputDbm, 9);
+            // +30 dBm is a 5 dB backstop below the E4406A's +35 dBm rated max input.
+            Assert.Equal(30.0, cfg.AnalyzerMaxSafeInputDbm, 9);
             Assert.Equal(0.0, cfg.PathLossDb, 9);
         }
     }

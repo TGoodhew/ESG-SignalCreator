@@ -54,7 +54,7 @@ namespace EsgSignalCreator.Tests.Measure
         {
             var io = new FakeVsa { ScalarResponse = "-10.2,-50.1" };
             var m = new BasicMeasurement(new VsaInstrument(io));
-            m.Setup(1e9, 1e6);
+            m.Setup(1e9);
             double[] result = m.Read("CHPower");
 
             Assert.Equal(new[] { -10.2, -50.1 }, result);
