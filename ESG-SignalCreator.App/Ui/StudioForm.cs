@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using EsgSignalCreator;
 using EsgSignalCreator.Capability;
 using EsgSignalCreator.Dsp;
+using EsgSignalCreator.Impairments;
 using EsgSignalCreator.Instruments;
 using EsgSignalCreator.Model;
 using EsgSignalCreator.Personalities;
@@ -53,6 +54,12 @@ namespace EsgSignalCreator.Ui
         private readonly Panel _instrumentCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _consoleCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _notificationsCard = new Panel { Dock = DockStyle.Fill, Visible = false };
+        private readonly Panel _impairmentsCard = new Panel { Dock = DockStyle.Fill, Visible = false };
+
+        private readonly CheckBox _iqEnable = new CheckBox { Text = "Apply I/Q impairments", AutoSize = true, Dock = DockStyle.Top };
+        private readonly IqImpairmentConfig _iqCfg = new IqImpairmentConfig();
+        private readonly CheckBox _awgnEnable = new CheckBox { Text = "Apply AWGN impairment", AutoSize = true, Dock = DockStyle.Top };
+        private readonly AwgnImpairmentConfig _awgnCfg = new AwgnImpairmentConfig();
 
         private readonly SplitContainer _outerSplit;
         private readonly SplitContainer _rightSplit;
@@ -98,6 +105,7 @@ namespace EsgSignalCreator.Ui
             // ---- left tree ----
             var tree = new TreeView { Dock = DockStyle.Fill };
             tree.Nodes.Add("source", "Source");
+            tree.Nodes.Add("impairments", "Impairments");
             tree.Nodes.Add("instrument", "Instrument settings");
             tree.Nodes.Add("console", "SCPI console");
             tree.Nodes.Add("notifications", "Notifications");
@@ -115,7 +123,9 @@ namespace EsgSignalCreator.Ui
             _instrumentCard.Controls.Add(_settings);
             _consoleCard.Controls.Add(_console);
             _notificationsCard.Controls.Add(_notifications);
+            BuildImpairmentsCard();
             _centerCards.Controls.Add(_sourceCard);
+            _centerCards.Controls.Add(_impairmentsCard);
             _centerCards.Controls.Add(_instrumentCard);
             _centerCards.Controls.Add(_consoleCard);
             _centerCards.Controls.Add(_notificationsCard);
@@ -180,9 +190,28 @@ namespace EsgSignalCreator.Ui
         private void ShowCard(string name)
         {
             _sourceCard.Visible = name == "source";
+            _impairmentsCard.Visible = name == "impairments";
             _instrumentCard.Visible = name == "instrument";
             _consoleCard.Visible = name == "console";
             _notificationsCard.Visible = name == "notifications";
+        }
+
+        private void BuildImpairmentsCard()
+        {
+            var iqGroup = new GroupBox { Text = "I/Q impairments", Dock = DockStyle.Top, Height = 220 };
+            var iqGrid = new PropertyGrid { Dock = DockStyle.Fill, SelectedObject = _iqCfg };
+            iqGroup.Controls.Add(iqGrid);
+            iqGroup.Controls.Add(_iqEnable);
+
+            var awgnGroup = new GroupBox { Text = "AWGN impairment", Dock = DockStyle.Top, Height = 200 };
+            var awgnGrid = new PropertyGrid { Dock = DockStyle.Fill, SelectedObject = _awgnCfg };
+            awgnGroup.Controls.Add(awgnGrid);
+            awgnGroup.Controls.Add(_awgnEnable);
+
+            _awgnEnable.CheckedChanged += (s, e) => _canvas.SetEnabled("awgn", _awgnEnable.Checked);
+
+            _impairmentsCard.Controls.Add(awgnGroup);
+            _impairmentsCard.Controls.Add(iqGroup);
         }
 
         private void SelectPersonality()
@@ -214,6 +243,8 @@ namespace EsgSignalCreator.Ui
                 IWaveformPersonality p = _sourcePanel.BuildPersonality();
                 var progress = new Progress<int>(v => { if (v >= 0 && v <= 100) _progress.Value = v; });
                 WaveformModel wf = await Task.Run(() => p.Calculate(progress));
+                if (_iqEnable.Checked) wf = IqImpairments.Apply(wf, _iqCfg);
+                if (_awgnEnable.Checked) wf = AwgnImpairment.Apply(wf, _awgnCfg);
                 _waveform = wf;
                 _plotIq.Show(wf);
                 _plotSpectrum.Show(wf);
@@ -299,10 +330,40 @@ namespace EsgSignalCreator.Ui
         private void UpdateReadout(WaveformModel wf)
         {
             double durationUs = wf.Length / wf.SampleRateHz * 1e6;
-            double papr = Ccdf.PaprDb(ToD(wf.I), ToD(wf.Q));
+            double[] iD = ToD(wf.I), qD = ToD(wf.Q);
+            double papr = Ccdf.PaprDb(iD, qD);
+            double peak = wf.PeakMagnitude();
+
+            double sumSq = 0;
+            for (int n = 0; n < wf.Length; n++) sumSq += (double)wf.I[n] * wf.I[n] + (double)wf.Q[n] * wf.Q[n];
+            double rms = Math.Sqrt(sumSq / wf.Length);
+            double obwMHz = OccupiedBandwidthHz(iD, qD, wf.SampleRateHz) / 1e6;
+
             _readout.Text = string.Format(CultureInfo.InvariantCulture,
-                "Samples: {0:n0}   Sample clock: {1:0.###} MHz   Duration: {2:0.###} µs\r\nPAPR: {3:0.##} dB   Download: {4:n0} bytes",
-                wf.Length, wf.SampleRateHz / 1e6, durationUs, papr, (long)wf.Length * 4);
+                "Samples: {0:n0}   Sample clock: {1:0.###} MHz   Duration: {2:0.###} µs   Download: {3:n0} bytes\r\n" +
+                "Peak: {4:0.###}   RMS: {5:0.###}   PAPR: {6:0.##} dB   Occupied BW (99%): {7:0.###} MHz",
+                wf.Length, wf.SampleRateHz / 1e6, durationUs, (long)wf.Length * 4, peak, rms, papr, obwMHz);
+        }
+
+        /// <summary>Estimate the 99% occupied bandwidth from the centered power spectrum.</summary>
+        private static double OccupiedBandwidthHz(double[] i, double[] q, double sampleRateHz)
+        {
+            Fft.MagnitudeSpectrumDb(i, q, sampleRateHz, out double[] f, out double[] db);
+            var p = new double[db.Length];
+            double total = 0;
+            for (int k = 0; k < db.Length; k++) { p[k] = Math.Pow(10, db[k] / 10); total += p[k]; }
+            if (total <= 0) return 0;
+
+            double lo = 0.005 * total, hi = 0.995 * total, cum = 0;
+            double fLo = f[0], fHi = f[f.Length - 1];
+            bool gotLo = false;
+            for (int k = 0; k < p.Length; k++)
+            {
+                cum += p[k];
+                if (!gotLo && cum >= lo) { fLo = f[k]; gotLo = true; }
+                if (cum >= hi) { fHi = f[k]; break; }
+            }
+            return Math.Abs(fHi - fLo);
         }
 
         // ---- connection ----
