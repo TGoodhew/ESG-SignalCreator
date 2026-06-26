@@ -1,0 +1,26 @@
+# Normalize line endings so the repo stores LF and Windows checkouts get CRLF.
+# This is a Windows-only Visual Studio / .NET Framework solution, so source and
+# build files are forced to CRLF in the working tree (eol=crlf overrides each
+# machine's core.autocrlf setting and matches what MSBuild/Visual Studio expect).
+* text=auto eol=crlf
+
+# Explicit per-type rules (documentation; covered by the line above).
+*.cs        text eol=crlf
+*.csproj    text eol=crlf
+*.sln       text eol=crlf
+*.config    text eol=crlf
+*.resx      text eol=crlf
+*.json      text eol=crlf
+*.md        text eol=crlf
+*.gitignore     text eol=crlf
+*.gitattributes text eol=crlf
+
+# Binary assets — never touch line endings.
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.gif  binary
+*.dll  binary
+*.exe  binary
+*.pdb  binary
+*.snk  binary
