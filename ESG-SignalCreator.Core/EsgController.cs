@@ -1,7 +1,8 @@
 using System;
 using System.Globalization;
-using System.Text;
+using EsgSignalCreator.Arb;
 using EsgSignalCreator.Instruments;
+using EsgSignalCreator.Model;
 using EsgSignalCreator.Waveform;
 
 namespace EsgSignalCreator
@@ -77,21 +78,35 @@ namespace EsgSignalCreator
         /// <c>:MEMory:DATA "WFM1:&lt;name&gt;",&lt;block&gt;</c>. The payload is interleaved 16-bit,
         /// two's-complement, big-endian (MSB first) — the format the E4438C ARB requires.
         /// </summary>
-        public void DownloadWaveform(string segmentName, IqWaveform waveform)
+        public void DownloadWaveform(string segmentName, IqWaveform waveform,
+            double backoff = EsgArbEncoder.DefaultBackoff)
         {
             if (waveform == null) throw new ArgumentNullException(nameof(waveform));
             ValidateSegmentName(segmentName);
+            DownloadPayload(segmentName, EsgArbEncoder.EncodePayload(waveform.I, waveform.Q, backoff));
+        }
 
-            byte[] payload = waveform.ToArbPayload();
-            string count = payload.Length.ToString(CultureInfo.InvariantCulture);
-            string header = string.Format(CultureInfo.InvariantCulture,
-                ":MEMory:DATA \"WFM1:{0}\",#{1}{2}", segmentName, count.Length, count);
+        /// <summary>
+        /// Download a <see cref="WaveformModel"/> (the neutral output of a signal personality) into
+        /// volatile ARB memory (WFM1).
+        /// </summary>
+        public void DownloadWaveform(string segmentName, WaveformModel waveform,
+            double backoff = EsgArbEncoder.DefaultBackoff)
+        {
+            if (waveform == null) throw new ArgumentNullException(nameof(waveform));
+            ValidateSegmentName(segmentName);
+            DownloadPayload(segmentName, EsgArbEncoder.EncodePayload(waveform.I, waveform.Q, backoff));
+        }
 
-            byte[] headerBytes = Encoding.ASCII.GetBytes(header);
-            var message = new byte[headerBytes.Length + payload.Length];
-            Buffer.BlockCopy(headerBytes, 0, message, 0, headerBytes.Length);
-            Buffer.BlockCopy(payload, 0, message, headerBytes.Length, payload.Length);
-
+        private void DownloadPayload(string segmentName, byte[] payload)
+        {
+            // Turn the ARB off first so a download never overwrites the segment currently playing
+            // (rebuild spec §5.3). The encoded payload is framed as an IEEE-488.2 definite-length
+            // block and sent as one bus transaction (END asserted only on the final byte).
+            SetArbState(false);
+            byte[] message = Ieee4882Block.Message(
+                string.Format(CultureInfo.InvariantCulture, ":MEMory:DATA \"WFM1:{0}\",", segmentName),
+                payload);
             _io.WriteBinaryBlock(message);
         }
 
@@ -118,6 +133,35 @@ namespace EsgSignalCreator
         public void SetArbState(bool on)
         {
             _io.Write(":RADio:ARB:STATe " + (on ? "ON" : "OFF"));
+        }
+
+        /// <summary>
+        /// Select a downloaded segment and start it: point the dual ARB at <c>WFM1:&lt;name&gt;</c>,
+        /// set the sample clock and runtime scaling, then turn the ARB on. RF output is controlled
+        /// separately (see <see cref="SetRfOutput"/>), so this can be armed before enabling RF.
+        /// </summary>
+        public void PlayWaveform(string segmentName, double sampleClockHz, double runtimeScalingPercent = 70)
+        {
+            SelectWaveform(segmentName);
+            SetSampleClockHz(sampleClockHz);
+            SetRuntimeScaling(runtimeScalingPercent);
+            SetArbState(true);
+        }
+
+        /// <summary>Copy a volatile WFM1 segment into non-volatile ARB storage (NVWFM).</summary>
+        public void CopyToNonVolatile(string segmentName)
+        {
+            ValidateSegmentName(segmentName);
+            _io.Write(string.Format(CultureInfo.InvariantCulture,
+                ":MEMory:COPY \"WFM1:{0}\",\"NVWFM:{0}\"", segmentName));
+        }
+
+        /// <summary>Load a non-volatile NVWFM segment back into volatile WFM1 memory for playback.</summary>
+        public void LoadFromNonVolatile(string segmentName)
+        {
+            ValidateSegmentName(segmentName);
+            _io.Write(string.Format(CultureInfo.InvariantCulture,
+                ":MEMory:COPY \"NVWFM:{0}\",\"WFM1:{0}\"", segmentName));
         }
 
         private static void ValidateSegmentName(string name)
