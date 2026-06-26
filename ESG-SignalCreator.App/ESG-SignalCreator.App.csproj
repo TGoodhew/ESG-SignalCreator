@@ -41,29 +41,8 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Windows.Forms.DataVisualization" />
     <Reference Include="System.Xml" />
-    <!-- NI-488.2 (GPIB) .NET library -->
-    <Reference Include="NationalInstruments.NI4882, Version=13.0.45.161, Culture=neutral, PublicKeyToken=4febd62461bf11a4, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\National Instruments\MeasurementStudioVS2010\DotNET\Assemblies\Current\NationalInstruments.NI4882.dll</HintPath>
-    </Reference>
-    <!-- NI-VISA .NET library + IVI VISA.NET shared components -->
-    <Reference Include="Ivi.Visa, Version=8.0.0.0, Culture=neutral, PublicKeyToken=a128c98f1d7717c1, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\IVI Foundation\VISA\Microsoft.NET\Framework64\v4.0.30319\VISA.NET Shared Components 8.0.2\Ivi.Visa.dll</HintPath>
-    </Reference>
-    <Reference Include="NationalInstruments.Visa, Version=26.0.0.3, Culture=neutral, PublicKeyToken=2eaa5af0834e221d, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files\IVI Foundation\VISA\Microsoft.NET\Framework64\v4.0.30319\NI VISA.NET 26.0\NationalInstruments.Visa.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Instruments\IInstrument.cs" />
-    <Compile Include="Instruments\VisaInstrument.cs" />
-    <Compile Include="Instruments\Gpib488Instrument.cs" />
-    <Compile Include="EsgController.cs" />
-    <Compile Include="Waveform\IqWaveform.cs" />
-    <Compile Include="Waveform\WaveformGenerator.cs" />
-    <Compile Include="Dsp\Fft.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -80,6 +59,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ESG-SignalCreator.Core\ESG-SignalCreator.Core.csproj">
+      <Project>{C0DE0001-0000-0000-0000-000000000001}</Project>
+      <Name>ESG-SignalCreator.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -60,13 +60,23 @@ Or open `ESG-SignalCreator.sln` in Visual Studio and build.
 
 ## Project layout
 
+The solution is split into a UI-free core library, the WinForms app, and a test project:
+
 | Path | Purpose |
 |------|---------|
-| [EsgController.cs](ESG-SignalCreator/EsgController.cs) | High-level SCPI helpers (frequency, power, ARB download/playback) |
-| [Instruments/](ESG-SignalCreator/Instruments/) | `IInstrument` transport abstraction; VISA and GPIB (488.2) implementations |
-| [Waveform/](ESG-SignalCreator/Waveform/) | I/Q waveform model and the signal generator |
-| [Dsp/Fft.cs](ESG-SignalCreator/Dsp/Fft.cs) | FFT used for the spectrum preview |
-| [MainForm.cs](ESG-SignalCreator/MainForm.cs) | WinForms UI and event handling |
+| [ESG-SignalCreator.Core/](ESG-SignalCreator.Core/) | Class library — no UI dependency. Transport, ARB encoding, DSP, and signal models. |
+| [Core/EsgController.cs](ESG-SignalCreator.Core/EsgController.cs) | High-level SCPI helpers (frequency, power, ARB download/playback) |
+| [Core/Instruments/](ESG-SignalCreator.Core/Instruments/) | `IInstrument` transport abstraction; VISA and GPIB (488.2) implementations |
+| [Core/Arb/](ESG-SignalCreator.Core/Arb/) | IEEE-488.2 block framing and the int16/interleave/big-endian ARB encoder |
+| [Core/Model/](ESG-SignalCreator.Core/Model/) | `WaveformModel` — the neutral I/Q output of every signal personality |
+| [Core/Personalities/](ESG-SignalCreator.Core/Personalities/) | `IWaveformPersonality` plug-in contract |
+| [Core/Waveform/](ESG-SignalCreator.Core/Waveform/) | I/Q waveform helper and the (legacy) signal generator |
+| [Core/Capability/](ESG-SignalCreator.Core/Capability/) | Per-target capability profiles (embedded JSON) for validation / offline mode |
+| [Core/Dsp/Fft.cs](ESG-SignalCreator.Core/Dsp/Fft.cs) | FFT used for the spectrum preview |
+| [ESG-SignalCreator.App/](ESG-SignalCreator.App/) | WinForms application (`MainForm`, entry point) — references Core |
+| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (block framing, encoder, capability profiles, generator) |
+
+Run the tests with `dotnet test` or VS Test Explorer.
 
 ## Disclaimer
 

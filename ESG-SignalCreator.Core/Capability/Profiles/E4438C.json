@@ -1,0 +1,12 @@
+{
+  "model": "E4438C",
+  "minFrequencyHz": 250000,
+  "maxFrequencyHz": 6000000000,
+  "maxSampleClockHz": 100000000,
+  "minSamples": 60,
+  "basebandOptions": [
+    { "name": "001/601", "maxSamples": 8377088,  "memoryMB": 40  },
+    { "name": "002",     "maxSamples": 33509120, "memoryMB": 160 },
+    { "name": "602",     "maxSamples": 67018496, "memoryMB": 320 }
+  ]
+}
