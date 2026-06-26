@@ -68,6 +68,45 @@ namespace EsgSignalCreator.Arb
             return EncodePayload(waveform.I, waveform.Q, backoff);
         }
 
+        /// <summary>
+        /// Double-precision overload, for callers holding <c>double[]</c> I/Q (e.g.
+        /// <see cref="EsgSignalCreator.Waveform.IqWaveform"/>). Same scaling and byte layout.
+        /// </summary>
+        public static byte[] EncodePayload(double[] i, double[] q, double backoff = DefaultBackoff)
+        {
+            if (i == null) throw new ArgumentNullException(nameof(i));
+            if (q == null) throw new ArgumentNullException(nameof(q));
+            if (i.Length != q.Length) throw new ArgumentException("I and Q must have equal length.");
+            if (i.Length < MinSamples)
+                throw new ArgumentException(
+                    $"Waveform has {i.Length} samples; the E4438C requires at least {MinSamples}.");
+            if (backoff <= 0 || backoff > 1)
+                throw new ArgumentOutOfRangeException(nameof(backoff), "Backoff must be in (0, 1].");
+
+            double peak = 0;
+            for (int n = 0; n < i.Length; n++)
+            {
+                double m = Math.Sqrt(i[n] * i[n] + q[n] * q[n]);
+                if (m > peak) peak = m;
+            }
+            double scale = peak > 0 ? backoff * FullScale / peak : 0;
+
+            var bytes = new byte[i.Length * 4];
+            int b = 0;
+            for (int n = 0; n < i.Length; n++)
+            {
+                WriteBigEndian(bytes, ref b, Saturate(i[n] * scale));
+                WriteBigEndian(bytes, ref b, Saturate(q[n] * scale));
+            }
+            return bytes;
+        }
+
+        /// <summary>Double-precision overload producing a complete definite-length block.</summary>
+        public static byte[] EncodeBlock(double[] i, double[] q, double backoff = DefaultBackoff)
+        {
+            return Ieee4882Block.Frame(EncodePayload(i, q, backoff));
+        }
+
         private static void WriteBigEndian(byte[] buffer, ref int offset, short value)
         {
             ushort u = unchecked((ushort)value);
