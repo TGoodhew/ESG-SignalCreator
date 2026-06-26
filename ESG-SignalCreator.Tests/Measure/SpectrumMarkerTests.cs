@@ -27,8 +27,8 @@ namespace EsgSignalCreator.Tests.Measure
             public string Query(string command)
             {
                 Writes.Add(command);
-                if (command == ":CALCulate:SPECtrum:MARKer:X?") return MarkerX;
-                if (command == ":CALCulate:SPECtrum:MARKer:Y?") return MarkerY;
+                if (command == ":CALCulate:SPECtrum:MARKer1:X?") return MarkerX;
+                if (command == ":CALCulate:SPECtrum:MARKer1:Y?") return MarkerY;
                 return command.EndsWith("?") ? "-30.0" : "";
             }
 
@@ -60,10 +60,11 @@ namespace EsgSignalCreator.Tests.Measure
             // Spectrum acquisition.
             Assert.Contains(":READ:SPECtrum?", io.Writes);
 
-            // Peak search write, then X/Y queries.
-            Assert.Contains(":CALCulate:SPECtrum:MARKer:MAXimum", io.Writes);
-            Assert.Contains(":CALCulate:SPECtrum:MARKer:X?", io.Writes);
-            Assert.Contains(":CALCulate:SPECtrum:MARKer:Y?", io.Writes);
+            // Marker assigned to a trace, peak search, then X/Y queries (numbered marker).
+            Assert.Contains(":CALCulate:SPECtrum:MARKer1:TRACe ASP", io.Writes);
+            Assert.Contains(":CALCulate:SPECtrum:MARKer1:MAXimum", io.Writes);
+            Assert.Contains(":CALCulate:SPECtrum:MARKer1:X?", io.Writes);
+            Assert.Contains(":CALCulate:SPECtrum:MARKer1:Y?", io.Writes);
         }
 
         [Fact]

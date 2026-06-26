@@ -79,20 +79,30 @@ NuGet `PackageReference`s).
 
 ## Hardware-in-the-loop testing
 
-The 184 unit tests run with **no instrument** (block framing, encoder, DSP, validation, …).
-To validate the real ARB download/play path against an actual E4438C, run the headless
-harness ([ESG-SignalCreator.HilHarness](ESG-SignalCreator.HilHarness/)):
+The 208 unit tests run with **no instrument** (block framing, encoder, DSP, validation,
+VSA SCPI parsing, …). To validate the real instruments, run the headless harness
+([ESG-SignalCreator.HilHarness](ESG-SignalCreator.HilHarness/)):
 
 ```powershell
-# RF stays OFF and power LOW (-30 dBm) by default; --rf-on briefly enables RF.
+# ESG-only: RF stays OFF (power -30 dBm) unless --rf-on briefly enables it.
 ESG-SignalCreator.HilHarness.exe "TCPIP0::192.168.1.82::inst1::INSTR"
-# or set ESG_VISA_RESOURCE and omit the argument.
+
+# Closed-loop (ESG -> E4406A): generate -> play -> measure -> compare.
+# RF is enabled at the (low) verify power, gated by the analyzer's max-safe input.
+ESG-SignalCreator.HilHarness.exe --vsa GPIB0::17::INSTR --verify-power-dbm -10
+#   options: --carrier-hz 1e9 --offset-hz 1e6 --max-input-dbm 30 --path-loss-db 0
 ```
 
-It connects over VISA, checks `*IDN?`/`*OPT?`, downloads a CW waveform to `WFM1`, arms the
-ARB, sets/reads back frequency and amplitude, and polls `:SYSTem:ERRor?` after each step —
-printing a per-step PASS/FAIL summary and exiting non-zero on any failure. It is a separate
-console project, kept out of the normal unit-test run so CI stays hardware-free.
+ESG-only mode checks `*IDN?`/`*OPT?`, downloads a CW to `WFM1`, arms the ARB, and reads
+back frequency/amplitude, polling `:SYSTem:ERRor?` after each step. Closed-loop mode adds
+the E4406A: it connects (refusing a non-E4406A), enforces the **input-damage safety gate**
+(E4406A rated +35 dBm; gate default +30 dBm), drives the ESG at a safe level with RF on,
+then measures **channel power** and the **spectrum peak** and compares them to the expected
+tone frequency and power. Per-step PASS/FAIL; non-zero exit on failure; RF returns to OFF.
+A separate console project, kept out of the normal unit-test run so CI stays hardware-free.
+
+> Validated on the bench (2026-06): closed-loop CW PASS — a +1 MHz-offset tone at 1 GHz
+> −10 dBm measured at 1001.01 MHz / −10.26 dBm on the E4406A (FW A.08.10).
 
 ## Project layout
 

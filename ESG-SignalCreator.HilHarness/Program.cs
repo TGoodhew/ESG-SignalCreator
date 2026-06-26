@@ -1,69 +1,104 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using EsgSignalCreator;
 using EsgSignalCreator.Instruments;
+using EsgSignalCreator.Measure;
+using EsgSignalCreator.Measure.Results;
+using EsgSignalCreator.Verify;
 using EsgSignalCreator.Visa;
 using EsgSignalCreator.Waveform;
 
 namespace EsgSignalCreator.HilHarness
 {
     /// <summary>
-    /// Hardware-in-the-loop test harness (issue #59). Drives a <b>real</b> E4438C over VISA to
-    /// validate the Core ARB download/play path that the offline unit tests can't reach.
+    /// Hardware-in-the-loop test harness (issues #59, #73). Drives a <b>real</b> E4438C over VISA to
+    /// validate the ARB download/play path the offline tests can't reach, and — with <c>--vsa</c> —
+    /// runs a <b>closed-loop</b> generate→measure→compare against a real E4406A on the ESG output.
     ///
-    /// Usage:  ESG-SignalCreator.HilHarness [resource] [--rf-on]
-    ///   resource : VISA resource string (default: $ESG_VISA_RESOURCE or the bench unit).
-    ///   --rf-on  : briefly enable RF at low power for the smoke test (off by default).
+    /// Usage:
+    ///   ESG-SignalCreator.HilHarness [esgResource] [--rf-on]
+    ///                                [--vsa [vsaResource]] [--verify-power-dbm X] [--carrier-hz X]
+    ///                                [--offset-hz X] [--max-input-dbm X] [--path-loss-db X]
     ///
-    /// Safety: RF stays OFF and amplitude LOW (-30 dBm) unless --rf-on is given; the error queue
-    /// is polled after every step. Exit code 0 = all pass, non-zero = a failure occurred.
+    /// Safety: in ESG-only mode RF stays OFF unless --rf-on. In closed-loop (--vsa) mode RF IS
+    /// enabled at the (low) verify power so the analyzer can measure it — but only after the
+    /// PowerSafetyGate confirms it is below the analyzer's max safe input (E4406A rating +35 dBm;
+    /// gate default +30 dBm). The error queue is polled after every step. Exit 0 = all pass.
     /// </summary>
     internal static class Program
     {
-        private const string DefaultResource = "TCPIP0::192.168.1.82::inst1::INSTR";
+        private const string DefaultEsgResource = "TCPIP0::192.168.1.82::inst1::INSTR";
+        private const string DefaultVsaResource = "GPIB0::17::INSTR";
         private const double SafeAmplitudeDbm = -30.0;
 
         private static int _failures;
 
         private static int Main(string[] args)
         {
-            bool rfOn = args.Any(a => string.Equals(a, "--rf-on", StringComparison.OrdinalIgnoreCase));
-            string resource = args.FirstOrDefault(a => !a.StartsWith("--"))
-                ?? Environment.GetEnvironmentVariable("ESG_VISA_RESOURCE")
-                ?? DefaultResource;
+            var positionals = new List<string>();
+            var opts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var valueFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db" };
+            for (int i = 0; i < args.Length; i++)
+            {
+                string a = args[i];
+                if (a.StartsWith("--"))
+                {
+                    if (valueFlags.Contains(a) && i + 1 < args.Length && !args[i + 1].StartsWith("--")) opts[a] = args[++i];
+                    else flags.Add(a);
+                }
+                else positionals.Add(a);
+            }
+
+            string esgResource = Opt(opts, "--esg") ?? positionals.FirstOrDefault()
+                ?? Environment.GetEnvironmentVariable("ESG_VISA_RESOURCE") ?? DefaultEsgResource;
+            bool rfOn = flags.Contains("--rf-on");
+            bool closedLoop = flags.Contains("--vsa") || opts.ContainsKey("--vsa");
+            string vsaResource = Opt(opts, "--vsa") ?? DefaultVsaResource;
+            double verifyPowerDbm = Num(opts, "--verify-power-dbm", -10.0);
+            double carrierHz = Num(opts, "--carrier-hz", 1e9);
+            double offsetHz = Num(opts, "--offset-hz", 1e6);
+            double maxInputDbm = Num(opts, "--max-input-dbm", 30.0);
+            double pathLossDb = Num(opts, "--path-loss-db", 0.0);
 
             Console.WriteLine("ESG-SignalCreator hardware-in-the-loop harness");
-            Console.WriteLine("Resource : " + resource);
-            Console.WriteLine("RF        : " + (rfOn ? "WILL be enabled briefly (--rf-on)" : "OFF (safe default)"));
-            Console.WriteLine(new string('-', 60));
+            Console.WriteLine("ESG       : " + esgResource);
+            Console.WriteLine("VSA       : " + (closedLoop ? vsaResource + "  (CLOSED-LOOP)" : "(not used)"));
+            Console.WriteLine(closedLoop
+                ? "RF        : WILL be enabled at " + verifyPowerDbm.ToString(CultureInfo.InvariantCulture) +
+                  " dBm into the analyzer (limit " + maxInputDbm.ToString(CultureInfo.InvariantCulture) +
+                  " dBm, path loss " + pathLossDb.ToString(CultureInfo.InvariantCulture) + " dB)"
+                : "RF        : " + (rfOn ? "WILL be enabled briefly (--rf-on)" : "OFF (safe default)"));
+            Console.WriteLine(new string('-', 64));
 
             IInstrument io = null;
             EsgController esg = null;
             try
             {
-                io = Step("Open VISA session", () => new VisaInstrument(resource));
+                io = Step("Open ESG VISA session", () => new VisaInstrument(esgResource));
                 if (io == null) return Finish();
 
                 var inst = new EsgInstrument(io);
-                Step("*IDN? identifies an E4438C", () =>
+                Step("ESG *IDN? identifies an E4438C", () =>
                 {
                     InstrumentIdentity id = inst.Identify();
                     Console.WriteLine("            " + id.Manufacturer + " / " + id.Model + " / FW " + id.FirmwareRevision);
                     if (id.Model == null || id.Model.IndexOf("E4438C", StringComparison.OrdinalIgnoreCase) < 0)
                         throw new Exception("Model is not E4438C: '" + id.Model + "'");
                 });
-                Warn("Baseband generator option present", () =>
+                Warn("ESG baseband generator option present", () =>
                 {
-                    string[] opts = inst.Options();
-                    Console.WriteLine("            *OPT? = " + string.Join(",", opts));
+                    string[] opt = inst.Options();
+                    Console.WriteLine("            *OPT? = " + string.Join(",", opt));
                     return inst.HasBasebandGenerator();
                 }, "no 001/002/601/602 option — ARB playback needs the baseband hardware");
 
                 esg = new EsgController(io);
-
-                Step("Set safe state (RF off, mod off, low power, *CLS)", () =>
+                Step("ESG safe state (RF off, mod off, low power, *CLS)", () =>
                 {
                     io.Write("*CLS");
                     esg.SetRfOutput(false);
@@ -72,13 +107,10 @@ namespace EsgSignalCreator.HilHarness
                 });
                 CheckErrorQueue(esg, "after safe state");
 
-                WaveformResult gen = Step("Generate CW waveform (Core)", () =>
+                WaveformResult gen = Step("Generate CW waveform (Core, +" + (offsetHz / 1e6) + " MHz offset)", () =>
                     WaveformGenerator.Generate(new WaveformSpec
                     {
-                        Type = SignalType.SingleTone,
-                        SampleRateHz = 10e6,
-                        TargetLength = 4096,
-                        OffsetHz = 1e6
+                        Type = SignalType.SingleTone, SampleRateHz = 10e6, TargetLength = 4096, OffsetHz = offsetHz
                     }));
                 IqWaveform wf = gen?.Waveform;
 
@@ -86,28 +118,26 @@ namespace EsgSignalCreator.HilHarness
                 {
                     Step("Download waveform to WFM1", () => esg.DownloadWaveform("HILTEST", wf));
                     CheckErrorQueue(esg, "after download");
-
-                    Step("Select + arm ARB (sample clock, 70% scaling)", () =>
-                    {
-                        esg.PlayWaveform("HILTEST", wf.SampleRateHz, 70);
-                    });
+                    Step("Select + arm ARB (sample clock, 70% scaling)", () => esg.PlayWaveform("HILTEST", wf.SampleRateHz, 70));
                     CheckErrorQueue(esg, "after ARB arm (catches DAC over-range)");
                 }
 
-                Step("Frequency set/read-back (1 GHz)", () =>
+                Step("ESG frequency set/read-back (1 GHz)", () =>
                 {
                     esg.SetFrequencyHz(1e9);
                     double back = esg.GetFrequencyHz();
                     if (Math.Abs(back - 1e9) > 1.0) throw new Exception("read back " + back.ToString("G", CultureInfo.InvariantCulture) + " Hz");
                 });
-                Step("Amplitude set/read-back (" + SafeAmplitudeDbm + " dBm)", () =>
+                Step("ESG amplitude set/read-back (" + SafeAmplitudeDbm + " dBm)", () =>
                 {
                     esg.SetAmplitudeDbm(SafeAmplitudeDbm);
                     double back = esg.GetAmplitudeDbm();
                     if (Math.Abs(back - SafeAmplitudeDbm) > 0.5) throw new Exception("read back " + back + " dBm");
                 });
 
-                if (rfOn)
+                if (closedLoop)
+                    RunClosedLoop(esg, vsaResource, verifyPowerDbm, carrierHz, offsetHz, maxInputDbm, pathLossDb);
+                else if (rfOn)
                 {
                     Step("RF-on smoke test (low power, 2 s)", () =>
                     {
@@ -131,6 +161,87 @@ namespace EsgSignalCreator.HilHarness
             return Finish();
         }
 
+        // ---- closed-loop (ESG -> E4406A) ----
+
+        private static void RunClosedLoop(EsgController esg, string vsaResource,
+            double verifyPowerDbm, double carrierHz, double offsetHz, double maxInputDbm, double pathLossDb)
+        {
+            Console.WriteLine(new string('-', 64));
+            Console.WriteLine("Closed-loop verification (E4406A)");
+
+            var safety = new RfPathSafety { Armed = true, AnalyzerMaxSafeInputDbm = maxInputDbm, PathLossDb = pathLossDb };
+            Step("Safety gate allows verify power", () => PowerSafetyGate.Guard(verifyPowerDbm, safety));
+
+            IInstrument vio = Step("Open VSA VISA session", () => new VisaInstrument(vsaResource));
+            if (vio == null) return;
+
+            try
+            {
+                var vsa = new VsaInstrument(vio);
+                Step("VSA *IDN? identifies an E4406A", () =>
+                {
+                    InstrumentIdentity id = vsa.Identify();
+                    Console.WriteLine("            " + id.Manufacturer + " / " + id.Model + " / FW " + id.FirmwareRevision);
+                    if (!vsa.IsE4406A()) throw new Exception("Model is not E4406A: '" + id.Model + "'");
+                });
+                Step("VSA options", () => Console.WriteLine("            *OPT? = " + string.Join(",", vsa.Options())));
+                vsa.Clear();
+
+                double expectedToneHz = carrierHz + offsetHz;
+                double expectedAnalyzerDbm = verifyPowerDbm - pathLossDb;
+                double spanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6);
+
+                Step("Drive ESG: carrier " + (carrierHz / 1e9) + " GHz, " + verifyPowerDbm + " dBm, RF ON", () =>
+                {
+                    PowerSafetyGate.Guard(verifyPowerDbm, safety); // re-check immediately before emitting
+                    esg.SetFrequencyHz(carrierHz);
+                    esg.SetAmplitudeDbm(verifyPowerDbm);
+                    esg.SetArbState(true);
+                    esg.SetModulation(true); // ARB I/Q only reaches the RF output when modulation is ON
+                    esg.SetRfOutput(true);
+                });
+                Thread.Sleep(1500); // settle
+
+                ChannelPowerResult cp = Step("Measure channel power (E4406A)", () =>
+                {
+                    // Integrate across the span so the +offset CW tone is inside the channel.
+                    ChannelPowerResult r = ChannelPower.Measure(vsa, carrierHz, spanHz, spanHz);
+                    Console.WriteLine("            total power = " + r.TotalPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
+                    return r;
+                });
+                SpectrumResult sp = Step("Measure spectrum peak (E4406A)", () =>
+                {
+                    SpectrumResult r = SpectrumMarker.MeasurePeak(vsa, carrierHz, spanHz);
+                    Console.WriteLine("            peak = " + (r.MarkerFrequencyHz / 1e6).ToString("0.######", CultureInfo.InvariantCulture)
+                        + " MHz @ " + r.MarkerPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
+                    return r;
+                });
+
+                if (sp != null)
+                    Compare("Tone frequency", expectedToneHz, sp.MarkerFrequencyHz, 50e3, "Hz");
+                if (cp != null)
+                    Compare("Channel power", expectedAnalyzerDbm, cp.TotalPowerDbm, 3.0, "dBm");
+
+                CheckErrorQueueVsa(vsa, "after measurements");
+            }
+            finally
+            {
+                try { esg.SetRfOutput(false); esg.SetArbState(false); } catch { /* best effort */ }
+                try { vio.Dispose(); } catch { /* best effort */ }
+                Console.WriteLine("            RF returned to OFF.");
+            }
+        }
+
+        private static void Compare(string metric, double expected, double measured, double tol, string unit)
+        {
+            double delta = measured - expected;
+            string name = string.Format(CultureInfo.InvariantCulture,
+                "{0}: expected {1:0.###} {4}, measured {2:0.###} {4} (Δ {3:+0.###;-0.###}, tol ±{5:0.###})",
+                metric, expected, measured, delta, unit, tol);
+            if (Math.Abs(delta) <= tol) Pass(name);
+            else Fail(name, "out of tolerance");
+        }
+
         // ---- step helpers ----
 
         private static T Step<T>(string name, Func<T> action)
@@ -151,14 +262,22 @@ namespace EsgSignalCreator.HilHarness
             catch (Exception ex) { Fail(name, ex.Message); }
         }
 
-        private static void CheckErrorQueue(EsgController esg, string when)
-        {
-            Step("Error queue clean " + when, () =>
+        private static void CheckErrorQueue(EsgController esg, string when) =>
+            Step("ESG error queue clean " + when, () => { if (!IsClean(esg.GetError())) throw new Exception(":SYSTem:ERRor? not clean"); });
+
+        private static void CheckErrorQueueVsa(VsaInstrument vsa, string when) =>
+            Step("VSA error queue clean " + when, () =>
             {
-                string err = esg.GetError();
-                if (!IsClean(err)) throw new Exception(":SYSTem:ERRor? = " + err);
+                // Drain the queue so a single stale error doesn't mask later ones; report all.
+                var errs = new List<string>();
+                for (int i = 0; i < 20; i++)
+                {
+                    string e = vsa.GetError();
+                    if (IsClean(e)) break;
+                    errs.Add(e.Trim());
+                }
+                if (errs.Count > 0) throw new Exception(string.Join(" | ", errs));
             });
-        }
 
         private static bool IsClean(string err)
         {
@@ -166,6 +285,10 @@ namespace EsgSignalCreator.HilHarness
             string e = err.TrimStart();
             return e.StartsWith("0") || e.StartsWith("+0");
         }
+
+        private static string Opt(Dictionary<string, string> o, string k) => o.TryGetValue(k, out string v) ? v : null;
+        private static double Num(Dictionary<string, string> o, string k, double def) =>
+            o.TryGetValue(k, out string v) && double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out double d) ? d : def;
 
         private static void Pass(string name)
         {
@@ -182,7 +305,7 @@ namespace EsgSignalCreator.HilHarness
 
         private static int Finish()
         {
-            Console.WriteLine(new string('-', 60));
+            Console.WriteLine(new string('-', 64));
             if (_failures == 0) { Console.ForegroundColor = ConsoleColor.Green; Console.WriteLine("ALL CHECKS PASSED"); }
             else { Console.ForegroundColor = ConsoleColor.Red; Console.WriteLine(_failures + " CHECK(S) FAILED"); }
             Console.ResetColor();

@@ -15,6 +15,9 @@ namespace EsgSignalCreator.Measure
         /// <summary>SCPI mnemonic for the integration bandwidth of the channel-power measurement.</summary>
         private const string IntegrationBandwidthCommand = ":SENSe:CHPower:BANDwidth:INTegration";
 
+        /// <summary>Per-measurement frequency span for Channel Power (the E4406A has no global span).</summary>
+        private const string SpanCommand = ":SENSe:CHPower:FREQuency:SPAN";
+
         /// <summary>SCPI measurement root for Channel Power.</summary>
         private const string Root = "CHPower";
 
@@ -44,8 +47,12 @@ namespace EsgSignalCreator.Measure
             if (vsa == null) throw new ArgumentNullException(nameof(vsa));
 
             var basic = new BasicMeasurement(vsa);
-            basic.Setup(centerHz, spanHz);
+            basic.Setup(centerHz);
 
+            if (spanHz > 0)
+            {
+                vsa.Write(SpanCommand + " " + spanHz.ToString("G17", CultureInfo.InvariantCulture) + " Hz");
+            }
             if (channelBandwidthHz > 0)
             {
                 vsa.Write(IntegrationBandwidthCommand + " " +
