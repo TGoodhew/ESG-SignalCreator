@@ -14,6 +14,7 @@ using EsgSignalCreator.Ui.Canvas;
 using EsgSignalCreator.Ui.Instrument;
 using EsgSignalCreator.Ui.Pipeline;
 using EsgSignalCreator.Ui.Plots;
+using EsgSignalCreator.Ui.Sequencing;
 using EsgSignalCreator.Ui.Sources;
 using EsgSignalCreator.Validation;
 using EsgSignalCreator.Visa;
@@ -55,6 +56,8 @@ namespace EsgSignalCreator.Ui
         private readonly Panel _consoleCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _notificationsCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _impairmentsCard = new Panel { Dock = DockStyle.Fill, Visible = false };
+        private readonly Panel _sequenceCard = new Panel { Dock = DockStyle.Fill, Visible = false };
+        private readonly SequencePanel _sequence = new SequencePanel { Dock = DockStyle.Fill };
 
         private readonly CheckBox _iqEnable = new CheckBox { Text = "Apply I/Q impairments", AutoSize = true, Dock = DockStyle.Top };
         private readonly IqImpairmentConfig _iqCfg = new IqImpairmentConfig();
@@ -106,6 +109,7 @@ namespace EsgSignalCreator.Ui
             var tree = new TreeView { Dock = DockStyle.Fill };
             tree.Nodes.Add("source", "Source");
             tree.Nodes.Add("impairments", "Impairments");
+            tree.Nodes.Add("sequence", "Sequence");
             tree.Nodes.Add("instrument", "Instrument settings");
             tree.Nodes.Add("console", "SCPI console");
             tree.Nodes.Add("notifications", "Notifications");
@@ -124,8 +128,10 @@ namespace EsgSignalCreator.Ui
             _consoleCard.Controls.Add(_console);
             _notificationsCard.Controls.Add(_notifications);
             BuildImpairmentsCard();
+            _sequenceCard.Controls.Add(_sequence);
             _centerCards.Controls.Add(_sourceCard);
             _centerCards.Controls.Add(_impairmentsCard);
+            _centerCards.Controls.Add(_sequenceCard);
             _centerCards.Controls.Add(_instrumentCard);
             _centerCards.Controls.Add(_consoleCard);
             _centerCards.Controls.Add(_notificationsCard);
@@ -191,6 +197,7 @@ namespace EsgSignalCreator.Ui
         {
             _sourceCard.Visible = name == "source";
             _impairmentsCard.Visible = name == "impairments";
+            _sequenceCard.Visible = name == "sequence";
             _instrumentCard.Visible = name == "instrument";
             _consoleCard.Visible = name == "console";
             _notificationsCard.Visible = name == "notifications";
