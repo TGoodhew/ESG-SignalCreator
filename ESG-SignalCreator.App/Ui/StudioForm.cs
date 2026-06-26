@@ -5,11 +5,14 @@ using System.Windows.Forms;
 using EsgSignalCreator;
 using EsgSignalCreator.Capability;
 using EsgSignalCreator.Dsp;
+using EsgSignalCreator.Export;
 using EsgSignalCreator.Impairments;
 using EsgSignalCreator.Instruments;
 using EsgSignalCreator.Model;
 using EsgSignalCreator.Personalities;
+using EsgSignalCreator.Presets;
 using EsgSignalCreator.Project;
+using EsgSignalCreator.Seamless;
 using EsgSignalCreator.Ui.Canvas;
 using EsgSignalCreator.Ui.Instrument;
 using EsgSignalCreator.Ui.Pipeline;
@@ -63,6 +66,10 @@ namespace EsgSignalCreator.Ui
         private readonly IqImpairmentConfig _iqCfg = new IqImpairmentConfig();
         private readonly CheckBox _awgnEnable = new CheckBox { Text = "Apply AWGN impairment", AutoSize = true, Dock = DockStyle.Top };
         private readonly AwgnImpairmentConfig _awgnCfg = new AwgnImpairmentConfig();
+        private readonly CheckBox _cfrEnable = new CheckBox { Text = "Apply CFR", AutoSize = true, Dock = DockStyle.Top };
+        private readonly CfrConfig _cfrCfg = new CfrConfig();
+        private readonly CheckBox _filterEnable = new CheckBox { Text = "Apply filter", AutoSize = true, Dock = DockStyle.Top };
+        private readonly FilterConfig _filterCfg = new FilterConfig();
 
         private readonly SplitContainer _outerSplit;
         private readonly SplitContainer _rightSplit;
@@ -98,6 +105,21 @@ namespace EsgSignalCreator.Ui
             var save = new ToolStripButton("Save…"); save.Click += (s, e) => SaveProject();
             var open = new ToolStripButton("Open…"); open.Click += (s, e) => OpenProject();
             bar.Items.Add(save); bar.Items.Add(open);
+            bar.Items.Add(new ToolStripSeparator());
+
+            var presets = new ToolStripDropDownButton("Presets");
+            foreach (TestModel m in TestModels.All)
+            {
+                TestModel model = m;
+                presets.DropDownItems.Add(model.Name, null, (s, e) => SetActiveSourcePanel(WrapPersonality(model.Create())));
+            }
+            bar.Items.Add(presets);
+
+            var export = new ToolStripDropDownButton("Export");
+            export.DropDownItems.Add("Raw ARB (int16 BE)…", null, (s, e) => Export("arb"));
+            export.DropDownItems.Add("CSV I/Q…", null, (s, e) => Export("csv"));
+            export.DropDownItems.Add("SCPI script…", null, (s, e) => Export("scpi"));
+            bar.Items.Add(export);
 
             // ---- status bar ----
             var statusStrip = new StatusStrip();
@@ -215,8 +237,21 @@ namespace EsgSignalCreator.Ui
             awgnGroup.Controls.Add(awgnGrid);
             awgnGroup.Controls.Add(_awgnEnable);
 
-            _awgnEnable.CheckedChanged += (s, e) => _canvas.SetEnabled("awgn", _awgnEnable.Checked);
+            var cfrGroup = new GroupBox { Text = "CFR (crest-factor reduction)", Dock = DockStyle.Top, Height = 160 };
+            cfrGroup.Controls.Add(new PropertyGrid { Dock = DockStyle.Fill, SelectedObject = _cfrCfg });
+            cfrGroup.Controls.Add(_cfrEnable);
 
+            var filterGroup = new GroupBox { Text = "Filter / correction", Dock = DockStyle.Top, Height = 160 };
+            filterGroup.Controls.Add(new PropertyGrid { Dock = DockStyle.Fill, SelectedObject = _filterCfg });
+            filterGroup.Controls.Add(_filterEnable);
+
+            _awgnEnable.CheckedChanged += (s, e) => _canvas.SetEnabled("awgn", _awgnEnable.Checked);
+            _cfrEnable.CheckedChanged += (s, e) => _canvas.SetEnabled("cfr", _cfrEnable.Checked);
+            _filterEnable.CheckedChanged += (s, e) => _canvas.SetEnabled("filter", _filterEnable.Checked);
+
+            // Added bottom-first so docking stacks them top-to-bottom in a sensible order.
+            _impairmentsCard.Controls.Add(filterGroup);
+            _impairmentsCard.Controls.Add(cfrGroup);
             _impairmentsCard.Controls.Add(awgnGroup);
             _impairmentsCard.Controls.Add(iqGroup);
         }
@@ -252,6 +287,8 @@ namespace EsgSignalCreator.Ui
                 WaveformModel wf = await Task.Run(() => p.Calculate(progress));
                 if (_iqEnable.Checked) wf = IqImpairments.Apply(wf, _iqCfg);
                 if (_awgnEnable.Checked) wf = AwgnImpairment.Apply(wf, _awgnCfg);
+                if (_cfrEnable.Checked) wf = Cfr.Apply(wf, _cfrCfg);
+                if (_filterEnable.Checked) wf = FilterImpairment.Apply(wf, _filterCfg);
                 _waveform = wf;
                 _plotIq.Show(wf);
                 _plotSpectrum.Show(wf);
@@ -330,7 +367,10 @@ namespace EsgSignalCreator.Ui
         private void RunValidation(WaveformModel wf)
         {
             double carrier = _profile != null ? (_profile.MinFrequencyHz + _profile.MaxFrequencyHz) / 2 : 1e9;
-            var results = WaveformValidator.Validate(wf, _profile, wf.SampleRateHz, carrier);
+            var results = new System.Collections.Generic.List<ValidationResult>(WaveformValidator.Validate(wf, _profile, wf.SampleRateHz, carrier));
+            if (!SeamlessGuard.IsSeamless(wf))
+                results.Add(new ValidationResult(ValidationSeverity.Warning,
+                    "Loop seam discontinuity — the waveform may not loop seamlessly. Consider an integer-cycle length.", "Length"));
             _notifications.Show(results);
         }
 
@@ -431,6 +471,32 @@ namespace EsgSignalCreator.Ui
                 catch (Exception ex)
                 {
                     _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Open failed: " + ex.Message));
+                }
+            }
+        }
+
+        private ISignalSourcePanel WrapPersonality(IWaveformPersonality p) => new GenericSourcePanel(p);
+
+        private void Export(string kind)
+        {
+            if (_waveform == null) { _status.Text = "Calculate a waveform first."; return; }
+            string filter = kind == "csv" ? "CSV (*.csv)|*.csv"
+                : kind == "scpi" ? "SCPI script (*.scpi)|*.scpi"
+                : "Raw ARB (*.bin)|*.bin";
+            using (var dlg = new SaveFileDialog { Filter = filter })
+            {
+                if (dlg.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    string seg = SegmentName();
+                    if (kind == "csv") WaveformExporter.SaveCsv(dlg.FileName, _waveform);
+                    else if (kind == "scpi") WaveformExporter.SaveScpiScript(dlg.FileName, _waveform, seg, 1e9, -10.0);
+                    else WaveformExporter.SaveRawArb(dlg.FileName, _waveform);
+                    _status.Text = "Exported " + dlg.FileName;
+                }
+                catch (Exception ex)
+                {
+                    _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Export failed: " + ex.Message));
                 }
             }
         }
