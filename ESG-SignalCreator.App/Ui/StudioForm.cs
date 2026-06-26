@@ -8,11 +8,14 @@ using EsgSignalCreator.Dsp;
 using EsgSignalCreator.Export;
 using EsgSignalCreator.Impairments;
 using EsgSignalCreator.Instruments;
+using EsgSignalCreator.Measure;
+using EsgSignalCreator.Measure.Results;
 using EsgSignalCreator.Model;
 using EsgSignalCreator.Personalities;
 using EsgSignalCreator.Presets;
 using EsgSignalCreator.Project;
 using EsgSignalCreator.Seamless;
+using EsgSignalCreator.Verify;
 using EsgSignalCreator.Ui.Canvas;
 using EsgSignalCreator.Ui.Instrument;
 using EsgSignalCreator.Ui.Pipeline;
@@ -76,6 +79,9 @@ namespace EsgSignalCreator.Ui
         private readonly InstrumentProfile _profile = InstrumentProfiles.Load("E4438C");
         private EsgInstrument _instrument;
         private EsgController _esg;
+        private VsaInstrument _vsa;
+        private RfPathSafety _safety = new RfPathSafety();
+        private readonly ToolStripLabel _vsaOnline = new ToolStripLabel("VSA: offline") { ForeColor = System.Drawing.Color.Firebrick };
         private ISignalSourcePanel _sourcePanel;
         private WaveformModel _waveform;
 
@@ -93,6 +99,9 @@ namespace EsgSignalCreator.Ui
             var connect = new ToolStripButton("Connect…"); connect.Click += (s, e) => Connect();
             bar.Items.Add(connect);
             bar.Items.Add(_online);
+            var connectVsa = new ToolStripButton("Connect VSA…"); connectVsa.Click += (s, e) => ConnectVsa();
+            bar.Items.Add(connectVsa);
+            bar.Items.Add(_vsaOnline);
             bar.Items.Add(new ToolStripSeparator());
             _calcBtn = Button("Calculate", async (s, e) => await Calculate());
             _downloadBtn = Button("Download", (s, e) => Download());
@@ -100,6 +109,8 @@ namespace EsgSignalCreator.Ui
             _stopBtn = Button("Stop", (s, e) => Stop());
             _allBtn = Button("Calc → DL → Play", async (s, e) => { if (await Calculate() && Download()) Play(); });
             bar.Items.Add(_calcBtn); bar.Items.Add(_downloadBtn); bar.Items.Add(_playBtn); bar.Items.Add(_stopBtn);
+            var verifyBtn = Button("Verify", (s, e) => VerifyCw());
+            bar.Items.Add(verifyBtn);
             bar.Items.Add(new ToolStripSeparator()); bar.Items.Add(_allBtn);
             bar.Items.Add(new ToolStripSeparator());
             var save = new ToolStripButton("Save…"); save.Click += (s, e) => SaveProject();
@@ -432,6 +443,76 @@ namespace EsgSignalCreator.Ui
             }
             catch { _statusModel.Text = inst.ResourceName; }
             UpdatePipelineEnabled();
+        }
+
+        private void ConnectVsa()
+        {
+            VsaConnectionForm.Result r = VsaConnectionForm.Show(this);
+            _safety = r.Safety ?? _safety;
+            if (r.ConnectedVsa == null) return;
+            _vsa = r.ConnectedVsa;
+            _vsaOnline.Text = "VSA: online";
+            _vsaOnline.ForeColor = System.Drawing.Color.ForestGreen;
+            try { _status.Text = "VSA connected: " + _vsa.Identify().Model; }
+            catch { _status.Text = "VSA connected."; }
+        }
+
+        /// <summary>
+        /// Manual closed-loop CW verify (#66): read the ESG's commanded centre frequency + power,
+        /// measure channel power + the spectrum peak on the E4406A, and compare expected vs measured
+        /// (accounting for the declared path loss). Results land in the Notifications dock.
+        /// </summary>
+        private void VerifyCw()
+        {
+            if (_esg == null) { _status.Text = "Connect the ESG first."; return; }
+            if (_vsa == null) { _status.Text = "Connect the VSA first (Connect VSA…)."; return; }
+            if (_waveform == null) { _status.Text = "Calculate/play a waveform first."; return; }
+
+            try
+            {
+                double carrierHz = _esg.GetFrequencyHz();
+                double esgPowerDbm = _esg.GetAmplitudeDbm();
+                double offsetHz = CwOffsetHz();
+                double expectedToneHz = carrierHz + offsetHz;
+                double expectedAnalyzerDbm = esgPowerDbm - _safety.PathLossDb;
+                double spanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6);
+
+                ChannelPowerResult cp = ChannelPower.Measure(_vsa, carrierHz, spanHz);
+                SpectrumResult sp = SpectrumMarker.MeasurePeak(_vsa, carrierHz, spanHz);
+
+                var results = new System.Collections.Generic.List<ValidationResult>();
+                results.Add(Compare("Tone frequency (Hz)", expectedToneHz, sp.MarkerFrequencyHz, 10e3));
+                results.Add(Compare("Channel power (dBm)", expectedAnalyzerDbm, cp.TotalPowerDbm, 1.5));
+                _notifications.Show(results);
+
+                bool pass = results.TrueForAll(v => v.Severity != ValidationSeverity.Error);
+                _status.Text = pass ? "Verify: PASS" : "Verify: FAIL (see Notifications)";
+            }
+            catch (Exception ex)
+            {
+                _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Verify failed: " + ex.Message));
+                _status.Text = "Verify failed.";
+            }
+        }
+
+        private static ValidationResult Compare(string metric, double expected, double measured, double tolerance)
+        {
+            double delta = measured - expected;
+            bool pass = Math.Abs(delta) <= tolerance;
+            string msg = string.Format(CultureInfo.InvariantCulture,
+                "{0}: expected {1:0.###}, measured {2:0.###} (Δ {3:+0.###;-0.###}; tol ±{4:0.###}) → {5}",
+                metric, expected, measured, delta, tolerance, pass ? "PASS" : "FAIL");
+            return new ValidationResult(pass ? ValidationSeverity.Info : ValidationSeverity.Error, msg, metric);
+        }
+
+        private double CwOffsetHz()
+        {
+            if (_sourcePanel == null) return 0;
+            object cfg = _sourcePanel.GetConfig();
+            System.Reflection.PropertyInfo p = cfg?.GetType().GetProperty("FreqOffsetHz");
+            if (p == null) return 0;
+            object v = p.GetValue(cfg);
+            return v == null ? 0 : Convert.ToDouble(v);
         }
 
         // ---- project I/O ----
