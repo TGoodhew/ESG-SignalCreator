@@ -77,6 +77,23 @@ NuGet `PackageReference`s).
    and run the waveform; **Stop** turns the ARB off. The instrument-settings and
    SCPI-console views are available from the left tree.
 
+## Hardware-in-the-loop testing
+
+The 184 unit tests run with **no instrument** (block framing, encoder, DSP, validation, …).
+To validate the real ARB download/play path against an actual E4438C, run the headless
+harness ([ESG-SignalCreator.HilHarness](ESG-SignalCreator.HilHarness/)):
+
+```powershell
+# RF stays OFF and power LOW (-30 dBm) by default; --rf-on briefly enables RF.
+ESG-SignalCreator.HilHarness.exe "TCPIP0::192.168.1.82::inst1::INSTR"
+# or set ESG_VISA_RESOURCE and omit the argument.
+```
+
+It connects over VISA, checks `*IDN?`/`*OPT?`, downloads a CW waveform to `WFM1`, arms the
+ARB, sets/reads back frequency and amplitude, and polls `:SYSTem:ERRor?` after each step —
+printing a per-step PASS/FAIL summary and exiting non-zero on any failure. It is a separate
+console project, kept out of the normal unit-test run so CI stays hardware-free.
+
 ## Project layout
 
 The solution is split into a UI-free core library, the WinForms app, and a test project:
@@ -97,7 +114,8 @@ The solution is split into a UI-free core library, the WinForms app, and a test 
 | [Core/Project/](ESG-SignalCreator.Core/Project/) | `SsProject` + `ProjectStore` (`.ssproj` save/load) |
 | [App/Ui/](ESG-SignalCreator.App/Ui/) | `StudioForm` shell, signal-flow canvas, source panels, plot panes, instrument UI |
 | [ESG-SignalCreator.App/](ESG-SignalCreator.App/) | WinForms application — references Core (entry point `Program.cs`) |
-| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (121: framing, encoder, DSP, personalities, validation, project, …) |
+| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (184: framing, encoder, DSP, personalities, validation, sequencing, …) |
+| [ESG-SignalCreator.HilHarness/](ESG-SignalCreator.HilHarness/) | Headless hardware-in-the-loop test runner for a real E4438C |
 
 Run the tests with `dotnet test` or VS Test Explorer.
 
