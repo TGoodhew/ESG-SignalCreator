@@ -20,18 +20,20 @@ namespace EsgSignalCreator.Ui.Plots
             IqVsTime,
             Spectrum,
             Constellation,
-            Ccdf
+            Ccdf,
+            Eye
         }
 
         private readonly Chart _chart;
         private readonly ComboBox _view;
         private WaveformModel _waveform;
+        private int _samplesPerSymbol;
 
         public PlotPane()
         {
             var top = new FlowLayoutPanel { Dock = DockStyle.Top, AutoSize = true, Padding = new Padding(2) };
             _view = new ComboBox { Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
-            _view.Items.AddRange(new object[] { "I / Q vs time", "Spectrum (FFT)", "Constellation", "CCDF" });
+            _view.Items.AddRange(new object[] { "I / Q vs time", "Spectrum (FFT)", "Constellation", "CCDF", "Eye diagram" });
             _view.SelectedIndex = 0;
             _view.SelectedIndexChanged += (s, e) => Render();
             top.Controls.Add(new Label { Text = "View:", AutoSize = true, Margin = new Padding(2, 6, 2, 0) });
@@ -68,6 +70,7 @@ namespace EsgSignalCreator.Ui.Plots
                     case 1: return ViewType.Spectrum;
                     case 2: return ViewType.Constellation;
                     case 3: return ViewType.Ccdf;
+                    case 4: return ViewType.Eye;
                     default: return ViewType.IqVsTime;
                 }
             }
@@ -77,7 +80,14 @@ namespace EsgSignalCreator.Ui.Plots
         /// <summary>Show a waveform (re-renders the current view).</summary>
         public void Show(WaveformModel waveform)
         {
+            Show(waveform, 0);
+        }
+
+        /// <summary>Show a waveform, hinting samples-per-symbol so the eye diagram folds correctly.</summary>
+        public void Show(WaveformModel waveform, int samplesPerSymbol)
+        {
             _waveform = waveform;
+            _samplesPerSymbol = samplesPerSymbol;
             Render();
         }
 
@@ -103,6 +113,7 @@ namespace EsgSignalCreator.Ui.Plots
                 case ViewType.Spectrum: RenderSpectrum(); break;
                 case ViewType.Constellation: RenderConstellation(); break;
                 case ViewType.Ccdf: RenderCcdf(); break;
+                case ViewType.Eye: RenderEye(); break;
                 default: RenderIq(); break;
             }
         }
@@ -160,16 +171,43 @@ namespace EsgSignalCreator.Ui.Plots
         private void RenderCcdf()
         {
             WaveformModel wf = _waveform;
-            _chart.Titles.Add("CCDF (instantaneous power above average)");
+            double[] iD = ToDouble(wf.I), qD = ToDouble(wf.Q);
+            double papr = Ccdf.PaprDb(iD, qD);
+            _chart.Titles.Add(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                "CCDF   (PAPR {0:0.##} dB)", papr));
             ChartArea a = _chart.ChartAreas[0];
             a.AxisX.Title = "dB above average";
             a.AxisY.Title = "Probability";
             a.AxisY.IsLogarithmic = true;
-            Ccdf.Curve(ToDouble(wf.I), ToDouble(wf.Q), out double[] db, out double[] prob);
+            Ccdf.Curve(iD, qD, out double[] db, out double[] prob);
             var s = new Series("CCDF") { ChartType = SeriesChartType.FastLine, Color = Color.DarkSlateBlue };
             for (int k = 0; k < db.Length; k++)
                 if (prob[k] > 0) s.Points.AddXY(db[k], prob[k]);
             _chart.Series.Add(s);
+        }
+
+        private void RenderEye()
+        {
+            WaveformModel wf = _waveform;
+            _chart.Titles.Add("Eye diagram (I)");
+            ChartArea a = _chart.ChartAreas[0];
+            a.AxisX.Title = "Sample in window";
+            a.AxisY.Title = "I";
+
+            // Fold the I signal over a two-symbol window. Use the symbol-rate hint when available,
+            // otherwise a heuristic window so the view is meaningful for arbitrary waveforms.
+            int sps = _samplesPerSymbol > 0 ? _samplesPerSymbol : Math.Max(8, Math.Min(128, wf.Length / 200));
+            int win = sps * 2;
+            if (win < 2 || win > wf.Length) return;
+
+            var color = System.Drawing.Color.FromArgb(60, System.Drawing.Color.Teal);
+            int traces = 0;
+            for (int start = 0; start + win <= wf.Length && traces < 200; start += sps, traces++)
+            {
+                var s = new Series("eye" + traces) { ChartType = SeriesChartType.FastLine, Color = color, IsVisibleInLegend = false };
+                for (int k = 0; k < win; k++) s.Points.AddXY(k, wf.I[start + k]);
+                _chart.Series.Add(s);
+            }
         }
 
         private static double[] ToDouble(float[] x)
