@@ -61,6 +61,40 @@ namespace EsgSignalCreator.Arb
             return Ieee4882Block.Frame(EncodePayload(i, q, backoff));
         }
 
+        /// <summary>
+        /// Encode I and Q into <b>separate</b> big-endian int16 byte streams (not interleaved), for the
+        /// legacy E443xB-compatible <c>ARBI:</c>/<c>ARBQ:</c> download path. Both channels share one
+        /// scale factor (the joint peak vector magnitude) so the constellation is preserved.
+        /// </summary>
+        public static void EncodeChannelsSeparate(float[] i, float[] q, double backoff,
+            out byte[] iBytes, out byte[] qBytes)
+        {
+            if (i == null) throw new ArgumentNullException(nameof(i));
+            if (q == null) throw new ArgumentNullException(nameof(q));
+            if (i.Length != q.Length) throw new ArgumentException("I and Q must have equal length.");
+            if (i.Length < MinSamples)
+                throw new ArgumentException($"Waveform has {i.Length} samples; the E4438C requires at least {MinSamples}.");
+            if (backoff <= 0 || backoff > 1)
+                throw new ArgumentOutOfRangeException(nameof(backoff), "Backoff must be in (0, 1].");
+
+            double peak = 0;
+            for (int n = 0; n < i.Length; n++)
+            {
+                double m = Math.Sqrt((double)i[n] * i[n] + (double)q[n] * q[n]);
+                if (m > peak) peak = m;
+            }
+            double scale = peak > 0 ? backoff * FullScale / peak : 0;
+
+            iBytes = new byte[i.Length * 2];
+            qBytes = new byte[q.Length * 2];
+            int bi = 0, bq = 0;
+            for (int n = 0; n < i.Length; n++)
+            {
+                WriteBigEndian(iBytes, ref bi, Saturate(i[n] * scale));
+                WriteBigEndian(qBytes, ref bq, Saturate(q[n] * scale));
+            }
+        }
+
         /// <summary>Encode a <see cref="WaveformModel"/> to the interleaved big-endian int16 payload.</summary>
         public static byte[] EncodePayload(WaveformModel waveform, double backoff = DefaultBackoff)
         {

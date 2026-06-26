@@ -110,6 +110,42 @@ namespace EsgSignalCreator
             _io.WriteBinaryBlock(message);
         }
 
+        /// <summary>
+        /// Legacy E443xB-compatible download: send I and Q as separate <c>ARBI:</c>/<c>ARBQ:</c>
+        /// blocks (the E4438C auto-converts them). Use the primary <see cref="DownloadWaveform(string,IqWaveform,double)"/>
+        /// WFM1 path unless a tool specifically needs this fallback (rebuild spec §5.3).
+        /// </summary>
+        public void DownloadWaveformLegacy(string segmentName, IqWaveform waveform,
+            double backoff = EsgArbEncoder.DefaultBackoff)
+        {
+            if (waveform == null) throw new ArgumentNullException(nameof(waveform));
+            ValidateSegmentName(segmentName);
+
+            var i = new float[waveform.Length];
+            var q = new float[waveform.Length];
+            for (int n = 0; n < waveform.Length; n++) { i[n] = (float)waveform.I[n]; q[n] = (float)waveform.Q[n]; }
+
+            EsgArbEncoder.EncodeChannelsSeparate(i, q, backoff, out byte[] iBytes, out byte[] qBytes);
+            SetArbState(false);
+            _io.WriteBinaryBlock(Ieee4882Block.Message(
+                string.Format(CultureInfo.InvariantCulture, ":MEMory:DATA \"ARBI:{0}\",", segmentName), iBytes));
+            _io.WriteBinaryBlock(Ieee4882Block.Message(
+                string.Format(CultureInfo.InvariantCulture, ":MEMory:DATA \"ARBQ:{0}\",", segmentName), qBytes));
+        }
+
+        /// <summary>
+        /// Download a marker stream (one byte per sample, value 1 = marker on) to the segment's
+        /// marker file via <c>:MEMory:DATA "MKR1:&lt;name&gt;"</c>. Optional — the instrument supplies
+        /// default markers when none is downloaded (rebuild spec §5.1/§5.3).
+        /// </summary>
+        public void DownloadMarkers(string segmentName, byte[] markers)
+        {
+            if (markers == null) throw new ArgumentNullException(nameof(markers));
+            ValidateSegmentName(segmentName);
+            _io.WriteBinaryBlock(Ieee4882Block.Message(
+                string.Format(CultureInfo.InvariantCulture, ":MEMory:DATA \"MKR1:{0}\",", segmentName), markers));
+        }
+
         /// <summary>Select a downloaded segment for the dual ARB player (:RADio:ARB:WAVeform).</summary>
         public void SelectWaveform(string segmentName)
         {
