@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    In-app Claude assistant subsystem (epic #91). SDK-style net472 so it can use PackageReference
+    (Newtonsoft.Json) cleanly without touching the proven old-style Core/App project files.
+    Layering: Core <- Assistant <- App; Tests references Assistant + Core.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <RootNamespace>EsgSignalCreator.Assistant</RootNamespace>
+    <AssemblyName>ESG-SignalCreator.Assistant</AssemblyName>
+    <LangVersion>7.3</LangVersion>
+    <Nullable>disable</Nullable>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ESG-SignalCreator.Core\ESG-SignalCreator.Core.csproj" />
+  </ItemGroup>
+
+</Project>

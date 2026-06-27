@@ -20,7 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ESG-SignalCreator.Core\ESG-SignalCreator.Core.csproj" />
+    <ProjectReference Include="..\ESG-SignalCreator.Assistant\ESG-SignalCreator.Assistant.csproj" />
   </ItemGroup>
 
 </Project>
