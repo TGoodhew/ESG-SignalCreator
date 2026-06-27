@@ -28,6 +28,31 @@ namespace EsgSignalCreator.Assistant.Agent
         public List<ClaudeMessage> Snapshot() => new List<ClaudeMessage>(_messages);
 
         /// <summary>
+        /// Trim the oldest messages so at most <paramref name="maxMessages"/> remain (#89 conversation
+        /// compaction). Keeps pairing valid: after trimming it never leaves a leading user turn whose
+        /// content is orphaned tool_result blocks (whose assistant tool_use was trimmed). The system
+        /// prompt lives outside the message list, so it is unaffected. Returns the number removed.
+        /// </summary>
+        public int Compact(int maxMessages)
+        {
+            if (maxMessages <= 0 || _messages.Count <= maxMessages) return 0;
+
+            int removed = _messages.Count - maxMessages;
+            _messages.RemoveRange(0, removed);
+
+            // Don't start the history with orphaned tool_result blocks.
+            while (_messages.Count > 0 && IsToolResultMessage(_messages[0]))
+            {
+                _messages.RemoveAt(0);
+                removed++;
+            }
+            return removed;
+        }
+
+        private static bool IsToolResultMessage(ClaudeMessage m) =>
+            m.Role == Roles.User && m.Content != null && m.Content.Any(b => b != null && b.Type == ContentTypes.ToolResult);
+
+        /// <summary>
         /// If the last message is an assistant turn with unanswered tool_use blocks, append a user turn
         /// with an error tool_result for each — so the history stays valid after a cap or cancellation.
         /// Returns true if it added anything.

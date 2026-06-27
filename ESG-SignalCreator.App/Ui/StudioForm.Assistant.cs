@@ -84,7 +84,9 @@ namespace EsgSignalCreator.Ui
                 PolicyOptions = policyOptions,
                 ClientFactory = opts => new ClaudeClient(opts),
                 SystemPrompt = AssistantSystemPrompt,
-                Log = msg => _notifications.Append(new ValidationResult(ValidationSeverity.Info, msg))
+                Log = msg => _notifications.Append(new ValidationResult(ValidationSeverity.Info, msg)),
+                ReadOnlyClassifier = name => registry.ByName(name)?.Effect == ToolEffect.Read,
+                MaxHistoryMessages = 100
             });
 
             _assistantCard.Controls.Add(pane);

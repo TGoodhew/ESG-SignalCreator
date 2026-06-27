@@ -25,6 +25,8 @@ namespace EsgSignalCreator.Ui.Assistant
         public Func<ClaudeClientOptions, IClaudeClient> ClientFactory;
         public string SystemPrompt;
         public Action<string> Log;                                // optional: echo notes to the app log
+        public Func<string, bool> ReadOnlyClassifier;             // reads run concurrently (#89)
+        public int MaxHistoryMessages;                            // conversation compaction (#89); 0 = unlimited
     }
 
     /// <summary>
@@ -189,7 +191,9 @@ namespace EsgSignalCreator.Ui.Assistant
             {
                 Tools = _deps.Registry.ToToolDefinitions(),
                 Streaming = true,
-                Model = _deps.Settings.Model
+                Model = _deps.Settings.Model,
+                ReadOnlyClassifier = _deps.ReadOnlyClassifier,
+                MaxHistoryMessages = _deps.MaxHistoryMessages
             });
             loop.TextDelta += OnTextDelta;
             loop.ToolRoundCompleted += OnToolRoundCompleted;
