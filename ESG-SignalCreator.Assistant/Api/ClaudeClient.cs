@@ -59,7 +59,7 @@ namespace EsgSignalCreator.Assistant.Api
     /// and supports both buffered and streaming responses. Accepts an injected <see cref="HttpClient"/>
     /// so it is unit-testable against a fake handler.
     /// </summary>
-    public sealed class ClaudeClient : IDisposable
+    public sealed class ClaudeClient : IClaudeClient, IDisposable
     {
         private static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings
         {
