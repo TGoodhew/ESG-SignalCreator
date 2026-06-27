@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+
+  <?ifndef ProductVersion ?><?define ProductVersion = "1.0.0.0" ?><?endif?>
+  <?ifndef HarvestPath ?><?define HarvestPath = "..\ESG-SignalCreator.App\bin\Release" ?><?endif?>
+
+  <Package
+      Name="ESG-SignalCreator"
+      Manufacturer="Tony Goodhew"
+      Version="$(ProductVersion)"
+      UpgradeCode="A7E2D1C4-9B3F-4E6A-8C5D-1F2A3B4C5D6E"
+      Scope="perMachine"
+      Compressed="yes">
+
+    <!-- Stable UpgradeCode + MajorUpgrade: installing a newer version replaces the old one cleanly. -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed. Setup will now exit." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Prerequisite: .NET Framework 4.7.2 (release key 461808). Blocks install with a clear message. -->
+    <Property Id="NETFRAMEWORK472">
+      <RegistrySearch Id="Net472Release" Root="HKLM"
+                      Key="SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
+                      Name="Release" Type="raw" />
+    </Property>
+    <Launch Condition="Installed OR (NETFRAMEWORK472 &gt;= 461808)"
+            Message="ESG-SignalCreator requires .NET Framework 4.7.2 or later. Please install it and run setup again." />
+
+    <!-- Prerequisite (soft): an IVI-compliant VISA runtime, needed for live instrument I/O. The app
+         talks to instruments through the vendor-neutral IVI VISA.NET shared components, so ANY
+         compliant VISA provider works — Keysight IO Libraries, NI-VISA, Rohde & Schwarz, Rigol, etc.
+         Detection is vendor-neutral (the IVI Foundation VISA shared-components key). Not blocking,
+         because the app still builds/exports waveforms offline and surfaces a clear message when a
+         connection is attempted without VISA present. -->
+    <Property Id="IVIVISAPRESENT">
+      <RegistrySearch Id="IviVisaSearch" Root="HKLM"
+                      Key="SOFTWARE\IVI Foundation\VISA\CurrentVersion"
+                      Type="raw" Bitness="always64" />
+    </Property>
+    <Property Id="IVIVISAPRESENT32">
+      <RegistrySearch Id="IviVisaSearch32" Root="HKLM"
+                      Key="SOFTWARE\IVI Foundation\VISA\CurrentVersion"
+                      Type="raw" Bitness="always32" />
+    </Property>
+
+    <!-- ARP (Add/Remove Programs) metadata + icon (extracted from the app exe). -->
+    <Icon Id="AppIcon.exe" SourceFile="$(HarvestPath)\ESG-SignalCreator.exe" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.exe" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/TGoodhew/ESG-SignalCreator" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/TGoodhew/ESG-SignalCreator" />
+
+    <!-- Optional desktop shortcut, on by default; pass INSTALLDESKTOPSHORTCUT=0 to skip. -->
+    <Property Id="INSTALLDESKTOPSHORTCUT" Value="1" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="ESG-SignalCreator" />
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="AppProgramMenuDir" Name="ESG-SignalCreator" />
+    </StandardDirectory>
+    <StandardDirectory Id="DesktopFolder" />
+
+    <!-- Application payload: the app exe (with a Start-menu shortcut), the Core library, and config.
+         NI/IVI VISA assemblies are intentionally NOT redistributed — they come from the NI-VISA runtime. -->
+    <ComponentGroup Id="AppFiles" Directory="INSTALLFOLDER">
+      <Component Id="MainExe" Guid="*">
+        <File Id="MainExe" Source="$(HarvestPath)\ESG-SignalCreator.exe" KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut" Directory="AppProgramMenuDir"
+                    Name="ESG-SignalCreator" Icon="AppIcon.exe" Advertise="yes"
+                    WorkingDirectory="INSTALLFOLDER" />
+        </File>
+      </Component>
+      <Component Id="CoreDll" Guid="*">
+        <File Source="$(HarvestPath)\ESG-SignalCreator.Core.dll" KeyPath="yes" />
+      </Component>
+      <Component Id="AppConfig" Guid="*">
+        <File Source="$(HarvestPath)\ESG-SignalCreator.exe.config" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Start-menu folder removal on uninstall. -->
+    <DirectoryRef Id="AppProgramMenuDir">
+      <Component Id="ProgramMenuDirCleanup" Guid="*">
+        <RemoveFolder Id="RemoveProgramMenuDir" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\TGoodhew\ESG-SignalCreator"
+                       Name="installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- Desktop shortcut (conditioned on the property; cleaned up on uninstall via its registry keypath). -->
+    <Component Id="DesktopShortcut" Directory="DesktopFolder" Guid="*" Condition="INSTALLDESKTOPSHORTCUT = 1">
+      <Shortcut Id="DesktopShortcut" Name="ESG-SignalCreator" Icon="AppIcon.exe"
+                Target="[INSTALLFOLDER]ESG-SignalCreator.exe" WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKCU" Key="Software\TGoodhew\ESG-SignalCreator"
+                     Name="desktop" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Feature Id="Main" Title="ESG-SignalCreator" Level="1">
+      <ComponentGroupRef Id="AppFiles" />
+      <ComponentRef Id="ProgramMenuDirCleanup" />
+      <ComponentRef Id="DesktopShortcut" />
+    </Feature>
+
+    <!-- Install-location chooser + MIT license page. -->
+    <ui:WixUI Id="WixUI_InstallDir" InstallDirectory="INSTALLFOLDER" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+
+  </Package>
+</Wix>
