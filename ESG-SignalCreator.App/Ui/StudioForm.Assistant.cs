@@ -15,6 +15,8 @@ using EsgSignalCreator.Assistant.Host;
 using EsgSignalCreator.Assistant.Secrets;
 using EsgSignalCreator.Assistant.Tools;
 using EsgSignalCreator.Dsp;
+using EsgSignalCreator.Measure;
+using EsgSignalCreator.Measure.Results;
 using EsgSignalCreator.Model;
 using EsgSignalCreator.Project;
 using EsgSignalCreator.Seamless;
@@ -64,17 +66,20 @@ namespace EsgSignalCreator.Ui
             ctx.Register<IAssistantConfigureHost>(host);
             ctx.Register<IAssistantHardwareHost>(host);
             ctx.Register<IAssistantRawScpiHost>(host);
+            ctx.Register<IAssistantMeasureHost>(host);
             var gate = new ValidationGate(host);
 
             var registry = new ToolRegistry();
             registry.Register(ReadTools.All());
             registry.Register(ConfigureTools.All());
             registry.Register(HardwareTools.All());
+            registry.Register(MeasureTools.All());
             registry.Register(GatedTools.SendRawScpi());
             registry.SetEnabled(GatedTools.SendRawScpiName, settings.AllowRawScpi); // gated: off unless opted in
 
             var dispatcher = new ToolDispatcher(registry, ctx, policy, gate);
             var store = new ConversationStore { SystemPrompt = AssistantSystemPrompt };
+            var appReadNames = new HashSet<string>(ReadTools.All().Select(t => t.Name));
 
             pane.Initialize(new AssistantPaneDeps
             {
@@ -88,7 +93,9 @@ namespace EsgSignalCreator.Ui
                 ClientFactory = opts => new ClaudeClient(opts),
                 SystemPrompt = AssistantSystemPrompt,
                 Log = msg => _notifications.Append(new ValidationResult(ValidationSeverity.Info, msg)),
-                ReadOnlyClassifier = name => registry.ByName(name)?.Effect == ToolEffect.Read,
+                // Only the pure PC-side reads parallelize; instrument measurements stay serialized so
+                // concurrent sweeps can't collide on the one analyzer.
+                ReadOnlyClassifier = appReadNames.Contains,
                 MaxHistoryMessages = 100
             });
 
@@ -99,7 +106,7 @@ namespace EsgSignalCreator.Ui
         /// Adapts the live <see cref="StudioForm"/> to the assistant host interfaces. A nested type so it
         /// can read/drive the form's private state directly; every mutation hops to the UI thread.
         /// </summary>
-        private sealed class StudioAssistantHost : IAssistantReadHost, IAssistantConfigureHost, IValidationGateHost, IAssistantHardwareHost, IAssistantRawScpiHost
+        private sealed class StudioAssistantHost : IAssistantReadHost, IAssistantConfigureHost, IValidationGateHost, IAssistantHardwareHost, IAssistantRawScpiHost, IAssistantMeasureHost
         {
             private readonly StudioForm _f;
             public StudioAssistantHost(StudioForm form) { _f = form; }
@@ -190,7 +197,7 @@ namespace EsgSignalCreator.Ui
                     DurationSeconds = wf.Length / wf.SampleRateHz,
                     PeakDbfs = peak > 0 ? 20.0 * Math.Log10(peak) : double.NegativeInfinity,
                     RmsDbfs = sumSq > 0 ? 20.0 * Math.Log10(Math.Sqrt(sumSq / wf.Length)) : double.NegativeInfinity,
-                    PaprDb = Ccdf.PaprDb(iD, qD),
+                    PaprDb = EsgSignalCreator.Dsp.Ccdf.PaprDb(iD, qD),
                     OccupiedBwHz = StudioForm.OccupiedBandwidthHz(iD, qD, wf.SampleRateHz),
                     DacHeadroomDb = headroom < 0 ? 0 : headroom
                 };
@@ -394,6 +401,123 @@ namespace EsgSignalCreator.Ui
 
                 return new JObject { ["applied"] = applied, ["summary"] = "Applied " + applied.Count + " setting(s)." };
             });
+
+            // ---- IAssistantMeasureHost (runs on the tool thread; sweeps block, so no UI marshaling) ----
+
+            private VsaInstrument Vsa() => _f._vsa ?? throw new InvalidOperationException("Connect the VSA first (Connect VSA…).");
+
+            public JObject GetVsaState()
+            {
+                if (_f._vsa == null) return new JObject { ["connected"] = false, ["summary"] = "VSA offline." };
+                InstrumentIdentity id = _f._vsa.Identify();
+                string mode = null; try { mode = _f._vsa.GetMode(); } catch { }
+                return new JObject
+                {
+                    ["connected"] = true,
+                    ["model"] = id?.Model,
+                    ["firmware"] = id?.FirmwareRevision,
+                    ["options"] = new JArray(_f._vsa.Options()),
+                    ["mode"] = mode,
+                    ["summary"] = "VSA " + (id?.Model ?? "connected") + (mode != null ? ", mode " + mode : "") + "."
+                };
+            }
+
+            public JObject MeasureChannelPower(double centerHz, double spanHz)
+            {
+                ChannelPowerResult r = ChannelPower.Measure(Vsa(), centerHz, spanHz, spanHz);
+                return new JObject
+                {
+                    ["total_power_dbm"] = r.TotalPowerDbm,
+                    ["psd_dbm_hz"] = r.PowerSpectralDensityDbmHz,
+                    ["summary"] = "Channel power " + r.TotalPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm."
+                };
+            }
+
+            public JObject MeasureAcp(double centerHz, double carrierBandwidthHz)
+            {
+                AcpResult r = Acp.Measure(Vsa(), centerHz, carrierBandwidthHz);
+                return new JObject
+                {
+                    ["upper_adjacent_dbc"] = r.UpperAdjacentDbc,
+                    ["lower_adjacent_dbc"] = r.LowerAdjacentDbc,
+                    ["lower_offsets_dbc"] = r.LowerOffsetsDbc != null ? new JArray(r.LowerOffsetsDbc) : new JArray(),
+                    ["upper_offsets_dbc"] = r.UpperOffsetsDbc != null ? new JArray(r.UpperOffsetsDbc) : new JArray(),
+                    ["summary"] = "ACP upper " + r.UpperAdjacentDbc.ToString("0.#", CultureInfo.InvariantCulture) +
+                                  " dBc, lower " + r.LowerAdjacentDbc.ToString("0.#", CultureInfo.InvariantCulture) + " dBc."
+                };
+            }
+
+            public JObject MeasureCcdf(double centerHz)
+            {
+                CcdfResult r = EsgSignalCreator.Measure.Ccdf.Measure(Vsa(), centerHz);
+                return new JObject
+                {
+                    ["papr_db"] = r.PaprDb,
+                    ["average_power_dbm"] = r.AveragePowerDbm,
+                    ["summary"] = "PAPR " + r.PaprDb.ToString("0.##", CultureInfo.InvariantCulture) + " dB."
+                };
+            }
+
+            public JObject MeasureSpectrumPeak(double centerHz, double spanHz)
+            {
+                SpectrumResult r = SpectrumMarker.MeasurePeak(Vsa(), centerHz, spanHz);
+                return new JObject
+                {
+                    ["marker_frequency_hz"] = r.MarkerFrequencyHz,
+                    ["marker_power_dbm"] = r.MarkerPowerDbm,
+                    ["occupied_bw_hz"] = r.OccupiedBandwidthHz,
+                    ["summary"] = "Peak " + (r.MarkerFrequencyHz / 1e6).ToString("0.######", CultureInfo.InvariantCulture) +
+                                  " MHz @ " + r.MarkerPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm."
+                };
+            }
+
+            public JObject MeasureWaveform(double centerHz)
+            {
+                WaveformResult r = WaveformMeasurement.Measure(Vsa(), centerHz);
+                return new JObject
+                {
+                    ["peak_power_dbm"] = r.PeakPowerDbm,
+                    ["mean_power_dbm"] = r.MeanPowerDbm,
+                    ["peak_to_mean_db"] = r.PeakToMeanDb,
+                    ["summary"] = "Peak " + r.PeakPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) +
+                                  " dBm, mean " + r.MeanPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm."
+                };
+            }
+
+            public JObject VerifySignal(double? carrierHz, double? commandedPowerDbm, double? toneOffsetHz)
+            {
+                VsaInstrument vsa = Vsa();
+                WaveformModel wf = _f._waveform ?? throw new InvalidOperationException("Calculate a waveform first.");
+                if (_f._esg == null && (carrierHz == null || commandedPowerDbm == null))
+                    throw new InvalidOperationException("Connect the ESG or pass carrier_hz and commanded_power_dbm.");
+
+                double carrier = carrierHz ?? _f._esg.GetFrequencyHz();
+                double power = commandedPowerDbm ?? _f._esg.GetAmplitudeDbm();
+                double offset = toneOffsetHz ?? 0;
+
+                var profile = new VerificationProfile { PathLossDb = _f._safety.PathLossDb };
+                IReadOnlyList<VerificationResult> results = VerificationHarness.Verify(vsa, wf, carrier, power, profile, offset);
+
+                var arr = new JArray();
+                foreach (VerificationResult r in results)
+                    arr.Add(new JObject
+                    {
+                        ["metric"] = r.Metric,
+                        ["expected"] = r.Expected,
+                        ["measured"] = r.Measured,
+                        ["delta"] = r.Delta,
+                        ["tolerance"] = r.Tolerance,
+                        ["unit"] = r.Unit,
+                        ["pass"] = r.Pass
+                    });
+                bool allPass = VerificationHarness.AllPass(results);
+                return new JObject
+                {
+                    ["all_pass"] = allPass,
+                    ["results"] = arr,
+                    ["summary"] = (allPass ? "VERIFIED — " : "FAILED — ") + arr.Count + " metric(s) checked."
+                };
+            }
 
             // ---- IAssistantRawScpiHost ----
 

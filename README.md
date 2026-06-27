@@ -51,9 +51,13 @@ core library, the WinForms app, and an xUnit test project.
   instrument settings). Guardrails are enforced in the dispatcher, not the prompt: read/configure run
   freely, but anything that touches the instrument requires an inline Approve/Decline card (RF and bus
   takeover always confirm), and a pre-execution validation gate refuses hardware actions on a hard
-  validation failure — even if approved. Tool output is treated as data, never commands; the API key
-  is stored encrypted (Windows DPAPI); the feature is off until enabled. Covered by an end-to-end
-  acceptance suite (schema validity, gate/confirmation, injection resistance, SCPI parity, secret hygiene).
+  validation failure — even if approved. It can also **measure + verify** on the E4406A (channel power,
+  ACP, CCDF/PAPR, spectrum peak, waveform, and a closed-loop `verify_signal`), and exposes an opt-in,
+  always-confirmed **raw-SCPI** escape hatch (off by default). Read tool_uses run concurrently while
+  configure/hardware stay serialized; long chats are compacted. Tool output is treated as data, never
+  commands; the API key is stored encrypted (Windows DPAPI); the feature is off until enabled. Covered
+  by an end-to-end acceptance suite (schema validity, gate/confirmation, injection resistance, SCPI
+  parity, secret hygiene).
 - **Projects** — save/open the active source + settings as a `*.ssproj` JSON file.
 - Pass **`--classic`** on the command line to launch the original single-window UI.
 
@@ -179,7 +183,7 @@ The solution is split into a UI-free core library, the WinForms app, and a test 
 | [Core/Measure/](ESG-SignalCreator.Core/Measure/) | E4406A Basic-mode measurements: Channel Power, ACP, CCDF, Spectrum, Waveform, Power-vs-Time + mask |
 | [Core/Verify/](ESG-SignalCreator.Core/Verify/) | Closed-loop verification harness/profile/result, RF-path safety gate, path calibration |
 | [ESG-SignalCreator.Assistant/](ESG-SignalCreator.Assistant/) | In-app Claude assistant: Messages API client, agent loop, tool surface (read/configure/hardware), guardrails, DPAPI secrets |
-| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (338: framing, encoder, DSP, personalities, validation, sequencing, measurements, verification, assistant tools + guardrails + acceptance, …) |
+| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (356: framing, encoder, DSP, personalities, validation, sequencing, measurements, verification, assistant tools + guardrails + acceptance, …) |
 | [ESG-SignalCreator.HilHarness/](ESG-SignalCreator.HilHarness/) | Headless hardware-in-the-loop test runner for a real E4438C |
 
 Run the tests with `dotnet test` or VS Test Explorer.
