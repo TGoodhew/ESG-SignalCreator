@@ -1,0 +1,28 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <!--
+    WiX v5 installer for ESG-SignalCreator. Built SEPARATELY from the solution (it is intentionally
+    not in ESG-SignalCreator.sln) so a dev machine without the WiX toolset still compiles the app.
+    Build with:  dotnet build ESG-SignalCreator.Installer\ESG-SignalCreator.Installer.wixproj -c Release
+    or via the repo-root build-installer.ps1 (which builds the app in Release first).
+  -->
+
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <Platform>x64</Platform>
+    <Platforms>x64</Platforms>
+    <InstallerPlatform>x64</InstallerPlatform>
+
+    <!-- Override on the command line: -p:ProductVersion=1.2.3.0 -p:HarvestPath=...\bin\Release -->
+    <ProductVersion Condition="'$(ProductVersion)'==''">1.0.0.0</ProductVersion>
+    <HarvestPath Condition="'$(HarvestPath)'==''">$(MSBuildThisFileDirectory)..\ESG-SignalCreator.App\bin\Release</HarvestPath>
+
+    <DefineConstants>ProductVersion=$(ProductVersion);HarvestPath=$(HarvestPath)</DefineConstants>
+    <OutputName>ESG-SignalCreator-$(ProductVersion)</OutputName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+</Project>

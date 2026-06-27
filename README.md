@@ -127,6 +127,20 @@ hardware-free.
 > I/Q gain imbalance → image at −15.4 dBc (matches theory), and amplitude accuracy within a
 > consistent ~0.76 dB cable roll-off at 3 GHz.
 
+## Installer
+
+A Windows **MSI** is built with the free **WiX Toolset v5** (restored from NuGet by `dotnet build`,
+no toolset install needed). From the repo root:
+
+```powershell
+./build-installer.ps1 -Version 1.0.0.0
+```
+
+It installs the app per-machine to `Program Files`, adds Start-menu/desktop shortcuts and a proper
+Add/Remove-Programs entry, requires .NET Framework 4.7.2, and detects an installed **VISA** runtime
+(vendor-neutral — Keysight, NI, R&S, Rigol, …). The installer project is kept out of the solution so
+a machine without WiX still builds the app. See [docs/Packaging.md](docs/Packaging.md) for details.
+
 ## Project layout
 
 The solution is split into a UI-free core library, the WinForms app, and a test project:
