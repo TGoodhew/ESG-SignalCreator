@@ -21,6 +21,7 @@ using EsgSignalCreator.Ui.Instrument;
 using EsgSignalCreator.Ui.Pipeline;
 using EsgSignalCreator.Ui.Plots;
 using EsgSignalCreator.Ui.Sequencing;
+using EsgSignalCreator.Ui.Verify;
 using EsgSignalCreator.Ui.Sources;
 using EsgSignalCreator.Validation;
 using EsgSignalCreator.Visa;
@@ -61,6 +62,8 @@ namespace EsgSignalCreator.Ui
         private readonly Panel _instrumentCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _consoleCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _notificationsCard = new Panel { Dock = DockStyle.Fill, Visible = false };
+        private readonly Panel _verificationCard = new Panel { Dock = DockStyle.Fill, Visible = false };
+        private readonly VerificationView _verification = new VerificationView { Dock = DockStyle.Fill };
         private readonly Panel _impairmentsCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _sequenceCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly SequencePanel _sequence = new SequencePanel { Dock = DockStyle.Fill };
@@ -109,7 +112,7 @@ namespace EsgSignalCreator.Ui
             _stopBtn = Button("Stop", (s, e) => Stop());
             _allBtn = Button("Calc → DL → Play", async (s, e) => { if (await Calculate() && Download()) Play(); });
             bar.Items.Add(_calcBtn); bar.Items.Add(_downloadBtn); bar.Items.Add(_playBtn); bar.Items.Add(_stopBtn);
-            var verifyBtn = Button("Verify", (s, e) => VerifyCw());
+            var verifyBtn = Button("Verify", (s, e) => Verify());
             bar.Items.Add(verifyBtn);
             bar.Items.Add(new ToolStripSeparator()); bar.Items.Add(_allBtn);
             bar.Items.Add(new ToolStripSeparator());
@@ -146,6 +149,7 @@ namespace EsgSignalCreator.Ui
             tree.Nodes.Add("instrument", "Instrument settings");
             tree.Nodes.Add("console", "SCPI console");
             tree.Nodes.Add("notifications", "Notifications");
+            tree.Nodes.Add("verification", "Verification");
             tree.SelectedNode = tree.Nodes[0];
             tree.AfterSelect += (s, e) => ShowCard(e.Node.Name);
 
@@ -160,6 +164,7 @@ namespace EsgSignalCreator.Ui
             _instrumentCard.Controls.Add(_settings);
             _consoleCard.Controls.Add(_console);
             _notificationsCard.Controls.Add(_notifications);
+            _verificationCard.Controls.Add(_verification);
             BuildImpairmentsCard();
             _sequenceCard.Controls.Add(_sequence);
             _centerCards.Controls.Add(_sourceCard);
@@ -168,6 +173,7 @@ namespace EsgSignalCreator.Ui
             _centerCards.Controls.Add(_instrumentCard);
             _centerCards.Controls.Add(_consoleCard);
             _centerCards.Controls.Add(_notificationsCard);
+            _centerCards.Controls.Add(_verificationCard);
 
             // ---- right dock: three plots + readout + progress + play state ----
             _plotSpectrum.SelectedView = PlotPane.ViewType.Spectrum;
@@ -234,6 +240,7 @@ namespace EsgSignalCreator.Ui
             _instrumentCard.Visible = name == "instrument";
             _consoleCard.Visible = name == "console";
             _notificationsCard.Visible = name == "notifications";
+            _verificationCard.Visible = name == "verification";
         }
 
         private void BuildImpairmentsCard()
@@ -458,11 +465,12 @@ namespace EsgSignalCreator.Ui
         }
 
         /// <summary>
-        /// Manual closed-loop CW verify (#66): read the ESG's commanded centre frequency + power,
-        /// measure channel power + the spectrum peak on the E4406A, and compare expected vs measured
-        /// (accounting for the declared path loss). Results land in the Notifications dock.
+        /// Manual closed-loop verify (#67/#71): read the ESG's commanded centre frequency + power,
+        /// measure the played signal on the E4406A (channel power, PAPR, and — for a single tone — the
+        /// spectrum peak) and compare expected vs measured within the verification profile, accounting
+        /// for the declared path loss. Results land in the Verification view as an expected-vs-measured table.
         /// </summary>
-        private void VerifyCw()
+        private void Verify()
         {
             if (_esg == null) { _status.Text = "Connect the ESG first."; return; }
             if (_vsa == null) { _status.Text = "Connect the VSA first (Connect VSA…)."; return; }
@@ -472,37 +480,21 @@ namespace EsgSignalCreator.Ui
             {
                 double carrierHz = _esg.GetFrequencyHz();
                 double esgPowerDbm = _esg.GetAmplitudeDbm();
-                double offsetHz = CwOffsetHz();
-                double expectedToneHz = carrierHz + offsetHz;
-                double expectedAnalyzerDbm = esgPowerDbm - _safety.PathLossDb;
-                double spanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6);
+                var profile = new VerificationProfile { PathLossDb = _safety.PathLossDb };
 
-                ChannelPowerResult cp = ChannelPower.Measure(_vsa, carrierHz, spanHz);
-                SpectrumResult sp = SpectrumMarker.MeasurePeak(_vsa, carrierHz, spanHz);
+                System.Collections.Generic.IReadOnlyList<VerificationResult> results =
+                    VerificationHarness.Verify(_vsa, _waveform, carrierHz, esgPowerDbm, profile, CwOffsetHz());
+                _verification.Show(results);
+                ShowCard("verification");
 
-                var results = new System.Collections.Generic.List<ValidationResult>();
-                results.Add(Compare("Tone frequency (Hz)", expectedToneHz, sp.MarkerFrequencyHz, 10e3));
-                results.Add(Compare("Channel power (dBm)", expectedAnalyzerDbm, cp.TotalPowerDbm, 1.5));
-                _notifications.Show(results);
-
-                bool pass = results.TrueForAll(v => v.Severity != ValidationSeverity.Error);
-                _status.Text = pass ? "Verify: PASS" : "Verify: FAIL (see Notifications)";
+                bool pass = VerificationHarness.AllPass(results);
+                _status.Text = pass ? "Verify: PASS (see Verification)" : "Verify: FAIL (see Verification)";
             }
             catch (Exception ex)
             {
                 _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Verify failed: " + ex.Message));
                 _status.Text = "Verify failed.";
             }
-        }
-
-        private static ValidationResult Compare(string metric, double expected, double measured, double tolerance)
-        {
-            double delta = measured - expected;
-            bool pass = Math.Abs(delta) <= tolerance;
-            string msg = string.Format(CultureInfo.InvariantCulture,
-                "{0}: expected {1:0.###}, measured {2:0.###} (Δ {3:+0.###;-0.###}; tol ±{4:0.###}) → {5}",
-                metric, expected, measured, delta, tolerance, pass ? "PASS" : "FAIL");
-            return new ValidationResult(pass ? ValidationSeverity.Info : ValidationSeverity.Error, msg, metric);
         }
 
         private double CwOffsetHz()
