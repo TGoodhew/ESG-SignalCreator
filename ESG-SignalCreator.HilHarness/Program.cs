@@ -42,7 +42,7 @@ namespace EsgSignalCreator.HilHarness
             var opts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var valueFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db" };
+                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds" };
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -64,6 +64,7 @@ namespace EsgSignalCreator.HilHarness
             double offsetHz = Num(opts, "--offset-hz", 1e6);
             double maxInputDbm = Num(opts, "--max-input-dbm", 30.0);
             double pathLossDb = Num(opts, "--path-loss-db", 0.0);
+            double dwellSeconds = Num(opts, "--dwell-seconds", 0.0);
 
             Console.WriteLine("ESG-SignalCreator hardware-in-the-loop harness");
             Console.WriteLine("ESG       : " + esgResource);
@@ -136,7 +137,7 @@ namespace EsgSignalCreator.HilHarness
                 });
 
                 if (closedLoop)
-                    RunClosedLoop(esg, vsaResource, verifyPowerDbm, carrierHz, offsetHz, maxInputDbm, pathLossDb);
+                    RunClosedLoop(esg, vsaResource, verifyPowerDbm, carrierHz, offsetHz, maxInputDbm, pathLossDb, dwellSeconds);
                 else if (rfOn)
                 {
                     Step("RF-on smoke test (low power, 2 s)", () =>
@@ -164,7 +165,8 @@ namespace EsgSignalCreator.HilHarness
         // ---- closed-loop (ESG -> E4406A) ----
 
         private static void RunClosedLoop(EsgController esg, string vsaResource,
-            double verifyPowerDbm, double carrierHz, double offsetHz, double maxInputDbm, double pathLossDb)
+            double verifyPowerDbm, double carrierHz, double offsetHz, double maxInputDbm, double pathLossDb,
+            double dwellSeconds)
         {
             Console.WriteLine(new string('-', 64));
             Console.WriteLine("Closed-loop verification (E4406A)");
@@ -223,6 +225,15 @@ namespace EsgSignalCreator.HilHarness
                     Compare("Channel power", expectedAnalyzerDbm, cp.TotalPowerDbm, 3.0, "dBm");
 
                 CheckErrorQueueVsa(vsa, "after measurements");
+
+                if (dwellSeconds > 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    Console.WriteLine("            >>> RF held ON for " + dwellSeconds.ToString(CultureInfo.InvariantCulture) +
+                        " s — watch the ESG (1 GHz, " + verifyPowerDbm + " dBm, ARB) and the E4406A display…");
+                    Console.ResetColor();
+                    Thread.Sleep((int)(dwellSeconds * 1000));
+                }
             }
             finally
             {
