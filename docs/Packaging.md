@@ -60,6 +60,34 @@ The artifact lands in `ESG-SignalCreator.Installer\bin\…\ESG-SignalCreator-<ve
 - `INSTALLDESKTOPSHORTCUT=0` (msiexec property) skips the desktop shortcut.
 - The MSI is x64 (per-machine, Program Files).
 
+## Continuous release (GitHub Actions)
+
+`.github/workflows/release.yml` builds the MSI and publishes a GitHub Release automatically:
+
+| Trigger | Result |
+|---------|--------|
+| Push to `main` (or manual *Run workflow*) | **Prerelease** tagged `v1.0.<run_number>.0` — every update produces a build |
+| Push a tag `vX.Y.Z` | **Stable release** using that tag |
+| Manual run with a `version` input | Stable release at that version |
+
+Each run: builds the solution in Release, runs the unit tests, builds the MSI (WiX restored from
+NuGet), and uploads the `.msi` to the release with its SHA256.
+
+### Self-hosted runner (required)
+
+The workflow runs on a **self-hosted Windows runner**, not a GitHub-hosted one. The `Core` project
+references the **NI-488.2** and **IVI/NI-VISA** assemblies by absolute path into the local National
+Instruments / IVI Foundation install — those aren't on hosted runners, so the solution won't compile
+there. Register a runner on a machine that has Visual Studio (MSBuild), the .NET SDK, and the VISA
+stack:
+
+1. GitHub → repo **Settings → Actions → Runners → New self-hosted runner** (Windows).
+2. Follow the steps; give it the labels **`self-hosted`** and **`windows`** (the default Windows label set works).
+3. Run it as a service so releases build unattended.
+
+> Once issue #102 makes VISA vendor-neutral via the freely-installable IVI VISA.NET shared components,
+> a GitHub-hosted runner may become viable (the NI-488.2 GPIB backend would still need handling).
+
 ## Code signing (optional)
 
 Authenticode signing is supported out-of-band: sign `ESG-SignalCreator.exe` before harvesting and
