@@ -37,6 +37,13 @@ core library, the WinForms app, and an xUnit test project.
   discovery and `*IDN?`/`*OPT?`; an instrument-settings panel (frequency, amplitude,
   RF/modulation, ARB sample clock, runtime scaling) with read-back; and a raw-SCPI
   console with a timestamped log.
+- **In-app closed-loop verification (E4406A)** — connect an E4406A VSA, then **Verify**
+  measures the played signal (channel power, PAPR, and — for a tone — frequency) and shows
+  it against the expected values (from the generated I/Q) in an Expected-vs-Measured
+  **Verification** view with pass/fail. A guided **Path cal…** wizard captures cable loss +
+  analyzer offset as a path-loss correction; a **Reference** menu locks both instruments to a
+  common 10 MHz timebase; a **VSA Mode** menu (gated off `:INSTrument:CATalog?`) selects any
+  installed standard personality (GSM / W-CDMA / cdma2000 / …).
 - **Projects** — save/open the active source + settings as a `*.ssproj` JSON file.
 - Pass **`--classic`** on the command line to launch the original single-window UI.
 
@@ -140,7 +147,9 @@ The solution is split into a UI-free core library, the WinForms app, and a test 
 | [Core/Project/](ESG-SignalCreator.Core/Project/) | `SsProject` + `ProjectStore` (`.ssproj` save/load) |
 | [App/Ui/](ESG-SignalCreator.App/Ui/) | `StudioForm` shell, signal-flow canvas, source panels, plot panes, instrument UI |
 | [ESG-SignalCreator.App/](ESG-SignalCreator.App/) | WinForms application — references Core (entry point `Program.cs`) |
-| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (184: framing, encoder, DSP, personalities, validation, sequencing, …) |
+| [Core/Measure/](ESG-SignalCreator.Core/Measure/) | E4406A Basic-mode measurements: Channel Power, ACP, CCDF, Spectrum, Waveform, Power-vs-Time + mask |
+| [Core/Verify/](ESG-SignalCreator.Core/Verify/) | Closed-loop verification harness/profile/result, RF-path safety gate, path calibration |
+| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (256: framing, encoder, DSP, personalities, validation, sequencing, measurements, verification, …) |
 | [ESG-SignalCreator.HilHarness/](ESG-SignalCreator.HilHarness/) | Headless hardware-in-the-loop test runner for a real E4438C |
 
 Run the tests with `dotnet test` or VS Test Explorer.
