@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using EsgSignalCreator.Measure.Results;
 using EsgSignalCreator.Visa;
 
@@ -20,6 +21,11 @@ namespace EsgSignalCreator.Measure
         /// </summary>
         /// <param name="vsa">Open analyzer facade.</param>
         /// <param name="centerHz">Signal center frequency, in hertz.</param>
+        /// <param name="counts">
+        /// Sample count at which the measurement stops (<c>:SENSe:PSTatistic:COUNts</c>). The factory
+        /// default is 10,000,000, which makes a single READ take far too long; this defaults to
+        /// 1,000,000 (valid range 1,000 … 2,000,000,000) for a fast, accurate-enough CCDF.
+        /// </param>
         /// <remarks>
         /// Per the E4406A Programmer's Guide (confirmed), the <c>PSTatistic</c> scalar result set is
         /// 10 comma-separated values, in order:
@@ -38,12 +44,16 @@ namespace EsgSignalCreator.Measure
         /// A short/empty response yields <see cref="double.NaN"/> for the missing field(s) rather than
         /// throwing.
         /// </remarks>
-        public static CcdfResult Measure(VsaInstrument vsa, double centerHz)
+        public static CcdfResult Measure(VsaInstrument vsa, double centerHz, long counts = 1_000_000)
         {
             if (vsa == null) throw new ArgumentNullException(nameof(vsa));
 
             var basic = new BasicMeasurement(vsa);
             basic.Setup(centerHz);
+
+            // Bound the sample count so READ:PSTatistic? returns promptly (factory default is 10,000,000).
+            if (counts > 0)
+                vsa.Write(":SENSe:PSTatistic:COUNts " + counts.ToString(CultureInfo.InvariantCulture));
 
             double[] scalars = basic.Read(Root);
 
