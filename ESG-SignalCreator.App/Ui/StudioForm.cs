@@ -120,6 +120,9 @@ namespace EsgSignalCreator.Ui
             refBtn.DropDownItems.Add("Independent (each internal)", null, (s, e) => ApplyReference(ReferenceScheme.Independent));
             refBtn.DropDownItems.Add("Common 10 MHz (external)", null, (s, e) => ApplyReference(ReferenceScheme.CommonExternal));
             bar.Items.Add(refBtn);
+            var modeBtn = new ToolStripDropDownButton("VSA Mode");
+            modeBtn.DropDownOpening += (s, e) => PopulateVsaModes(modeBtn);
+            bar.Items.Add(modeBtn);
             bar.Items.Add(new ToolStripSeparator()); bar.Items.Add(_allBtn);
             bar.Items.Add(new ToolStripSeparator());
             var save = new ToolStripButton("Save…"); save.Click += (s, e) => SaveProject();
@@ -500,6 +503,64 @@ namespace EsgSignalCreator.Ui
             {
                 _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Verify failed: " + ex.Message));
                 _status.Text = "Verify failed.";
+            }
+        }
+
+        /// <summary>
+        /// Standard-personality mode picker (#76): populate the dropdown from the analyzer's
+        /// <c>:INSTrument:CATalog?</c> so only installed modes (Basic plus any option-gated personalities
+        /// such as GSM / W-CDMA / cdma2000) are offered; the current mode is checked.
+        /// </summary>
+        private void PopulateVsaModes(ToolStripDropDownButton btn)
+        {
+            btn.DropDownItems.Clear();
+            if (_vsa == null)
+            {
+                btn.DropDownItems.Add(new ToolStripMenuItem("(connect the VSA first)") { Enabled = false });
+                return;
+            }
+
+            try
+            {
+                System.Collections.Generic.IReadOnlyList<InstrumentMode> modes =
+                    InstrumentModeCatalog.Resolve(_vsa.ModeCatalog());
+                string current = null;
+                try { current = _vsa.GetMode(); } catch { /* current mode is optional decoration */ }
+
+                if (modes.Count == 0)
+                {
+                    btn.DropDownItems.Add(new ToolStripMenuItem("(no modes reported)") { Enabled = false });
+                    return;
+                }
+
+                foreach (InstrumentMode m in modes)
+                {
+                    string label = m.DisplayName + (m.IsStandardPersonality ? "" : "  (base)");
+                    var item = new ToolStripMenuItem(label, null, (s, e) => SelectVsaMode(m.Mnemonic))
+                    {
+                        ToolTipText = m.Description,
+                        Checked = current != null && string.Equals(current, m.Mnemonic, StringComparison.OrdinalIgnoreCase)
+                    };
+                    btn.DropDownItems.Add(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                btn.DropDownItems.Add(new ToolStripMenuItem("Catalog error: " + ex.Message) { Enabled = false });
+            }
+        }
+
+        private void SelectVsaMode(string mnemonic)
+        {
+            if (_vsa == null) { _status.Text = "Connect the VSA first (Connect VSA…)."; return; }
+            try
+            {
+                _vsa.SelectMode(mnemonic);
+                _status.Text = "VSA mode: " + mnemonic;
+            }
+            catch (Exception ex)
+            {
+                _status.Text = "Mode select failed: " + ex.Message;
             }
         }
 

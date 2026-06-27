@@ -66,6 +66,35 @@ namespace EsgSignalCreator.Visa
         /// <summary>Select Basic (format-independent) measurement mode (<c>:INSTrument:SELect BASIC</c>).</summary>
         public void SelectBasicMode() => _io.Write(":INSTrument:SELect BASIC");
 
+        /// <summary>
+        /// Select a measurement mode by its SCPI mnemonic (<c>:INSTrument:SELect</c>), e.g. GSM, WCDMA,
+        /// CDMA2K — only legal for modes the unit actually has installed (see <see cref="ModeCatalog"/>) (#76).
+        /// </summary>
+        public void SelectMode(string mnemonic)
+        {
+            if (string.IsNullOrWhiteSpace(mnemonic)) throw new ArgumentException("Mode mnemonic required.", nameof(mnemonic));
+            _io.Write(":INSTrument:SELect " + mnemonic.Trim());
+        }
+
+        /// <summary>Read the current measurement mode mnemonic (<c>:INSTrument:SELect?</c>).</summary>
+        public string GetMode() => (_io.Query(":INSTrument:SELect?") ?? string.Empty).Trim().Trim('"');
+
+        /// <summary>
+        /// The measurement modes installed on this unit, from <c>:INSTrument:CATalog?</c> (a quoted,
+        /// comma-separated name list). This is the authoritative option gate for standard personalities.
+        /// </summary>
+        public string[] ModeCatalog()
+        {
+            string raw = _io.Query(":INSTrument:CATalog?") ?? string.Empty;
+            var names = new List<string>();
+            foreach (string part in raw.Split(','))
+            {
+                string s = part.Trim().Trim('"').Trim();
+                if (s.Length > 0) names.Add(s);
+            }
+            return names.ToArray();
+        }
+
         /// <summary>Single-measurement mode (<c>:INITiate:CONTinuous OFF</c>) so READ?/MEASure? block to completion.</summary>
         public void SetSingleMeasurement() => _io.Write(":INITiate:CONTinuous OFF");
 
