@@ -389,7 +389,7 @@ namespace EsgSignalCreator.Ui
         {
             double durationUs = wf.Length / wf.SampleRateHz * 1e6;
             double[] iD = ToD(wf.I), qD = ToD(wf.Q);
-            double papr = Ccdf.PaprDb(iD, qD);
+            double papr = EsgSignalCreator.Dsp.Ccdf.PaprDb(iD, qD);
             double peak = wf.PeakMagnitude();
 
             double sumSq = 0;
