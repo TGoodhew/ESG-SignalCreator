@@ -44,6 +44,12 @@ core library, the WinForms app, and an xUnit test project.
   analyzer offset as a path-loss correction; a **Reference** menu locks both instruments to a
   common 10 MHz timebase; a **VSA Mode** menu (gated off `:INSTrument:CATalog?`) selects any
   installed standard personality (GSM / W-CDMA / cdma2000 / …).
+- **In-app Claude assistant** (opt-in) — a natural-language pane that drives the app through a
+  versioned, function-calling tool surface (read app state, configure sources, calculate, …) rather
+  than synthetic clicks. Guardrails are enforced in the dispatcher, not the prompt: read/configure
+  run freely, but anything that touches the instrument requires an inline Approve/Decline card, and a
+  pre-execution validation gate refuses hardware actions on a hard validation failure. The API key is
+  stored encrypted (Windows DPAPI); the feature is off until enabled.
 - **Projects** — save/open the active source + settings as a `*.ssproj` JSON file.
 - Pass **`--classic`** on the command line to launch the original single-window UI.
 

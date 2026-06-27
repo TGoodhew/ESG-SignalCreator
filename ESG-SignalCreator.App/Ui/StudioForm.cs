@@ -33,7 +33,7 @@ namespace EsgSignalCreator.Ui
     /// signal-flow canvas + active source panel, a right dock of verification plots + results, and a
     /// status bar — driving the deliberate Calculate → Download → Play pipeline (§8).
     /// </summary>
-    public sealed class StudioForm : Form
+    public sealed partial class StudioForm : Form
     {
         private readonly SignalFlowStrip _canvas = new SignalFlowStrip();
         private readonly ComboBox _sourcePicker = new ComboBox { Dock = DockStyle.Top, DropDownStyle = ComboBoxStyle.DropDownList };
@@ -64,6 +64,7 @@ namespace EsgSignalCreator.Ui
         private readonly Panel _notificationsCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _verificationCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly VerificationView _verification = new VerificationView { Dock = DockStyle.Fill };
+        private readonly Panel _assistantCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _impairmentsCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly Panel _sequenceCard = new Panel { Dock = DockStyle.Fill, Visible = false };
         private readonly SequencePanel _sequence = new SequencePanel { Dock = DockStyle.Fill };
@@ -159,6 +160,7 @@ namespace EsgSignalCreator.Ui
             tree.Nodes.Add("console", "SCPI console");
             tree.Nodes.Add("notifications", "Notifications");
             tree.Nodes.Add("verification", "Verification");
+            tree.Nodes.Add("assistant", "Assistant");
             tree.SelectedNode = tree.Nodes[0];
             tree.AfterSelect += (s, e) => ShowCard(e.Node.Name);
 
@@ -183,6 +185,7 @@ namespace EsgSignalCreator.Ui
             _centerCards.Controls.Add(_consoleCard);
             _centerCards.Controls.Add(_notificationsCard);
             _centerCards.Controls.Add(_verificationCard);
+            _centerCards.Controls.Add(_assistantCard);
 
             // ---- right dock: three plots + readout + progress + play state ----
             _plotSpectrum.SelectedView = PlotPane.ViewType.Spectrum;
@@ -215,6 +218,7 @@ namespace EsgSignalCreator.Ui
 
             _notifications.JumpToFieldRequested += (s, field) => _status.Text = "Field: " + field;
             if (_sourcePicker.Items.Count > 0) _sourcePicker.SelectedIndex = 0;
+            WireAssistant();
             UpdatePipelineEnabled();
         }
 
@@ -250,6 +254,7 @@ namespace EsgSignalCreator.Ui
             _consoleCard.Visible = name == "console";
             _notificationsCard.Visible = name == "notifications";
             _verificationCard.Visible = name == "verification";
+            _assistantCard.Visible = name == "assistant";
         }
 
         private void BuildImpairmentsCard()
