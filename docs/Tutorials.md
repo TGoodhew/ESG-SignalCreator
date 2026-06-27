@@ -1,5 +1,7 @@
 # ESG-SignalCreator — Tutorials
 
+> 🌐 **English** (this page) · Dansk: [Tutorials](da/Tutorials.md)
+
 Hands-on, build-up walkthroughs for **ESG-SignalCreator** (the **ESG Signal Studio** app). Each
 tutorial is a short, self-contained exercise that you can do at the bench. They start with things you
 can do completely **offline** (no instrument needed), then progress to driving a real **E4438C**
