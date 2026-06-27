@@ -1,11 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using EsgSignalCreator;
+using EsgSignalCreator.Export;
 using EsgSignalCreator.Instruments;
 using EsgSignalCreator.Impairments;
+using EsgSignalCreator.Personalities.CustomIq;
 using EsgSignalCreator.Measure;
 using EsgSignalCreator.Measure.Results;
 using EsgSignalCreator.Model;
@@ -42,6 +46,9 @@ namespace EsgSignalCreator.HilHarness
         private const double SafeAmplitudeDbm = -30.0;
 
         private static int _failures;
+        private static string _jsonPath;
+        private sealed class CheckRecord { public string Name; public bool Ok; public string Detail; }
+        private static readonly List<CheckRecord> _results = new List<CheckRecord>();
 
         private static int Main(string[] args)
         {
@@ -49,7 +56,7 @@ namespace EsgSignalCreator.HilHarness
             var opts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var valueFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz", "--signal" };
+                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz", "--signal", "--json" };
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -78,8 +85,10 @@ namespace EsgSignalCreator.HilHarness
             double startHz = Num(opts, "--start-hz", 50e6);
             double stopHz = Num(opts, "--stop-hz", 0.0); // 0 = query the ESG's max (capped to the VSA's 4 GHz)
             // Which signal personalities to verify. --all runs the full battery; --signal X runs one.
+            _jsonPath = Opt(opts, "--json");
+            bool flatness = flags.Contains("--flatness");
             string[] signals = flags.Contains("--all")
-                ? new[] { "cw", "multitone", "awgn", "custom-mod", "multi-carrier", "iq-impair" }
+                ? new[] { "cw", "multitone", "awgn", "custom-mod", "multi-carrier", "iq-impair", "import-iq" }
                 : new[] { Opt(opts, "--signal") ?? "cw" };
 
             Console.WriteLine("ESG-SignalCreator hardware-in-the-loop harness");
@@ -155,7 +164,10 @@ namespace EsgSignalCreator.HilHarness
                 if (closedLoop)
                 {
                     double[] sweep = BuildSweep(esg, carrierOverride, points, startHz, stopHz);
-                    RunClosedLoop(esg, vsaResource, sweep, signals, verifyPowerDbm, offsetHz, maxInputDbm, pathLossDb, dwellSeconds);
+                    if (flatness)
+                        RunFlatness(esg, vsaResource, sweep, maxInputDbm, pathLossDb, dwellSeconds);
+                    else
+                        RunClosedLoop(esg, vsaResource, sweep, signals, verifyPowerDbm, offsetHz, maxInputDbm, pathLossDb, dwellSeconds);
                 }
                 else if (rfOn)
                 {
@@ -360,6 +372,75 @@ namespace EsgSignalCreator.HilHarness
             }
         }
 
+        /// <summary>
+        /// Amplitude accuracy / flatness (#99): a CW carrier stepped over several power levels at each
+        /// frequency, verifying the measured channel power tracks the commanded level (path-loss aware).
+        /// </summary>
+        private static void RunFlatness(EsgController esg, string vsaResource, double[] sweepHz,
+            double maxInputDbm, double pathLossDb, double dwellSeconds)
+        {
+            double[] powers = { -40, -30, -20, -10 };
+            Console.WriteLine(new string('-', 64));
+            Console.WriteLine("Amplitude accuracy / flatness — levels: "
+                + string.Join(", ", powers.Select(p => p.ToString("0", CultureInfo.InvariantCulture) + " dBm"))
+                + " over " + sweepHz.Length + " freq point(s)");
+
+            var safety = new RfPathSafety { Armed = true, AnalyzerMaxSafeInputDbm = maxInputDbm, PathLossDb = pathLossDb };
+            Step("Safety gate allows max level", () => PowerSafetyGate.Guard(powers.Max(), safety));
+
+            IInstrument vio = Step("Open VSA VISA session", () => new VisaInstrument(vsaResource));
+            if (vio == null) return;
+            try
+            {
+                var vsa = new VsaInstrument(vio);
+                vsa.TimeoutMilliseconds = 30000;
+                try { vsa.Write(":ABORt"); vsa.Clear(); } catch { /* recover */ }
+                Step("VSA *IDN? identifies an E4406A", () => { if (!vsa.IsE4406A()) throw new Exception("not an E4406A"); });
+
+                var src = new CwPersonality();
+                src.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = 1e6 });
+                WaveformModel wf = src.Calculate(new Progress<int>());
+                const double span = 5e6;
+                Step("Download + arm CW", () => { esg.DownloadWaveform("HILTEST", wf); esg.PlayWaveform("HILTEST", wf.SampleRateHz, 70); });
+                bool armed = false;
+
+                foreach (double f in sweepHz)
+                {
+                    foreach (double pw in powers)
+                    {
+                        string label = (f / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz @ " + pw.ToString("0", CultureInfo.InvariantCulture) + " dBm";
+                        Step("Set " + label, () =>
+                        {
+                            PowerSafetyGate.Guard(pw, safety);
+                            esg.SetFrequencyHz(f);
+                            esg.SetAmplitudeDbm(pw);
+                            esg.SetArbState(true);
+                            esg.SetModulation(true);
+                            if (!armed) { esg.SetRfOutput(true); armed = true; }
+                        });
+                        vsa.SetSingleMeasurement();
+                        Thread.Sleep(1000);
+                        ChannelPowerResult cp = Step("Channel power " + label, () =>
+                        {
+                            ChannelPowerResult r = ChannelPower.Measure(vsa, f, span, span);
+                            Console.WriteLine("            measured " + r.TotalPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
+                            return r;
+                        });
+                        if (cp != null) Compare("Level accuracy " + label, pw - pathLossDb, cp.TotalPowerDbm, 3.0, "dBm");
+                        CheckErrorQueueVsa(vsa, label);
+                    }
+                    if (dwellSeconds > 0) { vsa.SetContinuous(true); Thread.Sleep((int)(dwellSeconds * 1000)); }
+                }
+                Step("RF off, analyzer left running", () => { esg.SetRfOutput(false); esg.SetArbState(false); vsa.SetContinuous(true); });
+            }
+            finally
+            {
+                try { esg.SetRfOutput(false); esg.SetArbState(false); } catch { /* best effort */ }
+                try { vio.Dispose(); } catch { /* best effort */ }
+                Console.WriteLine("            RF returned to OFF.");
+            }
+        }
+
         /// <summary>A signal personality to verify: its generated waveform + expected metrics + which checks apply.</summary>
         private sealed class SignalCase
         {
@@ -420,6 +501,22 @@ namespace EsgSignalCreator.HilHarness
                     });
                     WaveformModel wf = p.Calculate(progress);
                     return new SignalCase { Name = "multi-carrier", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 10e6 };
+                }
+                case "import-iq":
+                {
+                    // Round-trip: generate a CW, export it to an I/Q CSV, re-import it, and verify.
+                    var src = new CwPersonality();
+                    src.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = offsetHz });
+                    string path = Path.Combine(Path.GetTempPath(), "hil-import-iq.csv");
+                    WaveformExporter.SaveCsv(path, src.Calculate(progress));
+                    var p = new ImportIqPersonality();
+                    p.LoadConfig(new ImportIqConfig { Path = path, SampleRateHz = 10e6 });
+                    WaveformModel wf = p.Calculate(progress);
+                    return new SignalCase
+                    {
+                        Name = "import-iq", Waveform = wf, ExpectedPaprDb = Papr(wf),
+                        SpanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6), CheckTone = true
+                    };
                 }
                 case "iq-impair":
                 {
@@ -549,6 +646,7 @@ namespace EsgSignalCreator.HilHarness
 
         private static void Pass(string name)
         {
+            _results.Add(new CheckRecord { Name = name, Ok = true });
             Console.ForegroundColor = ConsoleColor.Green; Console.Write("[PASS] "); Console.ResetColor();
             Console.WriteLine(name);
         }
@@ -556,17 +654,44 @@ namespace EsgSignalCreator.HilHarness
         private static void Fail(string name, string message)
         {
             _failures++;
+            _results.Add(new CheckRecord { Name = name, Ok = false, Detail = message });
             Console.ForegroundColor = ConsoleColor.Red; Console.Write("[FAIL] "); Console.ResetColor();
             Console.WriteLine(name + " — " + message);
         }
 
         private static int Finish()
         {
+            if (_jsonPath != null)
+            {
+                try { WriteJson(_jsonPath); Console.WriteLine("Wrote JSON report: " + _jsonPath); }
+                catch (Exception ex) { Console.WriteLine("JSON report failed: " + ex.Message); }
+            }
             Console.WriteLine(new string('-', 64));
             if (_failures == 0) { Console.ForegroundColor = ConsoleColor.Green; Console.WriteLine("ALL CHECKS PASSED"); }
             else { Console.ForegroundColor = ConsoleColor.Red; Console.WriteLine(_failures + " CHECK(S) FAILED"); }
             Console.ResetColor();
             return _failures == 0 ? 0 : 1;
         }
+
+        private static void WriteJson(string path)
+        {
+            var sb = new StringBuilder();
+            sb.Append("{\n");
+            sb.Append("  \"passed\": ").Append(_results.Count(r => r.Ok)).Append(",\n");
+            sb.Append("  \"failed\": ").Append(_failures).Append(",\n");
+            sb.Append("  \"checks\": [\n");
+            for (int i = 0; i < _results.Count; i++)
+            {
+                CheckRecord r = _results[i];
+                sb.Append("    { \"name\": ").Append(JsonStr(r.Name)).Append(", \"ok\": ").Append(r.Ok ? "true" : "false");
+                if (!string.IsNullOrEmpty(r.Detail)) sb.Append(", \"detail\": ").Append(JsonStr(r.Detail));
+                sb.Append(i < _results.Count - 1 ? " },\n" : " }\n");
+            }
+            sb.Append("  ]\n}\n");
+            File.WriteAllText(path, sb.ToString());
+        }
+
+        private static string JsonStr(string s) =>
+            "\"" + (s ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
     }
 }
