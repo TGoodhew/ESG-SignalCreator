@@ -125,7 +125,8 @@ namespace EsgSignalCreator.Visa
                     transport = new VisaInstrument(settings.VisaResource, settings.TimeoutMs);
                     break;
                 case ConnectionKind.Gpib:
-                    transport = new Gpib488Instrument(settings.GpibBoard, settings.GpibAddress, settings.TimeoutMs);
+                    // GPIB is addressed through VISA too, so any installed VISA provider handles it.
+                    transport = new VisaInstrument(BuildGpibResource(settings.GpibBoard, settings.GpibAddress), settings.TimeoutMs);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(settings), settings.Kind, "Unsupported connection kind.");

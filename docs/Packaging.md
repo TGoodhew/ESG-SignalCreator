@@ -36,8 +36,8 @@ VISA runtime (see prerequisites).
 - **A VISA runtime** (for live instrument I/O) — detected (vendor-neutral, via the IVI Foundation
   VISA shared-components registry key) and recorded, but **not** blocking: the app builds/exports
   waveforms offline and reports a clear error if you try to connect without VISA. Any IVI-compliant
-  VISA provider works — **Keysight IO Libraries Suite, NI-VISA, Rohde & Schwarz, Rigol, …** — once
-  the app's transport uses the vendor-neutral IVI VISA.NET shared components (see *Known limitation*).
+  VISA provider works — **Keysight IO Libraries Suite, NI-VISA, Rohde & Schwarz, Rigol, …** — the
+  app's transport uses the vendor-neutral IVI VISA.NET shared components (`GlobalResourceManager`).
 
 ## Building the installer
 
@@ -73,20 +73,21 @@ The artifact lands in `ESG-SignalCreator.Installer\bin\…\ESG-SignalCreator-<ve
 Each run: builds the solution in Release, runs the unit tests, builds the MSI (WiX restored from
 NuGet), and uploads the `.msi` to the release with its SHA256.
 
-### Self-hosted runner (required)
+### Build runner
 
-The workflow runs on a **self-hosted Windows runner**, not a GitHub-hosted one. The `Core` project
-references the **NI-488.2** and **IVI/NI-VISA** assemblies by absolute path into the local National
-Instruments / IVI Foundation install — those aren't on hosted runners, so the solution won't compile
-there. Register a runner on a machine that has Visual Studio (MSBuild), the .NET SDK, and the VISA
-stack:
+Since #102, `Core` references only the **IVI VISA.NET Shared Components** (`Ivi.Visa`) by `HintPath` —
+no NI-specific assemblies. So the build runs on any Windows runner (MSBuild + .NET SDK) that has the
+**IVI VISA.NET Shared Components** installed; those ship with *any* VISA provider (Keysight IO
+Libraries, NI-VISA, R&S, Rigol, …), so a lab machine that already talks to instruments works as a
+**self-hosted** runner with no extra setup:
 
 1. GitHub → repo **Settings → Actions → Runners → New self-hosted runner** (Windows).
-2. Follow the steps; give it the labels **`self-hosted`** and **`windows`** (the default Windows label set works).
+2. Follow the steps; give it the labels **`self-hosted`** and **`windows`**.
 3. Run it as a service so releases build unattended.
 
-> Once issue #102 makes VISA vendor-neutral via the freely-installable IVI VISA.NET shared components,
-> a GitHub-hosted runner may become viable (the NI-488.2 GPIB backend would still need handling).
+> A GitHub-hosted runner can also work if a step installs the IVI VISA.NET Shared Components (or the
+> reference is switched to the `Ivi.Visa` NuGet package); the runtime still needs an installed VISA
+> provider, which is why a VISA-equipped self-hosted runner is the simplest choice.
 
 ## Code signing (optional)
 
@@ -94,8 +95,9 @@ Authenticode signing is supported out-of-band: sign `ESG-SignalCreator.exe` befo
 sign the produced `.msi` with `signtool` (certificate supplied separately). A signing hook can be
 added to `build-installer.ps1` when a cert is available.
 
-## Known limitation — vendor-neutral VISA
+## Vendor-neutral VISA
 
-The app currently binds VISA I/O to **NI-VISA** (`NationalInstruments.Visa`). Making it work with any
-IVI-compliant VISA provider (Keysight/NI/R&S/Rigol/…) via the IVI `GlobalResourceManager` is tracked
-as a separate code issue. The installer is already vendor-neutral in how it *detects* VISA.
+The app talks to instruments through the **IVI `GlobalResourceManager`**, so it works with any
+IVI-compliant VISA provider (Keysight IO Libraries, NI-VISA, R&S, Rigol, …) for TCPIP/LAN, GPIB, USB
+and serial — no vendor-specific assemblies are referenced (#102, bench-verified on an E4438C including
+the byte-exact ARB download). The installer detects VISA vendor-neutrally too.

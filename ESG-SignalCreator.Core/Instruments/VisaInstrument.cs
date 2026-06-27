@@ -1,17 +1,19 @@
 using System;
 using System.Collections.Generic;
 using Ivi.Visa;
-using NationalInstruments.Visa;
 
 namespace EsgSignalCreator.Instruments
 {
     /// <summary>
-    /// Message-based instrument transport backed by NI-VISA (NationalInstruments.Visa).
-    /// Works with any VISA resource string: GPIB, USB, TCPIP/LAN, etc.
+    /// Message-based instrument transport over the vendor-neutral IVI VISA.NET shared components
+    /// (<see cref="GlobalResourceManager"/>). It works with ANY installed VISA provider — Keysight IO
+    /// Libraries, NI-VISA, Rohde &amp; Schwarz, Rigol, Tektronix, … — and any resource string
+    /// (TCPIP/LAN, GPIB, USB, serial). The actual provider is chosen at runtime by whatever VISA is
+    /// installed; this code never references a vendor-specific assembly (#102).
     /// </summary>
     public sealed class VisaInstrument : IInstrument
     {
-        private MessageBasedSession _session;
+        private IMessageBasedSession _session;
 
         public VisaInstrument(string resourceName, int timeoutMilliseconds = 5000)
         {
@@ -20,11 +22,8 @@ namespace EsgSignalCreator.Instruments
 
             ResourceName = resourceName;
 
-            using (var rm = new ResourceManager())
-            {
-                _session = (MessageBasedSession)rm.Open(resourceName);
-            }
-
+            // GlobalResourceManager dispatches to the installed VISA provider for this resource.
+            _session = (IMessageBasedSession)GlobalResourceManager.Open(resourceName);
             _session.TimeoutMilliseconds = timeoutMilliseconds;
             _session.TerminationCharacterEnabled = true;
         }
@@ -39,20 +38,17 @@ namespace EsgSignalCreator.Instruments
             set { if (_session != null) _session.TimeoutMilliseconds = value; }
         }
 
-        /// <summary>Enumerate the VISA instrument resources visible to NI-VISA on this machine.</summary>
+        /// <summary>Enumerate the VISA instrument resources visible to the installed VISA provider(s).</summary>
         public static IEnumerable<string> FindResources(string filter = "?*INSTR")
         {
-            using (var rm = new ResourceManager())
+            try
             {
-                try
-                {
-                    return new List<string>(rm.Find(filter));
-                }
-                catch (Exception)
-                {
-                    // No matching resources; VISA throws rather than returning an empty set.
-                    return new List<string>();
-                }
+                return new List<string>(GlobalResourceManager.Find(filter));
+            }
+            catch (Exception)
+            {
+                // No matching resources; VISA throws rather than returning an empty set.
+                return new List<string>();
             }
         }
 

@@ -62,7 +62,7 @@ namespace EsgSignalCreator
                 int count = 0;
                 if (isGpib)
                 {
-                    foreach (string r in Gpib488Instrument.FindListeners((int)numBoard.Value))
+                    foreach (string r in VisaInstrument.FindResources("GPIB" + (int)numBoard.Value + "::?*INSTR"))
                     {
                         cmbResource.Items.Add(r);
                         count++;
@@ -100,7 +100,7 @@ namespace EsgSignalCreator
                 bool isGpib = (string)cmbInterface.SelectedItem == InterfaceGpib;
                 if (isGpib)
                 {
-                    _instrument = new Gpib488Instrument((int)numBoard.Value, (byte)numAddress.Value);
+                    _instrument = new VisaInstrument("GPIB" + (int)numBoard.Value + "::" + (byte)numAddress.Value + "::INSTR");
                 }
                 else
                 {

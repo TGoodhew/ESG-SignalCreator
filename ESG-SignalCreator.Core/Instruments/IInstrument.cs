@@ -3,8 +3,9 @@ using System;
 namespace EsgSignalCreator.Instruments
 {
     /// <summary>
-    /// Common message-based transport for a SCPI instrument. Implemented by both the
-    /// NI-VISA (<see cref="VisaInstrument"/>) and NI-488.2 / GPIB (<see cref="Gpib488Instrument"/>) backends.
+    /// Common message-based transport for a SCPI instrument. Implemented by the vendor-neutral
+    /// <see cref="VisaInstrument"/> (IVI VISA.NET; handles TCPIP/LAN, GPIB, USB, serial via any
+    /// installed VISA provider).
     /// </summary>
     public interface IInstrument : IDisposable
     {
