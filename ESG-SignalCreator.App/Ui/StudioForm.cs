@@ -116,6 +116,10 @@ namespace EsgSignalCreator.Ui
             bar.Items.Add(verifyBtn);
             var pathCalBtn = Button("Path cal…", (s, e) => PathCalibrate());
             bar.Items.Add(pathCalBtn);
+            var refBtn = new ToolStripDropDownButton("Reference");
+            refBtn.DropDownItems.Add("Independent (each internal)", null, (s, e) => ApplyReference(ReferenceScheme.Independent));
+            refBtn.DropDownItems.Add("Common 10 MHz (external)", null, (s, e) => ApplyReference(ReferenceScheme.CommonExternal));
+            bar.Items.Add(refBtn);
             bar.Items.Add(new ToolStripSeparator()); bar.Items.Add(_allBtn);
             bar.Items.Add(new ToolStripSeparator());
             var save = new ToolStripButton("Save…"); save.Click += (s, e) => SaveProject();
@@ -496,6 +500,27 @@ namespace EsgSignalCreator.Ui
             {
                 _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Verify failed: " + ex.Message));
                 _status.Text = "Verify failed.";
+            }
+        }
+
+        /// <summary>
+        /// Common 10 MHz reference control (#75): lock the ESG and E4406A to a common external timebase
+        /// (or return them to independent internal timebases) and report the resulting source of each.
+        /// </summary>
+        private void ApplyReference(ReferenceScheme scheme)
+        {
+            if (_esg == null) { _status.Text = "Connect the ESG first."; return; }
+            if (_vsa == null) { _status.Text = "Connect the VSA first (Connect VSA…)."; return; }
+
+            try
+            {
+                ReferenceLock.Apply(_esg, _vsa, scheme);
+                ReferenceStatus st = ReferenceLock.Read(_esg, _vsa);
+                _status.Text = "Reference: " + st;
+            }
+            catch (Exception ex)
+            {
+                _status.Text = "Reference set failed: " + ex.Message;
             }
         }
 

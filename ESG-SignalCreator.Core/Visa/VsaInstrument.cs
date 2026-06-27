@@ -87,6 +87,17 @@ namespace EsgSignalCreator.Visa
         public void SetInputAttenuationDb(double db) =>
             _io.Write(":SENSe:POWer:RF:ATTenuation " + db.ToString("0.###", CultureInfo.InvariantCulture) + " dB");
 
+        /// <summary>
+        /// Select the analyzer's timebase (<c>:SENSe:ROSCillator:SOURce</c>): internal, or external to
+        /// discipline it to a common 10 MHz with the ESG for clean frequency comparisons (#75).
+        /// </summary>
+        public void SetReferenceSource(ReferenceSource source) =>
+            _io.Write(":SENSe:ROSCillator:SOURce " + ReferenceSourceText.Scpi(source));
+
+        /// <summary>Read which timebase the analyzer is using (<c>:SENSe:ROSCillator:SOURce?</c>).</summary>
+        public ReferenceSource GetReferenceSource() =>
+            ReferenceSourceText.Parse(_io.Query(":SENSe:ROSCillator:SOURce?"));
+
         public void Write(string command) => _io.Write(command);
         public string Query(string command) => _io.Query(command);
 

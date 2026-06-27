@@ -85,6 +85,18 @@ namespace EsgSignalCreator
         /// <summary>Query the standard event status register / error queue head.</summary>
         public string GetError() => _io.Query(":SYSTem:ERRor?");
 
+        /// <summary>
+        /// Enable/disable automatic timebase selection (<c>:ROSCillator:SOURce:AUTO</c>). With auto on,
+        /// the ESG locks to a valid external 10 MHz at its REF IN when present and falls back to its
+        /// internal timebase otherwise (#75).
+        /// </summary>
+        public void SetReferenceAuto(bool on) =>
+            _io.Write(":ROSCillator:SOURce:AUTO " + (on ? "ON" : "OFF"));
+
+        /// <summary>Read which timebase the ESG is currently using (<c>:ROSCillator:SOURce?</c>).</summary>
+        public Instruments.ReferenceSource GetReferenceSource() =>
+            Instruments.ReferenceSourceText.Parse(_io.Query(":ROSCillator:SOURce?"));
+
         // ---- Dual ARB (Option 001/601 or 002/602) ----
 
         /// <summary>
