@@ -46,6 +46,7 @@ namespace EsgSignalCreator.Ui.Assistant
         private readonly Button _stop;
         private readonly CheckBox _enabled;
         private readonly CheckBox _autoApprove;
+        private readonly CheckBox _rawScpi;
         private readonly Button _keyButton;
         private readonly Label _modelLabel;
 
@@ -59,13 +60,16 @@ namespace EsgSignalCreator.Ui.Assistant
             var settingsBar = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 30, Padding = new Padding(4, 4, 4, 0), WrapContents = false, AutoScroll = false };
             _enabled = new CheckBox { Text = "Enable assistant", AutoSize = true, Margin = new Padding(2, 4, 12, 0) };
             _autoApprove = new CheckBox { Text = "Auto-approve hardware", AutoSize = true, Margin = new Padding(2, 4, 12, 0) };
+            _rawScpi = new CheckBox { Text = "Allow raw SCPI", AutoSize = true, Margin = new Padding(2, 4, 12, 0) };
             _keyButton = new Button { Text = "Set API key…", AutoSize = true, Margin = new Padding(2, 1, 12, 0) };
             _modelLabel = new Label { Text = "", AutoSize = true, Margin = new Padding(2, 6, 0, 0), ForeColor = Color.DimGray };
             _enabled.CheckedChanged += (s, e) => OnEnabledChanged();
             _autoApprove.CheckedChanged += (s, e) => OnAutoApproveChanged();
+            _rawScpi.CheckedChanged += (s, e) => OnRawScpiChanged();
             _keyButton.Click += (s, e) => PromptAndStoreKey();
             settingsBar.Controls.Add(_enabled);
             settingsBar.Controls.Add(_autoApprove);
+            settingsBar.Controls.Add(_rawScpi);
             settingsBar.Controls.Add(_keyButton);
             settingsBar.Controls.Add(_modelLabel);
 
@@ -106,6 +110,7 @@ namespace EsgSignalCreator.Ui.Assistant
             _deps = deps ?? throw new ArgumentNullException(nameof(deps));
             _enabled.Checked = deps.Settings.Enabled;
             _autoApprove.Checked = deps.Settings.AutoApproveHardware;
+            _rawScpi.Checked = deps.Settings.AllowRawScpi;
             _modelLabel.Text = "Model: " + deps.Settings.Model;
             _keyButton.Text = deps.KeyStore.Exists ? "Change API key…" : "Set API key…";
             AddNote(deps.Settings.Enabled
@@ -130,6 +135,17 @@ namespace EsgSignalCreator.Ui.Assistant
             _deps.SettingsStore.Save(_deps.Settings);
             if (_autoApprove.Checked)
                 AddNote("Auto-approve hardware is ON. play_rf and connect_instrument still ask every time.");
+        }
+
+        private void OnRawScpiChanged()
+        {
+            if (_deps == null) return;
+            _deps.Settings.AllowRawScpi = _rawScpi.Checked;
+            _deps.Registry.SetEnabled(EsgSignalCreator.Assistant.Tools.GatedTools.SendRawScpiName, _rawScpi.Checked);
+            _deps.SettingsStore.Save(_deps.Settings);
+            AddNote(_rawScpi.Checked
+                ? "Raw SCPI passthrough ENABLED — every command shows the literal text and asks for approval."
+                : "Raw SCPI passthrough disabled.");
         }
 
         private void PromptAndStoreKey()
