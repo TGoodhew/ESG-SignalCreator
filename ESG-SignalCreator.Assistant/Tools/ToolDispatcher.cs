@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using EsgSignalCreator.Assistant.Agent;
 using EsgSignalCreator.Assistant.Api;
+using EsgSignalCreator.Assistant.Guardrails;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -19,12 +20,14 @@ namespace EsgSignalCreator.Assistant.Tools
         private readonly ToolRegistry _registry;
         private readonly ToolContext _context;
         private readonly IConfirmationPolicy _confirmation;
+        private readonly IPreExecutionGate _gate;
 
-        public ToolDispatcher(ToolRegistry registry, ToolContext context, IConfirmationPolicy confirmation = null)
+        public ToolDispatcher(ToolRegistry registry, ToolContext context, IConfirmationPolicy confirmation = null, IPreExecutionGate gate = null)
         {
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _confirmation = confirmation ?? new AllowAllConfirmationPolicy();
+            _gate = gate;
         }
 
         public async Task<ContentBlock> InvokeAsync(ContentBlock toolUse, CancellationToken ct)
@@ -41,6 +44,19 @@ namespace EsgSignalCreator.Assistant.Tools
             string validation = SchemaValidator.Validate(tool.InputSchema, args);
             if (validation != null)
                 return Error(id, "Invalid arguments for '" + tool.Name + "': " + validation + ".");
+
+            // Pre-execution gate (e.g. re-run validation before a hardware action). A refusal here
+            // blocks the action regardless of any later confirmation (§6.3).
+            if (_gate != null && tool.Effect != ToolEffect.Read)
+            {
+                string refusal;
+                try { refusal = await _gate.CheckAsync(tool, args, ct).ConfigureAwait(false); }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex) { return Error(id, "Pre-execution gate failed for '" + tool.Name + "': " + ex.Message); }
+
+                if (refusal != null)
+                    return Error(id, refusal);
+            }
 
             if (tool.Effect != ToolEffect.Read)
             {
