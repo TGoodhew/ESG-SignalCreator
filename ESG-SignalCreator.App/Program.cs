@@ -1,4 +1,5 @@
 using System;
+using System.Drawing;
 using System.Windows.Forms;
 using EsgSignalCreator.Ui;
 
@@ -20,7 +21,16 @@ namespace EsgSignalCreator
             // original single-window MainForm.
             bool classic = Array.Exists(args ?? new string[0],
                 a => string.Equals(a, "--classic", StringComparison.OrdinalIgnoreCase));
-            Application.Run(classic ? (Form)new MainForm() : new StudioForm());
+            Form form = classic ? (Form)new MainForm() : new StudioForm();
+            form.Icon = AppIcon();
+            Application.Run(form);
+        }
+
+        // The window/taskbar icon, taken from the icon embedded in the exe (ApplicationIcon).
+        private static Icon AppIcon()
+        {
+            try { return Icon.ExtractAssociatedIcon(Application.ExecutablePath); }
+            catch { return null; }
         }
 
         private static void ShowFatal(Exception ex)

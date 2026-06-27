@@ -1,0 +1,33 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <!--
+    WiX v5 Burn bootstrapper for ESG-SignalCreator. Produces a self-contained setup.exe that chains
+    the .NET Framework 4.7.2 redistributable ahead of the app MSI. Built SEPARATELY from the solution
+    (like the MSI project) and AFTER the MSI, which it embeds as a payload.
+
+    Build with:  dotnet build ESG-SignalCreator.Bundle\ESG-SignalCreator.Bundle.wixproj -c Release
+                   -p:ProductVersion=1.2.3.0
+                   -p:MsiPath=...\ESG-SignalCreator.Installer\bin\x64\Release\ESG-SignalCreator-1.2.3.0.msi
+    or via the repo-root build-installer.ps1 (which builds the app, the MSI, then this bundle).
+  -->
+
+  <PropertyGroup>
+    <OutputType>Bundle</OutputType>
+    <Platform>x64</Platform>
+    <Platforms>x64</Platforms>
+    <InstallerPlatform>x64</InstallerPlatform>
+
+    <!-- Override on the command line. MsiPath defaults to the Release MSI build output. -->
+    <ProductVersion Condition="'$(ProductVersion)'==''">1.0.0.0</ProductVersion>
+    <MsiPath Condition="'$(MsiPath)'==''">$(MSBuildThisFileDirectory)..\ESG-SignalCreator.Installer\bin\x64\Release\ESG-SignalCreator-$(ProductVersion).msi</MsiPath>
+
+    <DefineConstants>ProductVersion=$(ProductVersion);MsiPath=$(MsiPath)</DefineConstants>
+    <OutputName>ESG-SignalCreator-Setup-$(ProductVersion)</OutputName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="WixToolset.Bal.wixext" Version="5.0.2" />
+    <PackageReference Include="WixToolset.NetFx.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+</Project>
