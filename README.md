@@ -10,6 +10,10 @@ pipeline. It is a modern reimplementation of the legacy *Signal Studio for E4438
 Built with C# / WinForms targeting **.NET Framework 4.7.2**, split into a UI-free
 core library, the WinForms app, and an xUnit test project.
 
+**Documentation:** [User Guide](docs/UserGuide.md) (a complete reference for every feature) ·
+[Tutorials](docs/Tutorials.md) (21 hands-on walkthroughs, simple → complex) ·
+[Packaging](docs/Packaging.md) (installer + release build).
+
 ## Features
 
 - **Signal-flow shell** — a top action bar, a left project tree, a signal-flow
