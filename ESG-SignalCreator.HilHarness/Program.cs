@@ -287,20 +287,26 @@ namespace EsgSignalCreator.HilHarness
                             });
                             if (sp != null) Compare("Tone frequency " + label, carrierHz + offsetHz, sp.MarkerFrequencyHz, 50e3, "Hz");
                         }
-                        CheckErrorQueueVsa(vsa, label); // graded — runs BEFORE the informational ACP
-
                         if (sig.CheckAcp)
                         {
-                            // ACP is informational: its Basic-mode SCPI is still being hardware-truthed
-                            // (#69/#95), so don't let its errors fail the graded battery — clear after.
-                            Step("ACP " + label + " (informational)", () =>
+                            AcpResult acp = Step("ACP " + label, () =>
                             {
-                                AcpResult r = Acp.Measure(vsa, carrierHz, sig.SpanHz);
-                                Console.WriteLine("            center = " + r.CenterPowerDbm.ToString("0.##", CultureInfo.InvariantCulture)
-                                    + " dBm; lower ACPR = " + Fmt(r.LowerOffsetsDbc) + " dBc; upper = " + Fmt(r.UpperOffsetsDbc) + " dBc");
+                                AcpResult r = Acp.Measure(vsa, carrierHz, sig.AcpCarrierBwHz);
+                                Console.WriteLine("            adj L/U = " + r.LowerAdjacentDbc.ToString("0.#", CultureInfo.InvariantCulture)
+                                    + "/" + r.UpperAdjacentDbc.ToString("0.#", CultureInfo.InvariantCulture)
+                                    + " dBc; offsets L=" + Fmt(r.LowerOffsetsDbc) + " U=" + Fmt(r.UpperOffsetsDbc) + " dBc");
+                                return r;
                             });
-                            try { vsa.Clear(); } catch { /* clear any WIP ACP SCPI error */ }
+                            if (acp != null)
+                            {
+                                double worst = WorstAcprDbc(acp);
+                                // A real modulated carrier has well-suppressed adjacent power; garbage would be near 0 dBc.
+                                if (!double.IsNaN(worst))
+                                    Check("ACPR bounded " + label, worst < -20.0,
+                                        "worst offset " + worst.ToString("0.#", CultureInfo.InvariantCulture) + " dBc (want < -20)");
+                            }
                         }
+                        CheckErrorQueueVsa(vsa, label); // graded
 
                         if (dwellSeconds > 0)
                         {
@@ -339,8 +345,9 @@ namespace EsgSignalCreator.HilHarness
             public WaveformModel Waveform;
             public double ExpectedPaprDb; // computed from the generated I/Q (the RF should match)
             public double SpanHz;
+            public double AcpCarrierBwHz;  // ACP carrier integration bandwidth (modulated signals)
             public bool CheckTone;        // CW: verify the tone lands at carrier+offset
-            public bool CheckAcp;         // modulated signals: report adjacent-channel power
+            public bool CheckAcp;         // modulated signals: measure adjacent-channel power
         }
 
         /// <summary>Generate a signal with a Core personality and capture its expected metrics.</summary>
@@ -376,7 +383,8 @@ namespace EsgSignalCreator.HilHarness
                         Modulation = Modulation.QAM16, SymbolRateHz = 1e6, SamplesPerSymbol = 8, Alpha = 0.35, SymbolCount = 1024
                     });
                     WaveformModel wf = p.Calculate(progress);
-                    return new SignalCase { Name = "custom-mod", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 5e6, CheckAcp = true };
+                    // Carrier reference BW ≈ symbol rate × (1 + alpha) = 1e6 × 1.35.
+                    return new SignalCase { Name = "custom-mod", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 5e6, AcpCarrierBwHz = 1.35e6, CheckAcp = true };
                 }
                 default:
                 {
@@ -405,6 +413,20 @@ namespace EsgSignalCreator.HilHarness
 
         private static string Fmt(double[] a) =>
             a == null || a.Length == 0 ? "—" : string.Join("/", a.Select(v => v.ToString("0.#", CultureInfo.InvariantCulture)));
+
+        private static void Check(string name, bool ok, string detail)
+        {
+            if (ok) Pass(name); else Fail(name, detail);
+        }
+
+        /// <summary>Worst (least-negative) real offset ACPR in dBc, ignoring 0 and the ~-999 sentinel.</summary>
+        private static double WorstAcprDbc(AcpResult a)
+        {
+            double worst = double.NaN;
+            foreach (double v in a.LowerOffsetsDbc.Concat(a.UpperOffsetsDbc))
+                if (v > -200 && v < -1 && (double.IsNaN(worst) || v > worst)) worst = v;
+            return worst;
+        }
 
         private static void Compare(string metric, double expected, double measured, double tol, string unit)
         {

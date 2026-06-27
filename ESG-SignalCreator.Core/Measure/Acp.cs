@@ -7,84 +7,71 @@ using EsgSignalCreator.Visa;
 namespace EsgSignalCreator.Measure
 {
     /// <summary>
-    /// E4406A Adjacent Channel Power (<c>ACP</c> / ACPR) measurement (GitHub issue #69). Sets up Basic
-    /// single-measurement mode at the requested center, optionally constrains the measurement span, then
-    /// reads the <c>ACP</c> scalar result set and maps it to an <see cref="AcpResult"/>.
+    /// E4406A Basic-mode Adjacent Channel Power (<c>ACP</c> / ACPR) measurement (GitHub issue #69).
+    /// Sets up Basic single-measurement mode at the requested center, optionally constrains the carrier
+    /// integration bandwidth, then reads the <c>ACP</c> scalar set and maps it to an <see cref="AcpResult"/>.
     /// </summary>
+    /// <remarks>
+    /// Hardware-truthed on a real E4406A (FW A.08.10): ACP has <b>no</b> settable <c>:SENSe:ACP:FREQuency:SPAN</c>
+    /// (that emits -113); the span is coupled from the carrier/offset setup. The carrier reference
+    /// bandwidth is set with <c>:SENSe:ACP:BANDwidth:INTegration</c>. The Basic-mode (Total-power
+    /// reference) scalar set is 24 values: [0] upper-adjacent rel (dB), [1] upper-adjacent abs (dBm),
+    /// [2] lower-adjacent rel, [3] lower-adjacent abs, then offsets 1..5 as (neg rel, neg abs, pos rel,
+    /// pos abs) at [4..23]. Inactive channels report ~ -999. A short response yields fewer entries.
+    /// </remarks>
     public static class Acp
     {
-        /// <summary>Per-measurement frequency span for ACP (the E4406A has no global span).</summary>
-        private const string SpanCommand = ":SENSe:ACP:FREQuency:SPAN";
+        /// <summary>Carrier reference integration bandwidth command (valid on Basic-mode ACP).</summary>
+        private const string IntegrationBwCommand = ":SENSe:ACP:BANDwidth:INTegration";
 
         /// <summary>SCPI measurement root for Adjacent Channel Power.</summary>
         private const string Root = "ACP";
 
-        /// <summary>Maximum number of offset channels the Basic-mode scalar set carries (per side).</summary>
+        /// <summary>Number of offset channels per side the Basic-mode scalar set carries.</summary>
         private const int MaxOffsets = 5;
 
         /// <summary>
-        /// Perform an Adjacent Channel Power measurement using the analyzer's default offset definitions.
+        /// Perform an Adjacent Channel Power measurement using the analyzer's offset definitions.
         /// </summary>
         /// <param name="vsa">Open analyzer facade.</param>
         /// <param name="centerHz">Carrier center frequency, in hertz.</param>
-        /// <param name="spanHz">
-        /// Measurement span, in hertz. When &gt; 0 it is written via
-        /// <c>:SENSe:ACP:FREQuency:SPAN</c> before the read; 0 leaves the analyzer's setting.
+        /// <param name="carrierBandwidthHz">
+        /// Carrier reference (integration) bandwidth, in hertz. When &gt; 0 it is written via
+        /// <c>:SENSe:ACP:BANDwidth:INTegration</c> before the read; 0 leaves the analyzer's setting.
         /// </param>
-        /// <remarks>
-        /// Per the E4406A Programmer's Guide, the Basic-mode <c>ACP</c> scalar result set (n omitted) is
-        /// 22 comma-separated values in this order:
-        /// <list type="number">
-        /// <item>Center frequency — absolute power (dBm)</item>
-        /// <item>Center frequency — absolute power (W)</item>
-        /// <item>Negative offset 1 — relative power (dB)</item>
-        /// <item>Negative offset 1 — absolute power (dBm)</item>
-        /// <item>Positive offset 1 — relative power (dB)</item>
-        /// <item>Positive offset 1 — absolute power (dBm)</item>
-        /// </list>
-        /// then the (neg rel, neg abs, pos rel, pos abs) quartet repeats for offsets 2..5, ending at
-        /// value 22. <see cref="AcpResult.CenterPowerDbm"/> is value 1; for offset k (0-based) the lower
-        /// relative power is value <c>3 + 4k</c> and the upper relative power is value <c>5 + 4k</c>.
-        /// A short response simply yields fewer offset entries (the missing offsets are skipped) rather
-        /// than throwing. Custom offset configuration is a future extension; v1 uses defaults.
-        /// </remarks>
-        public static AcpResult Measure(VsaInstrument vsa, double centerHz, double spanHz)
+        public static AcpResult Measure(VsaInstrument vsa, double centerHz, double carrierBandwidthHz = 0)
         {
             if (vsa == null) throw new ArgumentNullException(nameof(vsa));
 
             var basic = new BasicMeasurement(vsa);
             basic.Setup(centerHz);
 
-            if (spanHz > 0)
-            {
-                vsa.Write(SpanCommand + " " + spanHz.ToString("G17", CultureInfo.InvariantCulture) + " Hz");
-            }
+            if (carrierBandwidthHz > 0)
+                vsa.Write(IntegrationBwCommand + " " + carrierBandwidthHz.ToString("G17", CultureInfo.InvariantCulture) + " Hz");
 
-            double[] scalars = basic.Read(Root);
+            double[] s = basic.Read(Root);
 
             var lowerDbc = new List<double>();
             var lowerDbm = new List<double>();
             var upperDbc = new List<double>();
             var upperDbm = new List<double>();
 
+            // Offsets 1..5 begin at index 4, four values each (neg rel, neg abs, pos rel, pos abs).
             for (int k = 0; k < MaxOffsets; k++)
             {
-                int lowerRel = 2 + 4 * k; // values 3, 7, 11, 15, 19 (0-based indices)
-                int lowerAbs = 3 + 4 * k; // values 4, 8, 12, 16, 20
-                int upperRel = 4 + 4 * k; // values 5, 9, 13, 17, 21
-                int upperAbs = 5 + 4 * k; // values 6, 10, 14, 18, 22
-
-                if (lowerRel < scalars.Length) lowerDbc.Add(scalars[lowerRel]);
-                if (lowerAbs < scalars.Length) lowerDbm.Add(scalars[lowerAbs]);
-                if (upperRel < scalars.Length) upperDbc.Add(scalars[upperRel]);
-                if (upperAbs < scalars.Length) upperDbm.Add(scalars[upperAbs]);
+                int negRel = 4 + 4 * k, negAbs = 5 + 4 * k, posRel = 6 + 4 * k, posAbs = 7 + 4 * k;
+                if (negRel < s.Length) lowerDbc.Add(s[negRel]);
+                if (negAbs < s.Length) lowerDbm.Add(s[negAbs]);
+                if (posRel < s.Length) upperDbc.Add(s[posRel]);
+                if (posAbs < s.Length) upperDbm.Add(s[posAbs]);
             }
 
             return new AcpResult
             {
                 Measurement = Root,
-                Raw = scalars,
-                CenterPowerDbm = scalars.Length > 0 ? scalars[0] : double.NaN,
+                Raw = s,
+                UpperAdjacentDbc = s.Length > 0 ? s[0] : double.NaN,
+                LowerAdjacentDbc = s.Length > 2 ? s[2] : double.NaN,
                 LowerOffsetsDbc = lowerDbc.ToArray(),
                 LowerOffsetsDbm = lowerDbm.ToArray(),
                 UpperOffsetsDbc = upperDbc.ToArray(),
