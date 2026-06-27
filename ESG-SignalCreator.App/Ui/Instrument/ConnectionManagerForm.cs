@@ -223,7 +223,7 @@ namespace EsgSignalCreator.Ui.Instrument
             {
                 _gpibFound.Items.Clear();
                 int board = (int)_gpibBoard.Value;
-                foreach (string listener in Gpib488Instrument.FindListeners(board))
+                foreach (string listener in VisaInstrument.FindResources("GPIB" + board + "::?*INSTR"))
                     _gpibFound.Items.Add(listener);
 
                 if (_gpibFound.Items.Count > 0)

@@ -5,12 +5,12 @@ name: Release
 #  - push to main / manual run  -> a PRERELEASE tagged  v1.0.<run_number>.0  (every update -> a build)
 #  - push a tag  v*             -> a STABLE release using that tag
 #
-# REQUIRES A SELF-HOSTED WINDOWS RUNNER. The Core project references the NI-488.2 + IVI/NI-VISA
-# assemblies by absolute path into a local National Instruments / IVI Foundation install, which are
-# NOT present on GitHub-hosted runners. Register a runner on a machine that has Visual Studio (MSBuild),
-# the .NET SDK, and the VISA stack installed, with the labels:  self-hosted, windows
-# (Settings -> Actions -> Runners -> New self-hosted runner). Once issue #102 makes VISA vendor-neutral
-# via the freely-installable IVI shared components, a hosted runner may become viable.
+# RUNS ON A SELF-HOSTED WINDOWS RUNNER. Since #102 the Core project references only the IVI VISA.NET
+# Shared Components (Ivi.Visa) by HintPath — no NI-specific assemblies — so any Windows machine with a
+# VISA provider installed (Keysight IO Libraries, NI-VISA, R&S, Rigol, ...) can build it unchanged.
+# Register a runner with the labels:  self-hosted, windows  (Settings -> Actions -> Runners -> New
+# self-hosted runner). A GitHub-hosted runner can work too if a step installs the IVI VISA.NET Shared
+# Components or the reference is switched to the Ivi.Visa NuGet package.
 
 on:
   push:

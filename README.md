@@ -33,10 +33,10 @@ core library, the WinForms app, and an xUnit test project.
 - **Validation** — a live checker (minimum samples, even/granularity, memory cap vs
   the connected baseband option, sample-clock and carrier limits, DAC over-range
   heuristic) surfaced in a Notifications dock.
-- **Instrument control** — connect over **NI-VISA** or **NI-488.2 (GPIB)** with
-  discovery and `*IDN?`/`*OPT?`; an instrument-settings panel (frequency, amplitude,
-  RF/modulation, ARB sample clock, runtime scaling) with read-back; and a raw-SCPI
-  console with a timestamped log.
+- **Instrument control** — connect over **VISA** through any installed provider (Keysight IO
+  Libraries, NI-VISA, R&S, Rigol, …), for TCPIP/LAN, GPIB, USB or serial resources, with discovery
+  and `*IDN?`/`*OPT?`; an instrument-settings panel (frequency, amplitude, RF/modulation, ARB sample
+  clock, runtime scaling) with read-back; and a raw-SCPI console with a timestamped log.
 - **In-app closed-loop verification (E4406A)** — connect an E4406A VSA, then **Verify**
   measures the played signal (channel power, PAPR, and — for a tone — frequency) and shows
   it against the expected values (from the generated I/Q) in an Expected-vs-Measured
@@ -65,14 +65,15 @@ core library, the WinForms app, and an xUnit test project.
 
 - Windows with .NET Framework 4.7.2
 - Visual Studio 2017+ (or MSBuild) to build
-- For live instrument control, one or both vendor stacks installed:
-  - **NI-VISA** — IVI VISA.NET Shared Components + `NationalInstruments.Visa`
-  - **NI-488.2** — `NationalInstruments.NI4882` (MeasurementStudio)
+- For live instrument control, **any IVI-compliant VISA runtime** installed (Keysight IO Libraries
+  Suite, NI-VISA, R&S, Rigol, …). The app uses the vendor-neutral **IVI VISA.NET Shared Components**
+  (`Ivi.Visa` / `GlobalResourceManager`) and dispatches to whichever provider is installed — GPIB,
+  TCPIP/LAN, USB and serial all go through VISA. No vendor-specific assemblies are referenced.
 
-The core library references these assemblies via `HintPath` entries in
-[ESG-SignalCreator.Core.csproj](ESG-SignalCreator.Core/ESG-SignalCreator.Core.csproj);
-adjust the paths if your installation differs. Authoring, preview, validation and
-project save/load all work without any instrument connected.
+The core library references `Ivi.Visa` via a `HintPath` entry in
+[ESG-SignalCreator.Core.csproj](ESG-SignalCreator.Core/ESG-SignalCreator.Core.csproj) (the IVI VISA.NET
+Shared Components, installed by any VISA provider); adjust the path if your installation differs.
+Authoring, preview, validation and project save/load all work without any instrument connected.
 
 ## Building
 
@@ -87,8 +88,8 @@ NuGet `PackageReference`s).
 
 ## Usage
 
-1. Click **Connect…**, pick **NI-VISA** or **NI-488.2**, discover/select the
-   instrument and connect (`*IDN?`/`*OPT?` are shown).
+1. Click **Connect…**, enter or discover a **VISA resource** (e.g.
+   `TCPIP0::192.168.1.82::inst1::INSTR` or `GPIB0::19::INSTR`) and connect (`*IDN?`/`*OPT?` are shown).
 2. In the **Source** view, choose a personality from the picker and edit its
    parameters (sample rate, length as time/samples/symbols, and the personality's
    own settings).
@@ -158,7 +159,7 @@ a machine without WiX still builds the app. See [docs/Packaging.md](docs/Packagi
 Prebuilt installers are published on the [Releases](https://github.com/TGoodhew/ESG-SignalCreator/releases)
 page. A GitHub Actions workflow builds the MSI and publishes a release on every push to `main`
 (prerelease) and on every `vX.Y.Z` tag (stable) — see [docs/Packaging.md](docs/Packaging.md#continuous-release-github-actions)
-(requires a self-hosted Windows runner with the VISA stack).
+(builds on a Windows runner with the IVI VISA.NET Shared Components — any VISA provider — installed).
 
 ## Project layout
 
