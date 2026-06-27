@@ -7,6 +7,11 @@ using EsgSignalCreator;
 using EsgSignalCreator.Instruments;
 using EsgSignalCreator.Measure;
 using EsgSignalCreator.Measure.Results;
+using EsgSignalCreator.Model;
+using EsgSignalCreator.Personalities.Awgn;
+using EsgSignalCreator.Personalities.CustomMod;
+using EsgSignalCreator.Personalities.Cw;
+using EsgSignalCreator.Personalities.Multitone;
 using EsgSignalCreator.Verify;
 using EsgSignalCreator.Visa;
 using EsgSignalCreator.Waveform;
@@ -42,7 +47,7 @@ namespace EsgSignalCreator.HilHarness
             var opts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var valueFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz" };
+                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz", "--signal" };
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -70,6 +75,10 @@ namespace EsgSignalCreator.HilHarness
             int points = (int)Num(opts, "--points", 7);
             double startHz = Num(opts, "--start-hz", 50e6);
             double stopHz = Num(opts, "--stop-hz", 0.0); // 0 = query the ESG's max (capped to the VSA's 4 GHz)
+            // Which signal personalities to verify. --all runs the full battery; --signal X runs one.
+            string[] signals = flags.Contains("--all")
+                ? new[] { "cw", "multitone", "awgn", "custom-mod" }
+                : new[] { Opt(opts, "--signal") ?? "cw" };
 
             Console.WriteLine("ESG-SignalCreator hardware-in-the-loop harness");
             Console.WriteLine("ESG       : " + esgResource);
@@ -144,7 +153,7 @@ namespace EsgSignalCreator.HilHarness
                 if (closedLoop)
                 {
                     double[] sweep = BuildSweep(esg, carrierOverride, points, startHz, stopHz);
-                    RunClosedLoop(esg, vsaResource, sweep, verifyPowerDbm, offsetHz, maxInputDbm, pathLossDb, dwellSeconds);
+                    RunClosedLoop(esg, vsaResource, sweep, signals, verifyPowerDbm, offsetHz, maxInputDbm, pathLossDb, dwellSeconds);
                 }
                 else if (rfOn)
                 {
@@ -191,11 +200,12 @@ namespace EsgSignalCreator.HilHarness
             return f;
         }
 
-        private static void RunClosedLoop(EsgController esg, string vsaResource, double[] sweepHz,
+        private static void RunClosedLoop(EsgController esg, string vsaResource, double[] sweepHz, string[] signals,
             double verifyPowerDbm, double offsetHz, double maxInputDbm, double pathLossDb, double dwellSeconds)
         {
             Console.WriteLine(new string('-', 64));
-            Console.WriteLine("Closed-loop verification (E4406A) — " + sweepHz.Length + " point(s): "
+            Console.WriteLine("Closed-loop verification (E4406A) — signals: " + string.Join(", ", signals));
+            Console.WriteLine("Sweep: " + sweepHz.Length + " point(s): "
                 + string.Join(", ", sweepHz.Select(x => (x / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz")));
 
             var safety = new RfPathSafety { Armed = true, AnalyzerMaxSafeInputDbm = maxInputDbm, PathLossDb = pathLossDb };
@@ -207,6 +217,8 @@ namespace EsgSignalCreator.HilHarness
             try
             {
                 var vsa = new VsaInstrument(vio);
+                vsa.TimeoutMilliseconds = 30000; // averaged measurements (CCDF/ACP) can take many seconds
+                try { vsa.Write(":ABORt"); vsa.Clear(); } catch { /* recover any measurement left running by a prior run */ }
                 Step("VSA *IDN? identifies an E4406A", () =>
                 {
                     InstrumentIdentity id = vsa.Identify();
@@ -217,60 +229,89 @@ namespace EsgSignalCreator.HilHarness
                 vsa.Clear();
 
                 double expectedAnalyzerDbm = verifyPowerDbm - pathLossDb;
-                double spanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6);
                 bool armed = false;
 
-                for (int p = 0; p < sweepHz.Length; p++)
+                foreach (string sigName in signals)
                 {
-                    double carrierHz = sweepHz[p];
-                    double expectedToneHz = carrierHz + offsetHz;
-                    string label = "[" + (p + 1) + "/" + sweepHz.Length + "] " +
-                        (carrierHz / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz";
+                    SignalCase sig = BuildSignal(sigName, offsetHz);
+                    Console.WriteLine(new string('-', 64));
+                    Console.WriteLine("Signal '" + sig.Name + "': " + sig.Waveform.Length + " samples @ "
+                        + (sig.Waveform.SampleRateHz / 1e6).ToString("0.###", CultureInfo.InvariantCulture)
+                        + " MHz, expected PAPR " + sig.ExpectedPaprDb.ToString("0.##", CultureInfo.InvariantCulture) + " dB");
 
-                    Step("Drive ESG " + label + " @ " + verifyPowerDbm + " dBm, RF ON", () =>
+                    Step("Download '" + sig.Name + "' to WFM1", () => esg.DownloadWaveform("HILTEST", sig.Waveform));
+                    CheckErrorQueue(esg, "after '" + sig.Name + "' download");
+                    Step("Select + arm ARB ('" + sig.Name + "')", () => esg.PlayWaveform("HILTEST", sig.Waveform.SampleRateHz, 70));
+
+                    for (int p = 0; p < sweepHz.Length; p++)
                     {
-                        PowerSafetyGate.Guard(verifyPowerDbm, safety); // re-check immediately before emitting
-                        esg.SetFrequencyHz(carrierHz);
-                        esg.SetAmplitudeDbm(verifyPowerDbm);
-                        if (!armed)
+                        double carrierHz = sweepHz[p];
+                        string label = sig.Name + " [" + (p + 1) + "/" + sweepHz.Length + "] " +
+                            (carrierHz / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz";
+
+                        Step("Drive ESG " + label + " @ " + verifyPowerDbm + " dBm, RF ON", () =>
                         {
+                            PowerSafetyGate.Guard(verifyPowerDbm, safety); // re-check immediately before emitting
+                            esg.SetFrequencyHz(carrierHz);
+                            esg.SetAmplitudeDbm(verifyPowerDbm);
                             esg.SetArbState(true);
                             esg.SetModulation(true); // ARB I/Q only reaches the RF output when modulation is ON
-                            esg.SetRfOutput(true);
-                            armed = true;
+                            if (!armed) { esg.SetRfOutput(true); armed = true; }
+                        });
+                        vsa.SetSingleMeasurement(); // accurate, triggered reads
+                        Thread.Sleep(1200); // settle
+
+                        ChannelPowerResult cp = Step("Channel power " + label, () =>
+                        {
+                            ChannelPowerResult r = ChannelPower.Measure(vsa, carrierHz, sig.SpanHz, sig.SpanHz);
+                            Console.WriteLine("            total power = " + r.TotalPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
+                            return r;
+                        });
+                        CcdfResult ccdf = Step("CCDF / PAPR " + label, () =>
+                        {
+                            CcdfResult r = Ccdf.Measure(vsa, carrierHz);
+                            Console.WriteLine("            PAPR = " + r.PaprDb.ToString("0.##", CultureInfo.InvariantCulture) + " dB");
+                            return r;
+                        });
+                        if (cp != null) Compare("Channel power " + label, expectedAnalyzerDbm, cp.TotalPowerDbm, 3.0, "dBm");
+                        if (ccdf != null) Compare("PAPR " + label, sig.ExpectedPaprDb, ccdf.PaprDb, 2.5, "dB");
+
+                        if (sig.CheckTone)
+                        {
+                            SpectrumResult sp = Step("Spectrum peak " + label, () =>
+                            {
+                                SpectrumResult r = SpectrumMarker.MeasurePeak(vsa, carrierHz, sig.SpanHz);
+                                Console.WriteLine("            peak = " + (r.MarkerFrequencyHz / 1e6).ToString("0.######", CultureInfo.InvariantCulture)
+                                    + " MHz @ " + r.MarkerPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
+                                return r;
+                            });
+                            if (sp != null) Compare("Tone frequency " + label, carrierHz + offsetHz, sp.MarkerFrequencyHz, 50e3, "Hz");
                         }
-                    });
-                    vsa.SetSingleMeasurement(); // accurate, triggered reads (Setup also re-asserts this)
-                    Thread.Sleep(800); // settle
+                        CheckErrorQueueVsa(vsa, label); // graded — runs BEFORE the informational ACP
 
-                    ChannelPowerResult cp = Step("Measure channel power " + label, () =>
-                    {
-                        ChannelPowerResult r = ChannelPower.Measure(vsa, carrierHz, spanHz, spanHz);
-                        Console.WriteLine("            total power = " + r.TotalPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
-                        return r;
-                    });
-                    SpectrumResult sp = Step("Measure spectrum peak " + label, () =>
-                    {
-                        SpectrumResult r = SpectrumMarker.MeasurePeak(vsa, carrierHz, spanHz);
-                        Console.WriteLine("            peak = " + (r.MarkerFrequencyHz / 1e6).ToString("0.######", CultureInfo.InvariantCulture)
-                            + " MHz @ " + r.MarkerPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
-                        return r;
-                    });
+                        if (sig.CheckAcp)
+                        {
+                            // ACP is informational: its Basic-mode SCPI is still being hardware-truthed
+                            // (#69/#95), so don't let its errors fail the graded battery — clear after.
+                            Step("ACP " + label + " (informational)", () =>
+                            {
+                                AcpResult r = Acp.Measure(vsa, carrierHz, sig.SpanHz);
+                                Console.WriteLine("            center = " + r.CenterPowerDbm.ToString("0.##", CultureInfo.InvariantCulture)
+                                    + " dBm; lower ACPR = " + Fmt(r.LowerOffsetsDbc) + " dBc; upper = " + Fmt(r.UpperOffsetsDbc) + " dBc");
+                            });
+                            try { vsa.Clear(); } catch { /* clear any WIP ACP SCPI error */ }
+                        }
 
-                    if (sp != null) Compare("Tone frequency " + label, expectedToneHz, sp.MarkerFrequencyHz, 50e3, "Hz");
-                    if (cp != null) Compare("Channel power " + label, expectedAnalyzerDbm, cp.TotalPowerDbm, 3.0, "dBm");
-                    CheckErrorQueueVsa(vsa, label);
-
-                    if (dwellSeconds > 0)
-                    {
-                        // Continuous (running) mode so the front panel sweeps live during the dwell.
-                        vsa.SetContinuous(true);
-                        Console.ForegroundColor = ConsoleColor.Cyan;
-                        Console.WriteLine("            >>> RF ON, analyzer running — tone near " +
-                            (expectedToneHz / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz for " +
-                            dwellSeconds.ToString(CultureInfo.InvariantCulture) + " s…");
-                        Console.ResetColor();
-                        Thread.Sleep((int)(dwellSeconds * 1000));
+                        if (dwellSeconds > 0)
+                        {
+                            vsa.SetContinuous(true); // running mode -> live front-panel sweep
+                            Console.ForegroundColor = ConsoleColor.Cyan;
+                            Console.WriteLine("            >>> RF ON, analyzer running — '" + sig.Name + "' near " +
+                                (carrierHz / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz for " +
+                                dwellSeconds.ToString(CultureInfo.InvariantCulture) + " s…");
+                            Console.ResetColor();
+                            Thread.Sleep((int)(dwellSeconds * 1000));
+                        }
                     }
                 }
 
@@ -290,6 +331,80 @@ namespace EsgSignalCreator.HilHarness
                 Console.WriteLine("            RF returned to OFF.");
             }
         }
+
+        /// <summary>A signal personality to verify: its generated waveform + expected metrics + which checks apply.</summary>
+        private sealed class SignalCase
+        {
+            public string Name;
+            public WaveformModel Waveform;
+            public double ExpectedPaprDb; // computed from the generated I/Q (the RF should match)
+            public double SpanHz;
+            public bool CheckTone;        // CW: verify the tone lands at carrier+offset
+            public bool CheckAcp;         // modulated signals: report adjacent-channel power
+        }
+
+        /// <summary>Generate a signal with a Core personality and capture its expected metrics.</summary>
+        private static SignalCase BuildSignal(string name, double offsetHz)
+        {
+            var progress = new Progress<int>();
+            switch ((name ?? "cw").ToLowerInvariant())
+            {
+                case "multitone":
+                {
+                    var p = new MultitonePersonality();
+                    p.LoadConfig(new MultitoneConfig
+                    {
+                        SampleRateHz = 10e6, Length = 16384, Phase = PhaseStrategy.Newman,
+                        Tones = MultitonePersonality.AutoSpacing(4, 1e6, 0, 0)
+                    });
+                    WaveformModel wf = p.Calculate(progress);
+                    return new SignalCase { Name = "multitone", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 10e6 };
+                }
+                case "awgn":
+                {
+                    var p = new AwgnPersonality();
+                    p.LoadConfig(new AwgnConfig { SampleRateHz = 10e6, Length = 32768, NoiseBandwidthHz = 2e6, CrestFactorDb = 10 });
+                    WaveformModel wf = p.Calculate(progress);
+                    return new SignalCase { Name = "awgn", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 5e6 };
+                }
+                case "custom-mod":
+                case "qam":
+                {
+                    var p = new CustomModPersonality();
+                    p.LoadConfig(new CustomModConfig
+                    {
+                        Modulation = Modulation.QAM16, SymbolRateHz = 1e6, SamplesPerSymbol = 8, Alpha = 0.35, SymbolCount = 1024
+                    });
+                    WaveformModel wf = p.Calculate(progress);
+                    return new SignalCase { Name = "custom-mod", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 5e6, CheckAcp = true };
+                }
+                default:
+                {
+                    var p = new CwPersonality();
+                    p.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = offsetHz });
+                    WaveformModel wf = p.Calculate(progress);
+                    return new SignalCase
+                    {
+                        Name = "cw", Waveform = wf, ExpectedPaprDb = Papr(wf),
+                        SpanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6), CheckTone = true
+                    };
+                }
+            }
+        }
+
+        // Expected PAPR of the generated baseband I/Q (the RF envelope should match it). Dsp.Ccdf is
+        // fully qualified to avoid the name clash with the Measure.Ccdf analyzer measurement.
+        private static double Papr(WaveformModel wf) => EsgSignalCreator.Dsp.Ccdf.PaprDb(ToD(wf.I), ToD(wf.Q));
+
+        private static double[] ToD(float[] x)
+        {
+            var d = new double[x.Length];
+            for (int i = 0; i < x.Length; i++) d[i] = x[i];
+            return d;
+        }
+
+        private static string Fmt(double[] a) =>
+            a == null || a.Length == 0 ? "—" : string.Join("/", a.Select(v => v.ToString("0.#", CultureInfo.InvariantCulture)));
 
         private static void Compare(string metric, double expected, double measured, double tol, string unit)
         {
@@ -327,13 +442,25 @@ namespace EsgSignalCreator.HilHarness
         private static void CheckErrorQueueVsa(VsaInstrument vsa, string when) =>
             Step("VSA error queue clean " + when, () =>
             {
-                // Drain the queue so a single stale error doesn't mask later ones; report all.
+                // Drain the queue; classify benign data-clip/range warnings (e.g. -222 "value clipped")
+                // separately from genuine command errors (e.g. -113 "undefined header").
                 var errs = new List<string>();
+                var warns = new List<string>();
                 for (int i = 0; i < 20; i++)
                 {
                     string e = vsa.GetError();
                     if (IsClean(e)) break;
-                    errs.Add(e.Trim());
+                    string t = e.Trim();
+                    if (t.IndexOf("clip", StringComparison.OrdinalIgnoreCase) >= 0 || t.StartsWith("-222"))
+                        warns.Add(t);
+                    else
+                        errs.Add(t);
+                }
+                if (warns.Count > 0)
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("            (warning) " + string.Join(" | ", warns));
+                    Console.ResetColor();
                 }
                 if (errs.Count > 0) throw new Exception(string.Join(" | ", errs));
             });
