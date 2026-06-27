@@ -87,22 +87,38 @@ VSA SCPI parsing, …). To validate the real instruments, run the headless harne
 # ESG-only: RF stays OFF (power -30 dBm) unless --rf-on briefly enables it.
 ESG-SignalCreator.HilHarness.exe "TCPIP0::192.168.1.82::inst1::INSTR"
 
-# Closed-loop (ESG -> E4406A): generate -> play -> measure -> compare.
-# RF is enabled at the (low) verify power, gated by the analyzer's max-safe input.
-ESG-SignalCreator.HilHarness.exe --vsa GPIB0::17::INSTR --verify-power-dbm -10
-#   options: --carrier-hz 1e9 --offset-hz 1e6 --max-input-dbm 30 --path-loss-db 0
+# Comprehensive closed-loop battery (ESG -> E4406A) across the frequency range:
+# verifies EVERY signal type on the analyzer, with a machine-readable report.
+ESG-SignalCreator.HilHarness.exe --vsa GPIB0::17::INSTR --all --dwell-seconds 3 --json report.json
+
+# A single signal type, or the amplitude-flatness power sweep:
+ESG-SignalCreator.HilHarness.exe --vsa --signal multitone
+ESG-SignalCreator.HilHarness.exe --vsa --flatness
+#   options: --points N --start-hz --stop-hz --carrier-hz --offset-hz
+#            --verify-power-dbm --max-input-dbm --path-loss-db --dwell-seconds --json
 ```
 
 ESG-only mode checks `*IDN?`/`*OPT?`, downloads a CW to `WFM1`, arms the ARB, and reads
-back frequency/amplitude, polling `:SYSTem:ERRor?` after each step. Closed-loop mode adds
-the E4406A: it connects (refusing a non-E4406A), enforces the **input-damage safety gate**
-(E4406A rated +35 dBm; gate default +30 dBm), drives the ESG at a safe level with RF on,
-then measures **channel power** and the **spectrum peak** and compares them to the expected
-tone frequency and power. Per-step PASS/FAIL; non-zero exit on failure; RF returns to OFF.
-A separate console project, kept out of the normal unit-test run so CI stays hardware-free.
+back frequency/amplitude. The **closed-loop battery** (`--all`) connects the E4406A (refusing
+a non-E4406A), enforces the **input-damage safety gate** (E4406A rated +35 dBm; gate default
++30 dBm), and for each signal type — **CW, multitone, AWGN, custom-mod (QAM), multi-carrier,
+I/Q-impairment, import-I/Q** — drives the ESG at a safe level across a frequency sweep and
+verifies on the analyzer:
 
-> Validated on the bench (2026-06): closed-loop CW PASS — a +1 MHz-offset tone at 1 GHz
-> −10 dBm measured at 1001.01 MHz / −10.26 dBm on the E4406A (FW A.08.10).
+- **channel power** vs the commanded level, and **PAPR** (CCDF) vs the value computed from the
+  generated I/Q, for every signal;
+- **tone frequency** (CW / import-I/Q), **ACPR** (custom-mod), and the **gain-imbalance image**
+  (I/Q-impairment) where applicable.
+
+The analyzer runs in continuous mode during the per-point dwell so the front panel tracks live;
+the run ends RF-off with the analyzer still sweeping. Per-step PASS/FAIL, optional JSON report,
+non-zero exit on failure. A separate console project, kept out of the unit-test run so CI stays
+hardware-free.
+
+> Bench-validated (2026-06, E4406A FW A.08.10) across 50 MHz–3 GHz: all signal types PASS —
+> e.g. multitone PAPR ≈3.8 dB (exp 2.9), AWGN crest ≈10.2 dB, 16-QAM ACPR ≈−48 dBc, a 3 dB
+> I/Q gain imbalance → image at −15.4 dBc (matches theory), and amplitude accuracy within a
+> consistent ~0.76 dB cable roll-off at 3 GHz.
 
 ## Project layout
 
