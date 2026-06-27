@@ -113,7 +113,7 @@ namespace EsgSignalCreator.HilHarness
                 });
                 CheckErrorQueue(esg, "after safe state");
 
-                WaveformResult gen = Step("Generate CW waveform (Core, +" + (offsetHz / 1e6) + " MHz offset)", () =>
+                EsgSignalCreator.Waveform.WaveformResult gen = Step("Generate CW waveform (Core, +" + (offsetHz / 1e6) + " MHz offset)", () =>
                     WaveformGenerator.Generate(new WaveformSpec
                     {
                         Type = SignalType.SingleTone, SampleRateHz = 10e6, TargetLength = 4096, OffsetHz = offsetHz
