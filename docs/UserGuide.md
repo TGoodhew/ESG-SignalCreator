@@ -1,5 +1,7 @@
 # ESG-SignalCreator — User Guide
 
+> 🌐 **English** (this page) · Dansk: [Brugervejledning](da/UserGuide.md)
+
 A complete reference for **ESG-SignalCreator**, a Windows application that builds arbitrary I/Q
 waveforms, plays them on an Agilent/Keysight **E4438C** ESG vector signal generator, and (optionally)
 verifies the result on an **E4406A** VSA — with an in-app **Claude assistant** that can drive the whole

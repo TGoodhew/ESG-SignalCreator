@@ -13,6 +13,7 @@ core library, the WinForms app, and an xUnit test project.
 **Documentation:** [User Guide](docs/UserGuide.md) (a complete reference for every feature) ·
 [Tutorials](docs/Tutorials.md) (21 hands-on walkthroughs, simple → complex) ·
 [Packaging](docs/Packaging.md) (installer + release build).
+🌐 Dansk: [Brugervejledning](docs/da/UserGuide.md) · [Tutorials](docs/da/Tutorials.md).
 
 ## Features
 
