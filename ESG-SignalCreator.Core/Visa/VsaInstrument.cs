@@ -69,6 +69,13 @@ namespace EsgSignalCreator.Visa
         /// <summary>Single-measurement mode (<c>:INITiate:CONTinuous OFF</c>) so READ?/MEASure? block to completion.</summary>
         public void SetSingleMeasurement() => _io.Write(":INITiate:CONTinuous OFF");
 
+        /// <summary>
+        /// Continuous (running) vs single measurement mode (<c>:INITiate:CONTinuous</c>). Continuous
+        /// keeps the front-panel trace updating live (so a watcher sees the current signal, not the
+        /// last frozen sweep); single is used for blocking READ?/MEASure? acquisitions.
+        /// </summary>
+        public void SetContinuous(bool on) => _io.Write(":INITiate:CONTinuous " + (on ? "ON" : "OFF"));
+
         /// <summary>Set the analyzer center frequency (<c>:SENSe:FREQuency:CENTer</c>), in hertz.</summary>
         public void SetCenterFrequencyHz(double hertz) =>
             _io.Write(":SENSe:FREQuency:CENTer " + hertz.ToString("G17", CultureInfo.InvariantCulture) + " Hz");

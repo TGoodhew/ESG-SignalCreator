@@ -64,5 +64,16 @@ namespace EsgSignalCreator.Tests.Visa
             Assert.Contains(":INITiate:CONTinuous OFF", io.Writes);
             Assert.Contains(io.Writes, w => w.StartsWith(":SENSe:FREQuency:CENTer") && w.Contains("1000000000"));
         }
+
+        [Fact]
+        public void SetContinuous_toggles_init_continuous()
+        {
+            var io = new FakeVsa();
+            var vsa = new VsaInstrument(io);
+            vsa.SetContinuous(true);
+            vsa.SetContinuous(false);
+            Assert.Contains(":INITiate:CONTinuous ON", io.Writes);
+            Assert.Contains(":INITiate:CONTinuous OFF", io.Writes);
+        }
     }
 }

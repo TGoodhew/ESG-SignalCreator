@@ -61,6 +61,20 @@ namespace EsgSignalCreator
             return double.Parse(r, NumberStyles.Float, CultureInfo.InvariantCulture);
         }
 
+        /// <summary>Query the maximum settable carrier frequency for the installed option, in hertz.</summary>
+        public double GetMaxFrequencyHz()
+        {
+            string r = _io.Query(":FREQuency:FIXed? MAX");
+            return double.Parse(r, NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>Query the minimum settable carrier frequency, in hertz.</summary>
+        public double GetMinFrequencyHz()
+        {
+            string r = _io.Query(":FREQuency:FIXed? MIN");
+            return double.Parse(r, NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
         /// <summary>Read back the current amplitude, in dBm.</summary>
         public double GetAmplitudeDbm()
         {

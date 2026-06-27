@@ -42,7 +42,7 @@ namespace EsgSignalCreator.HilHarness
             var opts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var valueFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds" };
+                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz" };
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -60,11 +60,16 @@ namespace EsgSignalCreator.HilHarness
             bool closedLoop = flags.Contains("--vsa") || opts.ContainsKey("--vsa");
             string vsaResource = Opt(opts, "--vsa") ?? DefaultVsaResource;
             double verifyPowerDbm = Num(opts, "--verify-power-dbm", -10.0);
-            double carrierHz = Num(opts, "--carrier-hz", 1e9);
             double offsetHz = Num(opts, "--offset-hz", 1e6);
             double maxInputDbm = Num(opts, "--max-input-dbm", 30.0);
             double pathLossDb = Num(opts, "--path-loss-db", 0.0);
             double dwellSeconds = Num(opts, "--dwell-seconds", 0.0);
+            // Frequency sweep across the E4438C's range (the default for hardware tests). A single
+            // --carrier-hz overrides the sweep with one point.
+            double carrierOverride = Num(opts, "--carrier-hz", 0.0);
+            int points = (int)Num(opts, "--points", 7);
+            double startHz = Num(opts, "--start-hz", 50e6);
+            double stopHz = Num(opts, "--stop-hz", 0.0); // 0 = query the ESG's max (capped to the VSA's 4 GHz)
 
             Console.WriteLine("ESG-SignalCreator hardware-in-the-loop harness");
             Console.WriteLine("ESG       : " + esgResource);
@@ -137,7 +142,10 @@ namespace EsgSignalCreator.HilHarness
                 });
 
                 if (closedLoop)
-                    RunClosedLoop(esg, vsaResource, verifyPowerDbm, carrierHz, offsetHz, maxInputDbm, pathLossDb, dwellSeconds);
+                {
+                    double[] sweep = BuildSweep(esg, carrierOverride, points, startHz, stopHz);
+                    RunClosedLoop(esg, vsaResource, sweep, verifyPowerDbm, offsetHz, maxInputDbm, pathLossDb, dwellSeconds);
+                }
                 else if (rfOn)
                 {
                     Step("RF-on smoke test (low power, 2 s)", () =>
@@ -164,12 +172,31 @@ namespace EsgSignalCreator.HilHarness
 
         // ---- closed-loop (ESG -> E4406A) ----
 
-        private static void RunClosedLoop(EsgController esg, string vsaResource,
-            double verifyPowerDbm, double carrierHz, double offsetHz, double maxInputDbm, double pathLossDb,
-            double dwellSeconds)
+        /// <summary>Build the carrier sweep: a single --carrier-hz override, else N points start→stop
+        /// (stop defaults to the ESG's queried max, capped to the E4406A's ~4 GHz ceiling).</summary>
+        private static double[] BuildSweep(EsgController esg, double carrierOverride, int points, double startHz, double stopHz)
+        {
+            if (carrierOverride > 0) return new[] { carrierOverride };
+            if (points < 1) points = 1;
+            if (stopHz <= 0)
+            {
+                try { stopHz = Math.Min(esg.GetMaxFrequencyHz(), 4e9); } // the E4406A tops out ~4 GHz
+                catch { stopHz = 3e9; }
+            }
+            if (stopHz < startHz) stopHz = startHz;
+            if (points == 1) return new[] { startHz };
+            var f = new double[points];
+            double step = (stopHz - startHz) / (points - 1);
+            for (int i = 0; i < points; i++) f[i] = startHz + i * step;
+            return f;
+        }
+
+        private static void RunClosedLoop(EsgController esg, string vsaResource, double[] sweepHz,
+            double verifyPowerDbm, double offsetHz, double maxInputDbm, double pathLossDb, double dwellSeconds)
         {
             Console.WriteLine(new string('-', 64));
-            Console.WriteLine("Closed-loop verification (E4406A)");
+            Console.WriteLine("Closed-loop verification (E4406A) — " + sweepHz.Length + " point(s): "
+                + string.Join(", ", sweepHz.Select(x => (x / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz")));
 
             var safety = new RfPathSafety { Armed = true, AnalyzerMaxSafeInputDbm = maxInputDbm, PathLossDb = pathLossDb };
             Step("Safety gate allows verify power", () => PowerSafetyGate.Guard(verifyPowerDbm, safety));
@@ -189,51 +216,72 @@ namespace EsgSignalCreator.HilHarness
                 Step("VSA options", () => Console.WriteLine("            *OPT? = " + string.Join(",", vsa.Options())));
                 vsa.Clear();
 
-                double expectedToneHz = carrierHz + offsetHz;
                 double expectedAnalyzerDbm = verifyPowerDbm - pathLossDb;
                 double spanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6);
+                bool armed = false;
 
-                Step("Drive ESG: carrier " + (carrierHz / 1e9) + " GHz, " + verifyPowerDbm + " dBm, RF ON", () =>
+                for (int p = 0; p < sweepHz.Length; p++)
                 {
-                    PowerSafetyGate.Guard(verifyPowerDbm, safety); // re-check immediately before emitting
-                    esg.SetFrequencyHz(carrierHz);
-                    esg.SetAmplitudeDbm(verifyPowerDbm);
-                    esg.SetArbState(true);
-                    esg.SetModulation(true); // ARB I/Q only reaches the RF output when modulation is ON
-                    esg.SetRfOutput(true);
-                });
-                Thread.Sleep(1500); // settle
+                    double carrierHz = sweepHz[p];
+                    double expectedToneHz = carrierHz + offsetHz;
+                    string label = "[" + (p + 1) + "/" + sweepHz.Length + "] " +
+                        (carrierHz / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz";
 
-                ChannelPowerResult cp = Step("Measure channel power (E4406A)", () =>
-                {
-                    // Integrate across the span so the +offset CW tone is inside the channel.
-                    ChannelPowerResult r = ChannelPower.Measure(vsa, carrierHz, spanHz, spanHz);
-                    Console.WriteLine("            total power = " + r.TotalPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
-                    return r;
-                });
-                SpectrumResult sp = Step("Measure spectrum peak (E4406A)", () =>
-                {
-                    SpectrumResult r = SpectrumMarker.MeasurePeak(vsa, carrierHz, spanHz);
-                    Console.WriteLine("            peak = " + (r.MarkerFrequencyHz / 1e6).ToString("0.######", CultureInfo.InvariantCulture)
-                        + " MHz @ " + r.MarkerPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
-                    return r;
-                });
+                    Step("Drive ESG " + label + " @ " + verifyPowerDbm + " dBm, RF ON", () =>
+                    {
+                        PowerSafetyGate.Guard(verifyPowerDbm, safety); // re-check immediately before emitting
+                        esg.SetFrequencyHz(carrierHz);
+                        esg.SetAmplitudeDbm(verifyPowerDbm);
+                        if (!armed)
+                        {
+                            esg.SetArbState(true);
+                            esg.SetModulation(true); // ARB I/Q only reaches the RF output when modulation is ON
+                            esg.SetRfOutput(true);
+                            armed = true;
+                        }
+                    });
+                    vsa.SetSingleMeasurement(); // accurate, triggered reads (Setup also re-asserts this)
+                    Thread.Sleep(800); // settle
 
-                if (sp != null)
-                    Compare("Tone frequency", expectedToneHz, sp.MarkerFrequencyHz, 50e3, "Hz");
-                if (cp != null)
-                    Compare("Channel power", expectedAnalyzerDbm, cp.TotalPowerDbm, 3.0, "dBm");
+                    ChannelPowerResult cp = Step("Measure channel power " + label, () =>
+                    {
+                        ChannelPowerResult r = ChannelPower.Measure(vsa, carrierHz, spanHz, spanHz);
+                        Console.WriteLine("            total power = " + r.TotalPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
+                        return r;
+                    });
+                    SpectrumResult sp = Step("Measure spectrum peak " + label, () =>
+                    {
+                        SpectrumResult r = SpectrumMarker.MeasurePeak(vsa, carrierHz, spanHz);
+                        Console.WriteLine("            peak = " + (r.MarkerFrequencyHz / 1e6).ToString("0.######", CultureInfo.InvariantCulture)
+                            + " MHz @ " + r.MarkerPowerDbm.ToString("0.##", CultureInfo.InvariantCulture) + " dBm");
+                        return r;
+                    });
 
-                CheckErrorQueueVsa(vsa, "after measurements");
+                    if (sp != null) Compare("Tone frequency " + label, expectedToneHz, sp.MarkerFrequencyHz, 50e3, "Hz");
+                    if (cp != null) Compare("Channel power " + label, expectedAnalyzerDbm, cp.TotalPowerDbm, 3.0, "dBm");
+                    CheckErrorQueueVsa(vsa, label);
 
-                if (dwellSeconds > 0)
-                {
-                    Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine("            >>> RF held ON for " + dwellSeconds.ToString(CultureInfo.InvariantCulture) +
-                        " s — watch the ESG (1 GHz, " + verifyPowerDbm + " dBm, ARB) and the E4406A display…");
-                    Console.ResetColor();
-                    Thread.Sleep((int)(dwellSeconds * 1000));
+                    if (dwellSeconds > 0)
+                    {
+                        // Continuous (running) mode so the front panel sweeps live during the dwell.
+                        vsa.SetContinuous(true);
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.WriteLine("            >>> RF ON, analyzer running — tone near " +
+                            (expectedToneHz / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz for " +
+                            dwellSeconds.ToString(CultureInfo.InvariantCulture) + " s…");
+                        Console.ResetColor();
+                        Thread.Sleep((int)(dwellSeconds * 1000));
+                    }
                 }
+
+                // Clean end state: RF off, but leave the analyzer running so the panel shows the
+                // true (no-signal) sweep live rather than a frozen last-triggered trace.
+                Step("RF off, analyzer left running (live no-signal display)", () =>
+                {
+                    esg.SetRfOutput(false);
+                    esg.SetArbState(false);
+                    vsa.SetContinuous(true);
+                });
             }
             finally
             {
