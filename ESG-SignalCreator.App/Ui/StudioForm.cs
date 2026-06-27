@@ -114,6 +114,8 @@ namespace EsgSignalCreator.Ui
             bar.Items.Add(_calcBtn); bar.Items.Add(_downloadBtn); bar.Items.Add(_playBtn); bar.Items.Add(_stopBtn);
             var verifyBtn = Button("Verify", (s, e) => Verify());
             bar.Items.Add(verifyBtn);
+            var pathCalBtn = Button("Path cal…", (s, e) => PathCalibrate());
+            bar.Items.Add(pathCalBtn);
             bar.Items.Add(new ToolStripSeparator()); bar.Items.Add(_allBtn);
             bar.Items.Add(new ToolStripSeparator());
             var save = new ToolStripButton("Save…"); save.Click += (s, e) => SaveProject();
@@ -494,6 +496,27 @@ namespace EsgSignalCreator.Ui
             {
                 _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Verify failed: " + ex.Message));
                 _status.Text = "Verify failed.";
+            }
+        }
+
+        /// <summary>
+        /// Path-calibration wizard (#72): run a guided CW measurement on the E4406A and store the
+        /// commanded−measured delta as the inline path loss, applied to both the safety gate and the
+        /// verification harness so subsequent Verify runs are self-consistent.
+        /// </summary>
+        private void PathCalibrate()
+        {
+            if (_esg == null) { _status.Text = "Connect the ESG first."; return; }
+            if (_vsa == null) { _status.Text = "Connect the VSA first (Connect VSA…)."; return; }
+
+            using (var form = new PathCalibrationForm(_esg, _vsa, _safety))
+            {
+                if (form.ShowDialog(this) == DialogResult.OK && form.AppliedPathLossDb.HasValue)
+                {
+                    _safety.PathLossDb = form.AppliedPathLossDb.Value;
+                    _status.Text = string.Format(CultureInfo.InvariantCulture,
+                        "Path loss calibrated: {0:0.###} dB (applied to safety + verify).", _safety.PathLossDb);
+                }
             }
         }
 
