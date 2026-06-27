@@ -5,12 +5,14 @@ using System.Linq;
 using System.Threading;
 using EsgSignalCreator;
 using EsgSignalCreator.Instruments;
+using EsgSignalCreator.Impairments;
 using EsgSignalCreator.Measure;
 using EsgSignalCreator.Measure.Results;
 using EsgSignalCreator.Model;
 using EsgSignalCreator.Personalities.Awgn;
 using EsgSignalCreator.Personalities.CustomMod;
 using EsgSignalCreator.Personalities.Cw;
+using EsgSignalCreator.Personalities.MultiCarrier;
 using EsgSignalCreator.Personalities.Multitone;
 using EsgSignalCreator.Verify;
 using EsgSignalCreator.Visa;
@@ -77,7 +79,7 @@ namespace EsgSignalCreator.HilHarness
             double stopHz = Num(opts, "--stop-hz", 0.0); // 0 = query the ESG's max (capped to the VSA's 4 GHz)
             // Which signal personalities to verify. --all runs the full battery; --signal X runs one.
             string[] signals = flags.Contains("--all")
-                ? new[] { "cw", "multitone", "awgn", "custom-mod" }
+                ? new[] { "cw", "multitone", "awgn", "custom-mod", "multi-carrier", "iq-impair" }
                 : new[] { Opt(opts, "--signal") ?? "cw" };
 
             Console.WriteLine("ESG-SignalCreator hardware-in-the-loop harness");
@@ -287,6 +289,26 @@ namespace EsgSignalCreator.HilHarness
                             });
                             if (sp != null) Compare("Tone frequency " + label, carrierHz + offsetHz, sp.MarkerFrequencyHz, 50e3, "Hz");
                         }
+                        if (sig.CheckImage)
+                        {
+                            // Narrow span so the wanted tone (carrier+offset) and its image
+                            // (carrier-offset) are isolated by separate peak searches.
+                            double imgSpan = Math.Max(0.5e6, Math.Abs(sig.WantedOffsetHz));
+                            SpectrumResult wanted = Step("Wanted tone " + label, () =>
+                                SpectrumMarker.MeasurePeak(vsa, carrierHz + sig.WantedOffsetHz, imgSpan));
+                            SpectrumResult image = Step("Image tone " + label, () =>
+                                SpectrumMarker.MeasurePeak(vsa, carrierHz - sig.WantedOffsetHz, imgSpan));
+                            if (wanted != null && image != null)
+                            {
+                                double supp = image.MarkerPowerDbm - wanted.MarkerPowerDbm;
+                                Console.WriteLine("            wanted " + wanted.MarkerPowerDbm.ToString("0.#", CultureInfo.InvariantCulture)
+                                    + " dBm, image " + image.MarkerPowerDbm.ToString("0.#", CultureInfo.InvariantCulture)
+                                    + " dBm -> suppression " + supp.ToString("0.#", CultureInfo.InvariantCulture) + " dBc");
+                                // A 3 dB gain imbalance yields a measurable, suppressed image.
+                                Check("Image present + suppressed " + label, supp < -3.0 && supp > -45.0,
+                                    "suppression " + supp.ToString("0.#", CultureInfo.InvariantCulture) + " dBc");
+                            }
+                        }
                         if (sig.CheckAcp)
                         {
                             AcpResult acp = Step("ACP " + label, () =>
@@ -348,6 +370,8 @@ namespace EsgSignalCreator.HilHarness
             public double AcpCarrierBwHz;  // ACP carrier integration bandwidth (modulated signals)
             public bool CheckTone;        // CW: verify the tone lands at carrier+offset
             public bool CheckAcp;         // modulated signals: measure adjacent-channel power
+            public bool CheckImage;       // I/Q impairment: verify the gain-imbalance image
+            public double WantedOffsetHz; // tone offset for the image check (image at carrier - offset)
         }
 
         /// <summary>Generate a signal with a Core personality and capture its expected metrics.</summary>
@@ -385,6 +409,31 @@ namespace EsgSignalCreator.HilHarness
                     WaveformModel wf = p.Calculate(progress);
                     // Carrier reference BW ≈ symbol rate × (1 + alpha) = 1e6 × 1.35.
                     return new SignalCase { Name = "custom-mod", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 5e6, AcpCarrierBwHz = 1.35e6, CheckAcp = true };
+                }
+                case "multi-carrier":
+                {
+                    var p = new MultiCarrierPersonality();
+                    p.LoadConfig(new MultiCarrierConfig
+                    {
+                        SampleRateHz = 10e6, Length = 16384,
+                        Carriers = MultiCarrierPersonality.EvenlySpaced(3, 1e6, 0)
+                    });
+                    WaveformModel wf = p.Calculate(progress);
+                    return new SignalCase { Name = "multi-carrier", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 10e6 };
+                }
+                case "iq-impair":
+                {
+                    // A CW tone at +offset with a deliberate I/Q gain imbalance produces a measurable
+                    // image at carrier - offset; verify the image is present and suppressed.
+                    var p = new CwPersonality();
+                    p.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = offsetHz });
+                    WaveformModel wf = IqImpairments.Apply(p.Calculate(progress), new IqImpairmentConfig { GainImbalanceDb = 3.0 });
+                    return new SignalCase
+                    {
+                        Name = "iq-impair", Waveform = wf, ExpectedPaprDb = Papr(wf),
+                        SpanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6),
+                        CheckImage = true, WantedOffsetHz = offsetHz
+                    };
                 }
                 default:
                 {
