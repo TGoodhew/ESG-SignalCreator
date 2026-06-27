@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using EsgSignalCreator.Assistant.Agent;
 using EsgSignalCreator.Assistant.Api;
 using EsgSignalCreator.Assistant.Guardrails;
+using EsgSignalCreator.Assistant.Secrets;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -87,7 +88,9 @@ namespace EsgSignalCreator.Assistant.Tools
         private static ContentBlock Package(string toolUseId, ToolResult result)
         {
             result = result ?? ToolResult.Error("Tool returned no result.");
-            var payload = result.Data != null ? (JObject)result.Data.DeepClone() : new JObject();
+            // Privacy minimization (§8): collapse any over-long arrays / huge strings so bulk data
+            // (e.g. raw I/Q) can never leak into the conversation.
+            var payload = result.Data != null ? PrivacyGuard.Compact(result.Data) : new JObject();
             payload["status"] = result.IsError ? "error" : "ok";
             if (result.Summary != null) payload["summary"] = result.Summary;
             string content = payload.ToString(Formatting.None);
