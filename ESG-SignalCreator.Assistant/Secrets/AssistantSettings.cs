@@ -17,6 +17,9 @@ namespace EsgSignalCreator.Assistant.Secrets
         /// <summary>Per-session auto-approve-hardware default (still never silences play_rf/connect).</summary>
         public bool AutoApproveHardware { get; set; }
 
+        /// <summary>Opt-in for the gated raw-SCPI passthrough tool (#88). Defaults off.</summary>
+        public bool AllowRawScpi { get; set; }
+
         public string Model { get; set; } = ClaudeModels.DefaultPlanning;
         public string FastModel { get; set; } = ClaudeModels.FastTurns;
     }

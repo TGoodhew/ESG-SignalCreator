@@ -63,12 +63,15 @@ namespace EsgSignalCreator.Ui
             ctx.Register<IAssistantReadHost>(host);
             ctx.Register<IAssistantConfigureHost>(host);
             ctx.Register<IAssistantHardwareHost>(host);
+            ctx.Register<IAssistantRawScpiHost>(host);
             var gate = new ValidationGate(host);
 
             var registry = new ToolRegistry();
             registry.Register(ReadTools.All());
             registry.Register(ConfigureTools.All());
             registry.Register(HardwareTools.All());
+            registry.Register(GatedTools.SendRawScpi());
+            registry.SetEnabled(GatedTools.SendRawScpiName, settings.AllowRawScpi); // gated: off unless opted in
 
             var dispatcher = new ToolDispatcher(registry, ctx, policy, gate);
             var store = new ConversationStore { SystemPrompt = AssistantSystemPrompt };
@@ -96,7 +99,7 @@ namespace EsgSignalCreator.Ui
         /// Adapts the live <see cref="StudioForm"/> to the assistant host interfaces. A nested type so it
         /// can read/drive the form's private state directly; every mutation hops to the UI thread.
         /// </summary>
-        private sealed class StudioAssistantHost : IAssistantReadHost, IAssistantConfigureHost, IValidationGateHost, IAssistantHardwareHost
+        private sealed class StudioAssistantHost : IAssistantReadHost, IAssistantConfigureHost, IValidationGateHost, IAssistantHardwareHost, IAssistantRawScpiHost
         {
             private readonly StudioForm _f;
             public StudioAssistantHost(StudioForm form) { _f = form; }
@@ -390,6 +393,32 @@ namespace EsgSignalCreator.Ui
                 if (args["reference"] != null) { _f._esg.SetReferenceAuto(((string)args["reference"] ?? "").ToLowerInvariant() == "external"); applied.Add("reference"); }
 
                 return new JObject { ["applied"] = applied, ["summary"] = "Applied " + applied.Count + " setting(s)." };
+            });
+
+            // ---- IAssistantRawScpiHost ----
+
+            public JObject SendRawScpi(string command) => Ui(() =>
+            {
+                if (string.IsNullOrWhiteSpace(command)) throw new ArgumentException("A SCPI command is required.");
+                if (_f._instrument == null || _f._esg == null) throw new InvalidOperationException("Not connected.");
+
+                bool isQuery = command.TrimEnd().EndsWith("?");
+                string response = isQuery ? _f._instrument.Query(command) : null;
+                if (!isQuery) _f._instrument.Write(command);
+
+                string error = null;
+                try { error = _f._esg.GetError(); } catch { /* error queue read is best-effort */ }
+
+                _f._notifications.Append(new ValidationResult(ValidationSeverity.Info,
+                    "raw SCPI: " + command + (isQuery ? " -> " + response : " (written)") + " | err: " + error));
+
+                return new JObject
+                {
+                    ["command"] = command,
+                    ["response"] = response,
+                    ["error"] = error,
+                    ["summary"] = "Sent '" + command + "'" + (isQuery ? "; response: " + response : "") + "; error queue: " + error
+                };
             });
 
             // ---- helpers ----

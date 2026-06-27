@@ -41,7 +41,7 @@ namespace EsgSignalCreator.Assistant.Guardrails
         /// silent). Destructive tools always confirm regardless.
         /// </summary>
         public HashSet<string> AlwaysConfirm { get; } =
-            new HashSet<string>(StringComparer.Ordinal) { "play_rf", "connect_instrument" };
+            new HashSet<string>(StringComparer.Ordinal) { "play_rf", "connect_instrument", "send_raw_scpi" };
     }
 
     /// <summary>
