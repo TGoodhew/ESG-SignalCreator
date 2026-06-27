@@ -141,6 +141,11 @@ Add/Remove-Programs entry, requires .NET Framework 4.7.2, and detects an install
 (vendor-neutral — Keysight, NI, R&S, Rigol, …). The installer project is kept out of the solution so
 a machine without WiX still builds the app. See [docs/Packaging.md](docs/Packaging.md) for details.
 
+Prebuilt installers are published on the [Releases](https://github.com/TGoodhew/ESG-SignalCreator/releases)
+page. A GitHub Actions workflow builds the MSI and publishes a release on every push to `main`
+(prerelease) and on every `vX.Y.Z` tag (stable) — see [docs/Packaging.md](docs/Packaging.md#continuous-release-github-actions)
+(requires a self-hosted Windows runner with the VISA stack).
+
 ## Project layout
 
 The solution is split into a UI-free core library, the WinForms app, and a test project:
