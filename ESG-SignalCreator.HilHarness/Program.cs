@@ -619,10 +619,14 @@ namespace EsgSignalCreator.HilHarness
                     string e = vsa.GetError();
                     if (IsClean(e)) break;
                     string t = e.Trim();
-                    if (t.IndexOf("clip", StringComparison.OrdinalIgnoreCase) >= 0 || t.StartsWith("-222"))
-                        warns.Add(t);
-                    else
-                        errs.Add(t);
+                    // Benign advisories: positive codes (device advisories like +36 "Signal near noise
+                    // floor"), data-clip/range warnings (-222). Genuine command errors (e.g. -113) fail.
+                    bool advisory = t.StartsWith("+")
+                        || t.IndexOf("clip", StringComparison.OrdinalIgnoreCase) >= 0
+                        || t.IndexOf("noise floor", StringComparison.OrdinalIgnoreCase) >= 0
+                        || t.StartsWith("-222");
+                    if (advisory) warns.Add(t);
+                    else errs.Add(t);
                 }
                 if (warns.Count > 0)
                 {
