@@ -1,22 +1,31 @@
 <#
 .SYNOPSIS
-  Build the ESG-SignalCreator Windows installer (WiX v5 MSI).
+  Build the ESG-SignalCreator Windows installer (WiX v5 MSI + Burn bootstrapper).
 
 .DESCRIPTION
-  Builds the solution in Release, then builds the WiX installer project against that output.
-  The installer project is intentionally NOT part of ESG-SignalCreator.sln, so a dev machine
-  without the WiX toolset can still build the app. WiX v5 is restored automatically from NuGet
+  Builds the solution in Release, then the WiX installer project against that output, then (unless
+  -NoBundle) the Burn bootstrapper that chains the .NET Framework 4.7.2 redistributable ahead of the
+  MSI. The installer/bundle projects are intentionally NOT part of ESG-SignalCreator.sln, so a dev
+  machine without the WiX toolset can still build the app. WiX v5 is restored automatically from NuGet
   by `dotnet build` (no global tool install required). Runs headless for CI.
 
+  Produces:
+    * ESG-SignalCreator-<version>.msi        - raw MSI (requires .NET 4.7.2 already present)
+    * ESG-SignalCreator-Setup-<version>.exe  - bootstrapper (installs .NET 4.7.2 if missing, then the app)
+
 .PARAMETER Version
-  Product version (a.b.c.d) stamped into the MSI / ARP entry. Defaults to 1.0.0.0.
+  Product version (a.b.c.d) stamped into the MSI / EXE / ARP entry. Defaults to 1.0.0.0.
+
+.PARAMETER NoBundle
+  Build only the MSI; skip the .exe bootstrapper.
 
 .EXAMPLE
   ./build-installer.ps1 -Version 1.0.0.0
 #>
 param(
   [string]$Version = "1.0.0.0",
-  [string]$Configuration = "Release"
+  [string]$Configuration = "Release",
+  [switch]$NoBundle
 )
 
 $ErrorActionPreference = "Stop"
@@ -50,5 +59,17 @@ if ($LASTEXITCODE -ne 0) { throw "Installer build failed." }
 
 $msi = Get-ChildItem -Path "$root\ESG-SignalCreator.Installer\bin" -Recurse -Filter *.msi |
        Sort-Object LastWriteTime -Descending | Select-Object -First 1
-if ($msi) { Write-Host "Installer: $($msi.FullName)" -ForegroundColor Green }
+if ($msi) { Write-Host "MSI: $($msi.FullName)" -ForegroundColor Green }
 else { throw "No .msi produced." }
+
+if (-not $NoBundle) {
+  Write-Host "Building bootstrapper (chains .NET Framework 4.7.2) v$Version..." -ForegroundColor Cyan
+  & dotnet build "$root\ESG-SignalCreator.Bundle\ESG-SignalCreator.Bundle.wixproj" `
+      -c $Configuration -p:ProductVersion=$Version -p:MsiPath=$($msi.FullName)
+  if ($LASTEXITCODE -ne 0) { throw "Bootstrapper build failed." }
+
+  $exe = Get-ChildItem -Path "$root\ESG-SignalCreator.Bundle\bin" -Recurse -Filter *.exe |
+         Sort-Object LastWriteTime -Descending | Select-Object -First 1
+  if ($exe) { Write-Host "Bootstrapper: $($exe.FullName)" -ForegroundColor Green }
+  else { throw "No setup .exe produced." }
+}

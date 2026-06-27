@@ -91,6 +91,23 @@ jobs:
           $sha = (Get-FileHash $msi.FullName -Algorithm SHA256).Hash
           "sha256=$sha" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
+      - name: Build bootstrapper (chains .NET Framework 4.7.2)
+        shell: powershell
+        run: |
+          dotnet build ESG-SignalCreator.Bundle\ESG-SignalCreator.Bundle.wixproj -c Release `
+            -p:ProductVersion=${{ steps.ver.outputs.version }} -p:MsiPath=${{ steps.msi.outputs.path }}
+
+      - name: Locate bootstrapper
+        id: exe
+        shell: powershell
+        run: |
+          $exe = Get-ChildItem ESG-SignalCreator.Bundle\bin -Recurse -Filter *.exe |
+                 Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $exe) { throw 'No setup .exe produced.' }
+          "path=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          $sha = (Get-FileHash $exe.FullName -Algorithm SHA256).Hash
+          "sha256=$sha" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
@@ -98,9 +115,16 @@ jobs:
           name: ESG-SignalCreator ${{ steps.ver.outputs.tag }}
           prerelease: ${{ steps.ver.outputs.prerelease }}
           generate_release_notes: true
-          files: ${{ steps.msi.outputs.path }}
+          files: |
+            ${{ steps.exe.outputs.path }}
+            ${{ steps.msi.outputs.path }}
           body: |
             Automated build of ESG-SignalCreator ${{ steps.ver.outputs.version }}.
 
-            **Installer:** the `.msi` asset below (per-machine x64; requires .NET Framework 4.7.2 and a VISA runtime).
-            **SHA256:** `${{ steps.msi.outputs.sha256 }}`
+            **Recommended — `ESG-SignalCreator-Setup-${{ steps.ver.outputs.version }}.exe`:** the bootstrapper.
+            Installs **.NET Framework 4.7.2** automatically if it's missing (downloaded from Microsoft on demand),
+            then the app. Per-machine x64. A VISA runtime is still needed for live instrument I/O.
+            SHA256: `${{ steps.exe.outputs.sha256 }}`
+
+            **`.msi`:** the raw package, for machines that already have .NET Framework 4.7.2.
+            SHA256: `${{ steps.msi.outputs.sha256 }}`

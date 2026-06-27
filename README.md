@@ -105,7 +105,7 @@ NuGet `PackageReference`s).
 
 ## Hardware-in-the-loop testing
 
-The 208 unit tests run with **no instrument** (block framing, encoder, DSP, validation,
+The 356 unit tests run with **no instrument** (block framing, encoder, DSP, validation,
 VSA SCPI parsing, …). To validate the real instruments, run the headless harness
 ([ESG-SignalCreator.HilHarness](ESG-SignalCreator.HilHarness/)):
 
@@ -148,21 +148,25 @@ hardware-free.
 
 ## Installer
 
-A Windows **MSI** is built with the free **WiX Toolset v5** (restored from NuGet by `dotnet build`,
-no toolset install needed). From the repo root:
+Two artifacts are built with the free **WiX Toolset v5** (restored from NuGet by `dotnet build`, no
+toolset install needed) — a **`setup.exe`** bootstrapper and a raw **MSI**. From the repo root:
 
 ```powershell
-./build-installer.ps1 -Version 1.0.0.0
+./build-installer.ps1 -Version 1.0.0.0   # builds the app, the MSI, then the setup.exe
 ```
 
-It installs the app per-machine to `Program Files`, adds Start-menu/desktop shortcuts and a proper
-Add/Remove-Programs entry, requires .NET Framework 4.7.2, and detects an installed **VISA** runtime
-(vendor-neutral — Keysight, NI, R&S, Rigol, …). The installer project is kept out of the solution so
-a machine without WiX still builds the app. See [docs/Packaging.md](docs/Packaging.md) for details.
+- **`ESG-SignalCreator-Setup-<version>.exe`** (recommended) — a bootstrapper that **chains the .NET
+  Framework 4.7.2 installer**: it installs the framework automatically if it's missing, then the app.
+- **`ESG-SignalCreator-<version>.msi`** — the raw package, for machines that already have .NET 4.7.2.
+
+Both install the app per-machine to `Program Files`, add Start-menu/desktop shortcuts and a proper
+Add/Remove-Programs entry (with the app icon), and detect an installed **VISA** runtime (vendor-neutral
+— Keysight, NI, R&S, Rigol, …). The installer/bootstrapper projects are kept out of the solution so a
+machine without WiX still builds the app. See [docs/Packaging.md](docs/Packaging.md) for details.
 
 Prebuilt installers are published on the [Releases](https://github.com/TGoodhew/ESG-SignalCreator/releases)
-page. A GitHub Actions workflow builds the MSI and publishes a release on every push to `main`
-(prerelease) and on every `vX.Y.Z` tag (stable) — see [docs/Packaging.md](docs/Packaging.md#continuous-release-github-actions)
+page. A GitHub Actions workflow builds the MSI + bootstrapper and publishes a release on every push to
+`main` (prerelease) and on every `vX.Y.Z` tag (stable) — see [docs/Packaging.md](docs/Packaging.md#continuous-release-github-actions)
 (builds on a Windows runner with the IVI VISA.NET Shared Components — any VISA provider — installed).
 
 ## Project layout

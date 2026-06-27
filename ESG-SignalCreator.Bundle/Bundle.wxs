@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:bal="http://wixtoolset.org/schemas/v4/wxs/bal"
+     xmlns:netfx="http://wixtoolset.org/schemas/v4/wxs/netfx">
+
+  <!--
+    Burn bootstrapper (setup.exe) for ESG-SignalCreator. It CHAINS the .NET Framework 4.7.2
+    redistributable ahead of the MSI: if the framework is missing the bootstrapper installs it
+    automatically, then installs the app MSI. With the framework already present the prereq is
+    detected and skipped, so the user just gets the app.
+
+    Build SEPARATELY from the solution, AFTER the MSI exists (it consumes the .msi as a payload):
+      dotnet build ESG-SignalCreator.Bundle\ESG-SignalCreator.Bundle.wixproj -c Release ^
+        -p:ProductVersion=1.0.0.0 -p:MsiPath=..\ESG-SignalCreator.Installer\bin\x64\Release\ESG-SignalCreator-1.0.0.0.msi
+    or via the repo-root build-installer.ps1 (which builds the app, then the MSI, then this bundle).
+  -->
+
+  <?ifndef ProductVersion ?><?define ProductVersion = "1.0.0.0" ?><?endif?>
+  <?ifndef MsiPath ?><?define MsiPath = "..\ESG-SignalCreator.Installer\bin\x64\Release\ESG-SignalCreator-$(ProductVersion).msi" ?><?endif?>
+
+  <!-- The bootstrapper's Add/Remove-Programs icon = the shared app icon. -->
+  <Bundle Name="ESG-SignalCreator"
+          Manufacturer="Tony Goodhew"
+          Version="$(ProductVersion)"
+          UpgradeCode="4C9E1B7A-2D3F-4A8B-9E6C-5F7081927364"
+          AboutUrl="https://github.com/TGoodhew/ESG-SignalCreator"
+          IconSourceFile="..\ESG-SignalCreator.App\ESG-SignalCreator.ico">
+
+    <!-- Standard Burn UI with the MIT license shown up front. The .NET prereq runs through the same UI. -->
+    <BootstrapperApplication>
+      <bal:WixStandardBootstrapperApplication
+          Theme="rtfLicense"
+          LicenseFile="..\ESG-SignalCreator.Installer\License.rtf"
+          SuppressOptionsUI="yes" />
+    </BootstrapperApplication>
+
+    <Chain>
+      <!-- Prerequisite: .NET Framework 4.7.2. The package group from WixToolset.NetFx.wixext detects
+           the installed release key and only runs the redistributable when the framework is absent.
+           The redist is downloaded from Microsoft at install time if needed (PermitWhenUnable... etc.). -->
+      <PackageGroupRef Id="NetFx472Redist" />
+
+      <!-- The application MSI, embedded in setup.exe so the bootstrapper is self-contained
+           (apart from the .NET redist, which only downloads when the framework is missing). -->
+      <MsiPackage Id="EsgSignalCreatorMsi"
+                  SourceFile="$(MsiPath)"
+                  Vital="yes" />
+    </Chain>
+
+  </Bundle>
+</Wix>
