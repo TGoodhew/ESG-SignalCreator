@@ -5,6 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using EsgSignalCreator;
+using EsgSignalCreator.Visa;
+using EsgSignalCreator.Verify;
 using EsgSignalCreator.Assistant.Agent;
 using EsgSignalCreator.Assistant.Api;
 using EsgSignalCreator.Assistant.Guardrails;
@@ -59,11 +62,13 @@ namespace EsgSignalCreator.Ui
             var ctx = new ToolContext();
             ctx.Register<IAssistantReadHost>(host);
             ctx.Register<IAssistantConfigureHost>(host);
+            ctx.Register<IAssistantHardwareHost>(host);
             var gate = new ValidationGate(host);
 
             var registry = new ToolRegistry();
             registry.Register(ReadTools.All());
             registry.Register(ConfigureTools.All());
+            registry.Register(HardwareTools.All());
 
             var dispatcher = new ToolDispatcher(registry, ctx, policy, gate);
             var store = new ConversationStore { SystemPrompt = AssistantSystemPrompt };
@@ -89,7 +94,7 @@ namespace EsgSignalCreator.Ui
         /// Adapts the live <see cref="StudioForm"/> to the assistant host interfaces. A nested type so it
         /// can read/drive the form's private state directly; every mutation hops to the UI thread.
         /// </summary>
-        private sealed class StudioAssistantHost : IAssistantReadHost, IAssistantConfigureHost, IValidationGateHost
+        private sealed class StudioAssistantHost : IAssistantReadHost, IAssistantConfigureHost, IValidationGateHost, IAssistantHardwareHost
         {
             private readonly StudioForm _f;
             public StudioAssistantHost(StudioForm form) { _f = form; }
@@ -305,6 +310,85 @@ namespace EsgSignalCreator.Ui
                 }));
                 return tcs.Task.GetAwaiter().GetResult(); // host runs on a background tool thread
             }
+
+            // ---- IAssistantHardwareHost ----
+
+            public JObject ConnectInstrument(string resource)
+            {
+                if (string.IsNullOrWhiteSpace(resource)) throw new ArgumentException("A VISA resource is required.");
+                return Ui(() =>
+                {
+                    EsgInstrument inst = EsgInstrument.Open(new ConnectionSettings { Kind = ConnectionKind.Visa, VisaResource = resource });
+                    _f.AttachInstrument(inst);
+                    InstrumentIdentity id = null;
+                    try { id = inst.Identify(); } catch { /* identity is best-effort */ }
+                    return new JObject
+                    {
+                        ["connected"] = true,
+                        ["resource"] = resource,
+                        ["model"] = id?.Model,
+                        ["firmware"] = id?.FirmwareRevision,
+                        ["summary"] = "Connected to " + (id?.Model ?? resource) + "."
+                    };
+                });
+            }
+
+            public JObject DisconnectInstrument() => Ui(() =>
+            {
+                _f._instrument?.Dispose();
+                _f._instrument = null;
+                _f._esg = null;
+                _f._online.Text = "Offline";
+                _f._online.ForeColor = System.Drawing.Color.Firebrick;
+                _f._statusModel.Text = "No instrument";
+                _f.UpdatePipelineEnabled();
+                return new JObject { ["disconnected"] = true, ["summary"] = "Disconnected." };
+            });
+
+            public JObject DownloadWaveform() => Ui(() =>
+            {
+                if (_f._waveform == null) throw new InvalidOperationException("No waveform calculated.");
+                if (_f._esg == null) throw new InvalidOperationException("Not connected.");
+                if (!_f.Download()) throw new InvalidOperationException("Download failed (see Notifications).");
+                long bytes = (long)_f._waveform.Length * 4;
+                return new JObject { ["segment"] = _f.SegmentName(), ["bytes"] = bytes, ["summary"] = "Downloaded " + bytes + " bytes." };
+            });
+
+            public JObject PlayRf() => Ui(() =>
+            {
+                if (_f._esg == null || _f._waveform == null) throw new InvalidOperationException("Need a connection and a waveform to play.");
+                _f.Play();
+                return new JObject { ["playing"] = true, ["summary"] = "RF on, ARB playing." };
+            });
+
+            public JObject StopRf() => Ui(() =>
+            {
+                _f.Stop();
+                return new JObject { ["stopped"] = true, ["summary"] = "Stopped, RF off." };
+            });
+
+            public JObject SetInstrumentSettings(JObject args) => Ui(() =>
+            {
+                if (_f._esg == null) throw new InvalidOperationException("Not connected.");
+                args = args ?? new JObject();
+                var applied = new JArray();
+
+                if (args["frequency_hz"] != null) { _f._esg.SetFrequencyHz((double)args["frequency_hz"]); applied.Add("frequency_hz"); }
+                if (args["power_dbm"] != null)
+                {
+                    double dbm = (double)args["power_dbm"];
+                    PowerSafetyGate.Guard(dbm, _f._safety); // throws RfSafetyException if it would overdrive the analyzer
+                    _f._esg.SetAmplitudeDbm(dbm);
+                    applied.Add("power_dbm");
+                }
+                if (args["rf_on"] != null) { _f._esg.SetRfOutput((bool)args["rf_on"]); applied.Add("rf_on"); }
+                if (args["modulation_on"] != null) { _f._esg.SetModulation((bool)args["modulation_on"]); applied.Add("modulation_on"); }
+                if (args["sample_clock_hz"] != null) { _f._esg.SetSampleClockHz((double)args["sample_clock_hz"]); applied.Add("sample_clock_hz"); }
+                if (args["runtime_scaling_percent"] != null) { _f._esg.SetRuntimeScaling((double)args["runtime_scaling_percent"]); applied.Add("runtime_scaling_percent"); }
+                if (args["reference"] != null) { _f._esg.SetReferenceAuto(((string)args["reference"] ?? "").ToLowerInvariant() == "external"); applied.Add("reference"); }
+
+                return new JObject { ["applied"] = applied, ["summary"] = "Applied " + applied.Count + " setting(s)." };
+            });
 
             // ---- helpers ----
 

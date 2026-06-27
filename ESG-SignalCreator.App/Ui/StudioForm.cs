@@ -451,6 +451,12 @@ namespace EsgSignalCreator.Ui
         {
             EsgInstrument inst = ConnectionManagerForm.Connect(this);
             if (inst == null) return;
+            AttachInstrument(inst);
+        }
+
+        /// <summary>Wire an opened ESG session into the form (shared by the Connect dialog and the assistant).</summary>
+        private void AttachInstrument(EsgInstrument inst)
+        {
             _instrument = inst;
             _esg = new EsgController(inst.Transport);
             _settings.Attach(_esg);
