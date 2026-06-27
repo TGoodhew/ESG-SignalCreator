@@ -19,6 +19,19 @@ namespace EsgSignalCreator.Assistant.Agent
 
         /// <summary>Model override; falls back to the client's configured model.</summary>
         public string Model { get; set; }
+
+        /// <summary>
+        /// Classifies a tool as read-only by name. When set, read tool_use blocks in one assistant turn
+        /// run concurrently while configure/hardware ones stay serialized in emit order (#89). Null
+        /// (default) keeps everything sequential.
+        /// </summary>
+        public Func<string, bool> ReadOnlyClassifier { get; set; }
+
+        /// <summary>
+        /// If &gt; 0, compact the history to at most this many messages before each request (#89), so a
+        /// long conversation doesn't grow unbounded. tool_use/tool_result pairing is preserved.
+        /// </summary>
+        public int MaxHistoryMessages { get; set; }
     }
 
     /// <summary>
@@ -65,6 +78,8 @@ namespace EsgSignalCreator.Assistant.Agent
                 {
                     ct.ThrowIfCancellationRequested();
 
+                    if (_options.MaxHistoryMessages > 0) _store.Compact(_options.MaxHistoryMessages);
+
                     ClaudeRequest request = BuildRequest();
                     ClaudeResponse response = (_options.Streaming && TextDelta != null)
                         ? await _client.CreateMessageStreamingAsync(request, t => TextDelta?.Invoke(t), ct).ConfigureAwait(false)
@@ -82,27 +97,26 @@ namespace EsgSignalCreator.Assistant.Agent
                         return response;
                     }
 
-                    var results = new List<ContentBlock>();
-                    foreach (ContentBlock toolUse in response.ToolUses())
+                    List<ContentBlock> toolUses = new List<ContentBlock>(response.ToolUses());
+                    var results = new ContentBlock[toolUses.Count];
+                    var readTasks = new List<KeyValuePair<int, Task<ContentBlock>>>();
+                    bool canParallelize = _options.ReadOnlyClassifier != null;
+
+                    // Reads run concurrently; configure/hardware stay serialized in the order Claude
+                    // emitted them. Results are assembled back into emit order regardless.
+                    for (int i = 0; i < toolUses.Count; i++)
                     {
                         ct.ThrowIfCancellationRequested();
-                        ContentBlock result;
-                        try
-                        {
-                            result = await _invoker.InvokeAsync(toolUse, ct).ConfigureAwait(false);
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            throw;
-                        }
-                        catch (Exception ex)
-                        {
-                            result = ContentBlock.OfToolResult(toolUse.Id, "Tool '" + toolUse.Name + "' failed: " + ex.Message, isError: true);
-                        }
-                        results.Add(result);
+                        ContentBlock toolUse = toolUses[i];
+                        if (canParallelize && _options.ReadOnlyClassifier(toolUse.Name))
+                            readTasks.Add(new KeyValuePair<int, Task<ContentBlock>>(i, InvokeGuardedAsync(toolUse, ct)));
+                        else
+                            results[i] = await InvokeGuardedAsync(toolUse, ct).ConfigureAwait(false);
                     }
+                    foreach (KeyValuePair<int, Task<ContentBlock>> rt in readTasks)
+                        results[rt.Key] = await rt.Value.ConfigureAwait(false);
 
-                    _store.Add(new ClaudeMessage { Role = Roles.User, Content = results });
+                    _store.Add(new ClaudeMessage { Role = Roles.User, Content = new List<ContentBlock>(results) });
                     ToolRoundCompleted?.Invoke(rounds);
                 }
             }
@@ -111,6 +125,22 @@ namespace EsgSignalCreator.Assistant.Agent
                 // Keep the history valid so the next turn can proceed.
                 _store.EnsureToolResultsPaired("Cancelled by the user.");
                 throw;
+            }
+        }
+
+        private async Task<ContentBlock> InvokeGuardedAsync(ContentBlock toolUse, CancellationToken ct)
+        {
+            try
+            {
+                return await _invoker.InvokeAsync(toolUse, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                return ContentBlock.OfToolResult(toolUse.Id, "Tool '" + toolUse.Name + "' failed: " + ex.Message, isError: true);
             }
         }
 
