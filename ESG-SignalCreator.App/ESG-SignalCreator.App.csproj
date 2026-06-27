@@ -60,6 +60,9 @@
       <Project>{C0DE0001-0000-0000-0000-000000000001}</Project>
       <Name>ESG-SignalCreator.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\ESG-SignalCreator.Assistant\ESG-SignalCreator.Assistant.csproj">
+      <Name>ESG-SignalCreator.Assistant</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

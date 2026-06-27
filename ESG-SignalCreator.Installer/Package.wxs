@@ -73,6 +73,12 @@
       <Component Id="CoreDll" Guid="*">
         <File Source="$(HarvestPath)\ESG-SignalCreator.Core.dll" KeyPath="yes" />
       </Component>
+      <Component Id="AssistantDll" Guid="*">
+        <File Source="$(HarvestPath)\ESG-SignalCreator.Assistant.dll" KeyPath="yes" />
+      </Component>
+      <Component Id="NewtonsoftJsonDll" Guid="*">
+        <File Source="$(HarvestPath)\Newtonsoft.Json.dll" KeyPath="yes" />
+      </Component>
       <Component Id="AppConfig" Guid="*">
         <File Source="$(HarvestPath)\ESG-SignalCreator.exe.config" KeyPath="yes" />
       </Component>
