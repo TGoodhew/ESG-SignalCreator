@@ -4,7 +4,7 @@
 
 A complete reference for **ESG-SignalCreator**, a Windows application that builds arbitrary I/Q
 waveforms, plays them on an Agilent/Keysight **E4438C** ESG vector signal generator, and (optionally)
-verifies the result on an **E4406A** VSA — with an in-app **Claude assistant** that can drive the whole
+verifies the result on a **VSA** (an Agilent **E4406A** or a Keysight **N9010A**) — with an in-app **Claude assistant** that can drive the whole
 flow in natural language.
 
 This document explains *what the app does and how every feature works*. For step-by-step walkthroughs,
@@ -23,7 +23,7 @@ analyzer. It is organised around four ideas:
 - **A deliberate pipeline** — you **Calculate** the waveform on the PC, **Download** it to the
   generator's ARB memory, then **Play** it (arm the ARB + turn on RF). Each stage is explicit so you
   always know what is on the instrument.
-- **Closed-loop verification** — with an E4406A connected to the generator's RF output, the app
+- **Closed-loop verification** — with a VSA (E4406A or N9010A) connected to the generator's RF output, the app
   measures the played signal (channel power, PAPR, tone frequency, ACP, …) and compares **expected vs
   measured**.
 - **An assistant** — an opt-in pane where Claude uses the *same* operations you do, through a guarded
@@ -67,7 +67,7 @@ The app is C#/.NET Framework 4.7.2 / WinForms. Launch the modern shell (`StudioF
   desktop shortcuts; clean uninstall). The installer enforces .NET 4.7.2 and detects a VISA runtime.
   See [Packaging.md](Packaging.md) for build/CI details.
 - **On-instrument playback** needs an E4438C with a baseband/ARB option (001/601 or 002/602).
-  **Verification** needs an E4406A on the generator's RF output.
+  **Verification** needs a VSA (E4406A or N9010A) on the generator's RF output.
 
 ---
 
@@ -80,14 +80,15 @@ The shell is split into four regions:
 | Button | What it does |
 |--------|--------------|
 | **Connect…** | Open the connection manager and connect to the ESG (VISA resource or GPIB board/address). |
-| **Connect VSA…** | Connect the E4406A analyzer, including the RF-path safety settings (§9). |
+| **Connect VSA…** | Connect the analyzer (E4406A or N9010A, per the **VSA model** toggle), including the RF-path safety settings (§9). |
 | **Calculate** | Generate the I/Q waveform from the current source + impairments (off the UI thread, with a progress bar). Updates the plots, validation and readout. No hardware. |
 | **Download** | Encode the waveform and push it to the generator's ARB memory (WFM1). Requires a connection. |
 | **Play** | Arm the ARB and turn RF **on**. |
 | **Stop** | Disarm the ARB and turn RF **off**. |
-| **Verify** | Closed-loop measure the played signal on the E4406A and show expected-vs-measured (§9). |
+| **Verify** | Closed-loop measure the played signal on the analyzer and show expected-vs-measured (§9). |
 | **Path cal…** | Run the path-calibration wizard to capture cable loss + analyzer offset (§9). |
-| **Reference** | Lock the ESG and E4406A to independent timebases or a common external 10 MHz. |
+| **Reference** | Lock the ESG and the analyzer to independent timebases or a common external 10 MHz. |
+| **VSA model** | Toggle which analyzer the app targets — E4406A or N9010A (§9). |
 | **VSA Mode** | Pick the analyzer measurement mode from the modes actually installed on the unit. |
 | **Calc → DL → Play** | Run all three pipeline stages in sequence. |
 | **Save… / Open…** | Save or load a project (`.ssproj`). |
@@ -206,17 +207,28 @@ checker as a safety gate before any hardware action.
 
 ---
 
-## 9. E4406A verification
+## 9. VSA verification (E4406A or N9010A)
 
-With an **E4406A** VSA on the generator's RF output, the app becomes a closed-loop *generate → measure
-→ compare* system. The analyzer only ever **receives** RF.
+With a **VSA** on the generator's RF output, the app becomes a closed-loop *generate → measure →
+compare* system. The analyzer only ever **receives** RF. Two analyzers are supported: the Agilent
+**E4406A** and the Keysight **N9010A (EXA)**.
+
+**Choosing the analyzer.** The **VSA model** toggle on the action bar (next to **Connect VSA…**)
+selects which analyzer the app targets — **E4406A** or **N9010A** — and is remembered between sessions.
+The selection drives the connect dialog's title, its default interface and address hint (the E4406A
+defaults to GPIB, e.g. `GPIB0::17::INSTR`; the N9010A defaults to LAN/USB, e.g.
+`TCPIP0::<ip>::hislip0::INSTR`), the per-model input-damage default, and the identity check —
+connecting an instrument that doesn't match the selected model is refused. The N9010A is validated
+against the Keysight X-Series manuals; the E4406A path is additionally hardware-validated. Confirm the
+N9010A's max safe input against its data sheet before driving power (see below).
 
 ### 9.1 Connecting the analyzer (safety first)
 **Connect VSA…** opens the VSA connection form, which includes the **RF-path safety** settings:
 
 - **Armed** — turn this on when the analyzer is physically on the ESG output and must be protected.
-- **Analyzer max safe input (dBm)** — the damage threshold (E4406A type-N input ≈ +35 dBm; default
-  gate +30 dBm).
+- **Analyzer max safe input (dBm)** — the damage threshold, seeded from the selected model (E4406A
+  type-N input ≈ +35 dBm, default gate +30 dBm; N9010A a conservative +25 dBm backstop pending
+  data-sheet confirmation). Override it for your unit.
 - **Path loss (dB)** — any inline pad/attenuator between the ESG and the analyzer.
 
 When armed, the **power safety gate** blocks any commanded ESG power that would put more than the safe
@@ -237,9 +249,9 @@ records *commanded − measured* as the inline **path loss** — applied to both
 so subsequent runs are self-consistent. RF is returned off when done.
 
 ### 9.4 Reference locking
-The **Reference** menu sets the ESG and E4406A to **independent** internal timebases or to a **common
-10 MHz external** reference (a house reference or the ESG's 10 MHz OUT cabled to the analyzer) for clean
-frequency comparisons. It reports the resulting source of each instrument.
+The **Reference** menu sets the ESG and the analyzer to **independent** internal timebases or to a
+**common 10 MHz external** reference (a house reference or the ESG's 10 MHz OUT cabled to the analyzer)
+for clean frequency comparisons. It reports the resulting source of each instrument.
 
 ### 9.5 VSA measurement mode
 The **VSA Mode** menu lists the measurement modes actually installed on the unit (read live from the
@@ -248,7 +260,7 @@ personalities (GSM, EDGE, cdmaOne, cdma2000, 1xEV-DO, W-CDMA, NADC, PDC, iDEN). 
 the analyzer's mode.
 
 ### 9.6 Measurements
-Under the hood the app provides typed E4406A **Basic-mode** measurements (also exposed to the
+Under the hood the app provides typed VSA measurements (also exposed to the
 assistant, §10): **Channel Power**, **ACP/ACPR**, **CCDF / PAPR** (Power Statistics), **Spectrum**
 marker (tone frequency/power, occupied BW), **Waveform** (time-domain peak/mean/peak-to-mean), and
 **Power-vs-Time** with a configurable **power mask** (pass/fail over time windows) for bursted signals.

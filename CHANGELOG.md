@@ -32,11 +32,14 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
     flag (`e4406a` | `n9010a`) that drives the identity guard, the per-model input-damage default, and
     the sweep ceiling; the assistant's measure_*/verify_signal tool text and system prompt are now
     model-neutral, and `get_vsa_state` reports the connected analyzer's model (#112).
+  - **Documentation** generalized to dual-analyzer: README, UserGuide (§9), Tutorials (Part F), and the
+    Danish `docs/da/` mirrors now cover E4406A **or** N9010A with the model toggle, per-model addressing
+    and safety, and the harness `--vsa-model` flag (#113).
 
 ### Notes
-- Still in progress for full N9010A verification: the SA-mode Channel Power / ACP / CCDF and IQ
-  Analyzer Spectrum / Waveform measurement mappings (#110, #111), safety limits/addressing (#109),
-  the headless harness/tests/assistant surface (#112), and the full docs/tutorials sweep (#113).
+- N9010A support (epic #105, issues #106–#113) is code-complete and unit-tested against the Keysight
+  X-Series manuals, but is **not yet bench-validated** — confirm the ACP result layout and the max
+  safe input against a physical N9010A. The E4406A path remains hardware-validated.
 
 ## [1.0.3] - 2026-07-13
 

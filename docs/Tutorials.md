@@ -6,7 +6,7 @@ Hands-on, build-up walkthroughs for **ESG-SignalCreator** (the **ESG Signal Stud
 tutorial is a short, self-contained exercise that you can do at the bench. They start with things you
 can do completely **offline** (no instrument needed), then progress to driving a real **E4438C**
 generator, exploring every signal type, applying impairments, sequencing and exporting projects,
-closing the loop with an **E4406A** analyzer, letting the in-app **Claude assistant** drive the flow,
+closing the loop with a **VSA** (E4406A or N9010A), letting the in-app **Claude assistant** drive the flow,
 and finally automating and packaging the app.
 
 This file is the *practice companion* to [UserGuide.md](UserGuide.md), which is the authoritative
@@ -22,7 +22,7 @@ User Guide section (e.g. "see UserGuide §5.2"). For an overview, build and inst
   **Calculate** and the plots. Parts B, D–H that touch the instrument are clearly marked in
   **Prerequisites**.
 - **Stay safe.** Anything that emits RF or could damage the analyzer is gated. Read the safety
-  notes in [UserGuide §15](UserGuide.md#15-safety-notes) before driving power into the E4406A.
+  notes in [UserGuide §15](UserGuide.md#15-safety-notes) before driving power into the analyzer.
 - **The pipeline is deliberate.** You **Calculate** on the PC, **Download** to the generator, then
   **Play**. Nothing reaches the DAC or RF until you say so (see UserGuide §7).
 - **When a number isn't given, read it from the app.** Defaults and exact values live in the app's
@@ -56,8 +56,8 @@ User Guide section (e.g. "see UserGuide §5.2"). For an overview, build and inst
 11. [Sequencing multiple segments](#tutorial-11--sequencing-multiple-segments)
 12. [Using the SCPI console](#tutorial-12--using-the-scpi-console)
 
-**Part F — E4406A verification**
-13. [Connect the E4406A safely](#tutorial-13--connect-the-e4406a-safely)
+**Part F — VSA verification (E4406A / N9010A)**
+13. [Connect the VSA safely](#tutorial-13--connect-the-vsa-safely)
 14. [Path calibration](#tutorial-14--path-calibration)
 15. [Closed-loop Verify](#tutorial-15--closed-loop-verify)
 16. [Analyzer measurements, mode and reference](#tutorial-16--analyzer-measurements-mode-and-reference)
@@ -551,35 +551,44 @@ log.
 
 ---
 
-## Part F — E4406A verification
+## Part F — VSA verification (E4406A / N9010A)
 
-## Tutorial 13 — Connect the E4406A safely
+> These tutorials use **the analyzer** / **VSA** to mean whichever model you select with the **VSA
+> model** toggle — an Agilent **E4406A** or a Keysight **N9010A (EXA)**. The steps are the same for
+> both; only the addressing and the default input-damage limit differ (called out where relevant).
 
-**Goal:** Connect the E4406A analyzer and arm the RF-path safety so the app blocks any power that
-could damage the analyzer input.
+## Tutorial 13 — Connect the VSA safely
+
+**Goal:** Choose the analyzer model, connect it, and arm the RF-path safety so the app blocks any
+power that could damage the analyzer input.
 
 **You'll learn:**
-- How **Connect VSA…** opens the VSA connection form with RF-path safety settings (see UserGuide §9.1).
+- How the **VSA model** toggle selects E4406A vs N9010A, and how **Connect VSA…** opens the VSA
+  connection form with RF-path safety settings (see UserGuide §9).
 - What **Armed**, **Analyzer max safe input**, and **Path loss** do, and how the **damage gate**
   works.
 
-**Prerequisites:** An E4406A on the generator's RF output, an installed VISA runtime, and its VISA
-resource (e.g. `GPIB0::17::INSTR`). A connected ESG (Tutorial 2) is helpful.
+**Prerequisites:** A VSA (E4406A or N9010A) on the generator's RF output, an installed VISA runtime,
+and its VISA resource (E4406A e.g. `GPIB0::17::INSTR`; N9010A e.g. `TCPIP0::<ip>::hislip0::INSTR`).
+A connected ESG (Tutorial 2) is helpful.
 
 **Steps:**
 1. Make sure the analyzer is physically on the ESG's RF output (the analyzer only ever **receives**
    RF — UserGuide §9).
-2. Click **Connect VSA…** to open the VSA connection form. Enter the analyzer's VISA resource and
-   connect (the app refuses a non-E4406A).
-3. In the **RF-path safety** settings:
+2. Set the **VSA model** toggle (next to **Connect VSA…**) to your analyzer — **E4406A** or
+   **N9010A**. The choice is remembered between sessions and sets the connect dialog's defaults.
+3. Click **Connect VSA…** to open the VSA connection form. Enter the analyzer's VISA resource and
+   connect (the app refuses an instrument that doesn't match the selected model).
+4. In the **RF-path safety** settings:
    - Turn **Armed** on — this enables the protection now that the analyzer is on the output.
-   - Set **Analyzer max safe input (dBm)** — the damage threshold (the E4406A type-N input is
-     ≈ +35 dBm; the default gate is +30 dBm).
+   - Set **Analyzer max safe input (dBm)** — the damage threshold, seeded from the model (E4406A
+     type-N input ≈ +35 dBm, default gate +30 dBm; N9010A a conservative +25 dBm — confirm against
+     its data sheet).
    - Set **Path loss (dB)** — any inline pad/attenuator between the ESG and the analyzer.
 
 **What you should see:**
-- The analyzer connects and reports as an E4406A; the safety settings show **Armed** with your max
-  safe input and path loss.
+- The analyzer connects and reports as the selected model; the safety settings show **Armed** with
+  your max safe input and path loss.
 - From now on, any commanded ESG power that would exceed the safe level at the analyzer input
   (accounting for path loss) is **blocked** — this gate guards both the manual UI and the assistant.
 
@@ -601,7 +610,7 @@ analyzer, and applies it everywhere.
 - How **Path cal…** captures path loss (see UserGuide §9.3).
 - Where the captured loss is applied (safety gate and Verify).
 
-**Prerequisites:** A connected ESG (Tutorial 2) and a connected, armed E4406A (Tutorial 13).
+**Prerequisites:** A connected ESG (Tutorial 2) and a connected, armed VSA (Tutorial 13).
 
 **Steps:**
 1. Click **Path cal…** to open the path-calibration wizard.
@@ -623,14 +632,14 @@ analyzer, and applies it everywhere.
 
 ## Tutorial 15 — Closed-loop Verify
 
-**Goal:** Use **Verify** to measure a played signal on the E4406A and read the Expected-vs-Measured
+**Goal:** Use **Verify** to measure a played signal on the analyzer and read the Expected-vs-Measured
 table — for a CW tone and a multitone.
 
 **You'll learn:**
 - How **Verify** turns generate → measure → compare into a pass/fail table (see UserGuide §9.2).
 - How to read channel power, PAPR, and tone frequency against expectations.
 
-**Prerequisites:** Connected ESG (Tutorial 2), connected + armed E4406A with path loss captured
+**Prerequisites:** Connected ESG (Tutorial 2), connected + armed VSA with path loss captured
 (Tutorials 13–14).
 
 **Steps:**
@@ -670,7 +679,7 @@ comparisons, and understand the Basic-mode measurements the app uses.
 - How **Reference** locks the instruments to independent or common 10 MHz timebases (UserGuide §9.4).
 - What Basic-mode measurements underpin Verify (UserGuide §9.6).
 
-**Prerequisites:** Connected ESG and E4406A (Tutorials 2, 13).
+**Prerequisites:** Connected ESG and VSA (Tutorials 2, 13).
 
 **Steps:**
 1. Click **VSA Mode**. The menu lists the modes the unit actually has (read live from
@@ -777,7 +786,7 @@ configure tools, with no hardware involved.
 - What **Auto-approve hardware** does — and which tools *always* confirm regardless.
 - The opt-in **Allow raw SCPI** escape hatch.
 
-**Prerequisites:** Tutorials 17–18, a connected ESG (and a connected + armed E4406A for the verify
+**Prerequisites:** Tutorials 17–18, a connected ESG (and a connected + armed VSA for the verify
 step, Tutorials 2, 13–15).
 
 **Steps:**
@@ -825,8 +834,8 @@ closed-loop battery with a JSON report.
 - That the harness enforces the safety gate and can emit a machine-readable report.
 
 **Prerequisites:** A built `ESG-SignalCreator.HilHarness.exe`, an installed VISA runtime, a real
-E4438C (and an E4406A on its RF output for the closed-loop run). This is a console tool, separate from
-the GUI.
+E4438C (and a VSA — E4406A or N9010A — on its RF output for the closed-loop run). This is a console
+tool, separate from the GUI.
 
 **Steps:**
 1. **ESG-only** — connect, run `*IDN?`/`*OPT?`, download a CW, arm the ARB, and read back (RF stays
@@ -838,7 +847,11 @@ the GUI.
    JSON report:
    ```powershell
    ESG-SignalCreator.HilHarness.exe --vsa GPIB0::17::INSTR --all --dwell-seconds 3 --json report.json
+   # For a Keysight N9010A instead (LAN address + model flag):
+   ESG-SignalCreator.HilHarness.exe --vsa TCPIP0::192.168.1.90::hislip0::INSTR --vsa-model n9010a --all
    ```
+   `--vsa-model` (`e4406a` default | `n9010a`) selects the analyzer, its identity guard, and its
+   per-model input-damage default.
 3. Or run a single signal type, or the amplitude-flatness power sweep:
    ```powershell
    ESG-SignalCreator.HilHarness.exe --vsa --signal multitone
@@ -853,7 +866,7 @@ the GUI.
   with per-step PASS/FAIL, a non-zero exit code on failure, and a machine-readable `report.json`.
 
 **Tips / troubleshooting:**
-- The harness **enforces the input-damage safety gate** (E4406A rated +35 dBm; default gate +30 dBm)
+- The harness **enforces the input-damage safety gate** (per-model default — E4406A +30 dBm, N9010A +25 dBm)
   and keeps the analyzer sweeping during dwell so the front panel tracks live; it ends RF-off.
 - It exits **non-zero on failure** — ideal as a CI gate.
 - Use the sweep options (`--points`, `--start-hz`, `--stop-hz`, `--carrier-hz`, `--offset-hz`,
