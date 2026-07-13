@@ -43,6 +43,7 @@ namespace EsgSignalCreator.Ui.Instrument
         private readonly CheckBox _safetyArmed;
         private readonly NumericUpDown _safetyMaxInput;
         private readonly NumericUpDown _safetyPathLoss;
+        private readonly ToolTip _safetyTips = new ToolTip();
 
         private readonly Button _connectButton;
         private readonly Button _okButton;
@@ -73,6 +74,9 @@ namespace EsgSignalCreator.Ui.Instrument
         public VsaConnectionForm(VsaModel targetModel)
         {
             _targetModel = targetModel;
+            // Seed the input-damage limit from the selected model's default (the E4406A and N9010A have
+            // different safe-input levels). The user can still override it in the safety group below.
+            Safety.AnalyzerMaxSafeInputDbm = AnalyzerInputLimits.DefaultMaxSafeInputDbm(targetModel);
             Text = "Connect VSA — " + VsaModels.DisplayName(targetModel);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent;
@@ -195,6 +199,11 @@ namespace EsgSignalCreator.Ui.Instrument
                 Value = (decimal)Safety.AnalyzerMaxSafeInputDbm
             };
             _safetyMaxInput.ValueChanged += (s, e) => Safety.AnalyzerMaxSafeInputDbm = (double)_safetyMaxInput.Value;
+            _safetyTips.SetToolTip(_safetyMaxInput, AnalyzerInputLimits.IsConservativeDefault(targetModel)
+                ? "Default seeded from a CONSERVATIVE backstop for the " + VsaModels.DisplayName(targetModel) +
+                  " — the supplied manuals don't state a damage limit. Confirm the max safe input against the unit's data sheet."
+                : "Default seeded from the " + VsaModels.DisplayName(targetModel) +
+                  " rated input. Confirm against the unit's specifications.");
 
             var pathLossLabel = new Label
             {
