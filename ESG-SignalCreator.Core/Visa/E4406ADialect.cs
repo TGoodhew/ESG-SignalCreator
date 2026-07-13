@@ -17,6 +17,14 @@ namespace EsgSignalCreator.Visa
         // E4406A :READ:WAVeform? -> [peak, mean, mean-avg, aux, peak-to-mean] (bench-validated).
         public WaveformScalarLayout WaveformScalars => new WaveformScalarLayout(peakIndex: 0, meanIndex: 1, peakToMeanIndex: 4);
 
+        // E4406A :READ:PSTatistic? scalars are at n=1 (omitted).
+        public int CcdfScalarResultIndex => 1;
+
+        // E4406A :READ:ACP? -> 24 values: [upper-adj rel, upper-adj abs, lower-adj rel, lower-adj abs,
+        // then 5 offsets x (lowerRel, lowerAbs, upperRel, upperAbs) from index 4]. (Bench-validated.)
+        public AcpScalarLayout AcpScalars =>
+            new AcpScalarLayout(offsetCount: 5, offsetBaseIndex: 4, upperAdjacentDbcIndex: 0, lowerAdjacentDbcIndex: 2);
+
         public string InstrumentModeFor(VsaMeasurement measurement) => "BASIC";
 
         public string RootFor(VsaMeasurement measurement)

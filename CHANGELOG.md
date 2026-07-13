@@ -23,6 +23,11 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
     markers) is identical SCPI across both analyzers and now works on the N9010A via the mode routing;
     the Waveform measurement reads peak/mean/peak-to-mean from model-specific scalar positions (the
     N9010A's peak is the Maximum at index 5, not index 0), driven by the dialect (#110).
+  - **N9010A Channel Power / ACP / CCDF measurements** (SA mode, from 9018-06099): Channel Power is
+    cross-model (same root/config/order); CCDF reads its scalars at a per-model result index (E4406A
+    n=1, N9010A n=2 — PAPR still at [8]); ACP uses a per-model layout (E4406A 5 offsets with adjacent
+    dBc in the header; N9010A `ACPower` with 6 offsets A–F and adjacent dBc from offset A). With these,
+    the closed-loop **Verify** (channel power + PAPR + spectrum tone) works on the N9010A (#111).
 
 ### Notes
 - Still in progress for full N9010A verification: the SA-mode Channel Power / ACP / CCDF and IQ

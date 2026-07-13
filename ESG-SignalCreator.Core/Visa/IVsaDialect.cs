@@ -30,6 +30,29 @@ namespace EsgSignalCreator.Visa
     }
 
     /// <summary>
+    /// Layout of the ACP scalar result set. The per-offset block is identical on both models — four
+    /// values per offset (lower-relative dB, lower-absolute dBm, upper-relative dB, upper-absolute dBm)
+    /// starting at <see cref="OffsetBaseIndex"/> — but the offset <b>count</b> and the summary
+    /// adjacent-channel positions differ (the E4406A carries adjacent dBc in the header; the N9010A's
+    /// header is total/reference carrier power, so its adjacent values come from offset A).
+    /// </summary>
+    public struct AcpScalarLayout
+    {
+        public AcpScalarLayout(int offsetCount, int offsetBaseIndex, int upperAdjacentDbcIndex, int lowerAdjacentDbcIndex)
+        {
+            OffsetCount = offsetCount;
+            OffsetBaseIndex = offsetBaseIndex;
+            UpperAdjacentDbcIndex = upperAdjacentDbcIndex;
+            LowerAdjacentDbcIndex = lowerAdjacentDbcIndex;
+        }
+
+        public int OffsetCount { get; }
+        public int OffsetBaseIndex { get; }
+        public int UpperAdjacentDbcIndex { get; }
+        public int LowerAdjacentDbcIndex { get; }
+    }
+
+    /// <summary>
     /// The model-varying parts of the analyzer's SCPI, so measurement code can stay instrument-agnostic
     /// and read the right mnemonics from <see cref="VsaInstrument.Dialect"/> instead of hard-coding an
     /// E4406A dialect. This is the seam introduced for the N9010A port (issue #106); the concrete
@@ -62,5 +85,15 @@ namespace EsgSignalCreator.Visa
 
         /// <summary>Where peak/mean/peak-to-mean sit in the <c>:READ:WAVeform?</c> scalar set for this model.</summary>
         WaveformScalarLayout WaveformScalars { get; }
+
+        /// <summary>
+        /// The result index <c>n</c> that returns the CCDF scalar set from <c>:READ:PSTatistic[n]?</c>.
+        /// The E4406A returns the scalars at n=1 (omitted); the N9010A returns them at n=2 (n=0/1 are
+        /// I/Q trace data). The within-set ordering is the same (PAPR / peak power at index 8).
+        /// </summary>
+        int CcdfScalarResultIndex { get; }
+
+        /// <summary>Offset count and adjacent-channel positions of the <c>:READ:ACP?</c> scalar set.</summary>
+        AcpScalarLayout AcpScalars { get; }
     }
 }
