@@ -38,5 +38,16 @@ namespace EsgSignalCreator.Visa
 
         private static bool Contains(string haystack, string needle) =>
             haystack.IndexOf(needle, StringComparison.OrdinalIgnoreCase) >= 0;
+
+        /// <summary>A short human-friendly name for a model, for UI titles and messages.</summary>
+        public static string DisplayName(VsaModel model)
+        {
+            switch (model)
+            {
+                case VsaModel.E4406A: return "Agilent E4406A";
+                case VsaModel.N9010A: return "Keysight N9010A (EXA)";
+                default: return "Unknown";
+            }
+        }
     }
 }

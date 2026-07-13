@@ -48,7 +48,10 @@ core library, the WinForms app, and an xUnit test project.
   **Verification** view with pass/fail. A guided **Path cal…** wizard captures cable loss +
   analyzer offset as a path-loss correction; a **Reference** menu locks both instruments to a
   common 10 MHz timebase; a **VSA Mode** menu (gated off `:INSTrument:CATalog?`) selects any
-  installed standard personality (GSM / W-CDMA / cdma2000 / …).
+  installed standard personality (GSM / W-CDMA / cdma2000 / …). A **VSA model** toggle selects
+  which analyzer the app targets — the E4406A or a **Keysight N9010A (EXA)**; connect verifies
+  the instrument matches the selection. _(N9010A support is landing in stages — analyzer
+  selection and the X-Series control plane are in; the SA-mode measurement mapping is in progress.)_
 - **In-app Claude assistant** (opt-in) — a natural-language pane that drives the app through a
   versioned, function-calling tool surface rather than synthetic clicks: **read** tools (app state,
   config, validation, readout, personalities), **configure** tools (pick/configure a source, select a
