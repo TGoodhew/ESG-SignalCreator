@@ -14,6 +14,8 @@ namespace EsgSignalCreator.Visa
     public sealed class VsaInstrument : IDisposable
     {
         private readonly IInstrument _io;
+        private VsaModel? _model;
+        private IVsaDialect _dialect;
 
         public VsaInstrument(IInstrument transport)
         {
@@ -34,12 +36,30 @@ namespace EsgSignalCreator.Visa
         /// <summary>Query <c>*IDN?</c> and parse into an <see cref="InstrumentIdentity"/>.</summary>
         public InstrumentIdentity Identify() => InstrumentIdentity.Parse(_io.Query("*IDN?"));
 
-        /// <summary>True if <c>*IDN?</c> reports an E4406A (use to refuse driving the wrong instrument).</summary>
-        public bool IsE4406A()
+        /// <summary>
+        /// The analyzer model resolved from <c>*IDN?</c> (see <see cref="VsaModels.Detect"/>). Cached on
+        /// first access; call <see cref="DetectModel"/> to re-query. Drives <see cref="Dialect"/> and the
+        /// connect-time model guards.
+        /// </summary>
+        public VsaModel Model => _model ?? (_model = VsaModels.Detect(Identify().Model)).Value;
+
+        /// <summary>Re-query <c>*IDN?</c> and refresh the cached <see cref="Model"/> and <see cref="Dialect"/>.</summary>
+        public VsaModel DetectModel()
         {
-            string model = Identify().Model;
-            return model != null && model.IndexOf("E4406A", StringComparison.OrdinalIgnoreCase) >= 0;
+            _model = VsaModels.Detect(Identify().Model);
+            _dialect = null;
+            return _model.Value;
         }
+
+        /// <summary>True if the connected instrument's <see cref="Model"/> is <paramref name="model"/>
+        /// (use to refuse driving the wrong instrument).</summary>
+        public bool IsModel(VsaModel model) => Model == model;
+
+        /// <summary>
+        /// The SCPI dialect for the resolved <see cref="Model"/>. Measurement code reads mnemonics from
+        /// here so it stays instrument-agnostic (issue #106 seam; consumed by the SCPI sub-issues).
+        /// </summary>
+        public IVsaDialect Dialect => _dialect ?? (_dialect = VsaDialects.For(Model));
 
         /// <summary>Installed options from <c>*OPT?</c> (comma-separated, trimmed, empties removed).</summary>
         public string[] Options()

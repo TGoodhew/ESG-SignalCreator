@@ -397,7 +397,7 @@ namespace EsgSignalCreator.Ui.Instrument
                 InstrumentIdentity idn = vsa.Identify();
                 string[] options = vsa.Options();
 
-                if (!vsa.IsE4406A())
+                if (!vsa.IsModel(VsaModel.E4406A))
                 {
                     SetStatus("Refused: connected instrument is not an E4406A.", Color.DarkRed);
                     _detailsBox.Text =
@@ -430,7 +430,7 @@ namespace EsgSignalCreator.Ui.Instrument
             finally
             {
                 // Dispose anything half-open that did not transfer ownership: a wrapped VSA (Identify/
-                // Options/IsE4406A threw), or a bare transport (wrapping threw before transport = null).
+                // Options/IsModel threw), or a bare transport (wrapping threw before transport = null).
                 vsa?.Dispose();
                 transport?.Dispose();
             }
