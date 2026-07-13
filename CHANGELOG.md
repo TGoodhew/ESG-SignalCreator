@@ -7,6 +7,10 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 ## [Unreleased]
 
 ### Added
+- **Install-verification troubleshooting dialog** (#130): when the self-test fails, a dialog lists each
+  failed check's likely cause and ordered fixes (e.g. AM PAPR too high → over-driven ESG or analyzer
+  mis-read → lower level / check ARB scaling / re-run Path cal…), naming both the ESG and analyzer sides
+  so the operator can bisect the chain. Guidance comes from a pure, unit-tested Core helper.
 - **Install verification self-test** (#125): a **Verify install…** action runs a guided
   CW → AM → FM → I/Q multitone battery — synthesized as ARB I/Q, played through the ESG and measured on
   the connected analyzer (E4406A or N9010A) — showing expected-vs-measured per step with an overall

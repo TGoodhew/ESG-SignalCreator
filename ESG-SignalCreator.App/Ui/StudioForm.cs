@@ -623,9 +623,16 @@ namespace EsgSignalCreator.Ui
 
                 _verification.Show(report.Flatten());
                 ShowCard("verification");
-                _status.Text = report.AllPass
-                    ? "Verify install: PASS (see Verification)"
-                    : "Verify install: FAIL (see Verification)";
+                if (report.AllPass)
+                {
+                    _status.Text = "Verify install: PASS (see Verification)";
+                }
+                else
+                {
+                    _status.Text = "Verify install: FAIL (see Verification)";
+                    // #130: offer likely causes + troubleshooting for the failed checks.
+                    VerificationGuidanceForm.ShowFor(this, VerificationGuidanceBook.ForFailures(report.Flatten()));
+                }
             }
             catch (Exception ex)
             {

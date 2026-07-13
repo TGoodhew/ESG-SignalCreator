@@ -206,6 +206,8 @@ analysator:
 Resultaterne vises i **Verification**-visningen (forventet vs. målt pr. trin) med et samlet **PASS/FAIL**.
 Det kræver en baseband-kapabel ESG og en forbundet analysator; **input-skade-sikkerheds-gaten** håndhæves
 før enhver RF, og RF returneres slukket, når det er færdigt. AM/FM verificeres via effekt/PAPR (ikke analog demodulation).
+Ved **FAIL** viser en **fejlfindingsdialog** hvert fejlet tjeks sandsynlige årsag og trin i rækkefølge
+(f.eks. for kraftig AM → overdrevet ESG eller forkert VSA-aflæsning → sænk niveauet / tjek ARB-skalering / kør Path cal… igen).
 
 ---
 
