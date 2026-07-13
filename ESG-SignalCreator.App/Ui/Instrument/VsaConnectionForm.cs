@@ -10,8 +10,9 @@ namespace EsgSignalCreator.Ui.Instrument
     /// <summary>
     /// Modal dialog (GitHub issue #65) — the analyzer counterpart to <see cref="ConnectionManagerForm"/>.
     /// Lets the user pick a transport (NI-VISA or NI-488.2 / GPIB), discover and select a resource,
-    /// connect, and confirm the instrument is an Agilent E4406A VSA via <c>*IDN?</c> / <c>*OPT?</c>
-    /// before the dialog is accepted.
+    /// connect, and confirm the instrument identifies (via <c>*IDN?</c> / <c>*OPT?</c>) as the targeted
+    /// analyzer model — an Agilent E4406A or a Keysight N9010A, chosen by the VSA model toggle (#108) —
+    /// before the dialog is accepted. Interface defaults and the resource hint adapt to the target model.
     ///
     /// The analyzer sits on the ESG's RF output, so the dialog also carries a prominent RF-path safety
     /// group (<see cref="RfPathSafety"/>) describing the analyzer's maximum safe input and the inline
@@ -52,6 +53,9 @@ namespace EsgSignalCreator.Ui.Instrument
         /// <summary>Default GPIB primary address for the E4406A in this lab's HIL rig.</summary>
         private const byte DefaultGpibAddress = 17;
 
+        /// <summary>The analyzer model this dialog is targeting; connect is refused for any other model.</summary>
+        private readonly VsaModel _targetModel;
+
         /// <summary>
         /// The E4406A opened by a successful Connect, or null if nothing connected (or the dialog was
         /// cancelled). Ownership transfers to the caller when the dialog closes with OK.
@@ -64,9 +68,12 @@ namespace EsgSignalCreator.Ui.Instrument
         /// </summary>
         public RfPathSafety Safety { get; } = new RfPathSafety();
 
-        public VsaConnectionForm()
+        public VsaConnectionForm() : this(VsaModel.E4406A) { }
+
+        public VsaConnectionForm(VsaModel targetModel)
         {
-            Text = "Connect VSA (E4406A)";
+            _targetModel = targetModel;
+            Text = "Connect VSA — " + VsaModels.DisplayName(targetModel);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             StartPosition = FormStartPosition.CenterParent;
             MaximizeBox = false;
@@ -80,9 +87,11 @@ namespace EsgSignalCreator.Ui.Instrument
                 Location = new Point(12, 12),
                 Size = new Size(416, 50)
             };
-            // Default to GPIB — the E4406A in the rig is on GPIB0::17::INSTR.
-            _visaRadio = new RadioButton { Text = "VISA", Location = new Point(16, 20), AutoSize = true, Checked = false };
-            _gpibRadio = new RadioButton { Text = "GPIB (488.2)", Location = new Point(120, 20), AutoSize = true, Checked = true };
+            // Default interface by model: the E4406A in the rig is on GPIB0::17::INSTR, while the N9010A
+            // (X-Series) is normally reached over LAN/USB via VISA.
+            bool defaultGpib = targetModel != VsaModel.N9010A;
+            _visaRadio = new RadioButton { Text = "VISA", Location = new Point(16, 20), AutoSize = true, Checked = !defaultGpib };
+            _gpibRadio = new RadioButton { Text = "GPIB (488.2)", Location = new Point(120, 20), AutoSize = true, Checked = defaultGpib };
             _visaRadio.CheckedChanged += (s, e) => UpdateInterfaceEnabled();
             _gpibRadio.CheckedChanged += (s, e) => UpdateInterfaceEnabled();
             interfaceGroup.Controls.Add(_visaRadio);
@@ -105,7 +114,9 @@ namespace EsgSignalCreator.Ui.Instrument
             _visaRefresh.Click += (s, e) => RefreshVisa();
             var visaHint = new Label
             {
-                Text = "e.g. GPIB0::17::INSTR  or  TCPIP0::192.168.0.20::INSTR",
+                Text = targetModel == VsaModel.N9010A
+                    ? "e.g. TCPIP0::192.168.0.20::hislip0::INSTR  or  TCPIP0::<ip>::INSTR  (LAN/USB)"
+                    : "e.g. GPIB0::17::INSTR  or  TCPIP0::192.168.0.20::INSTR",
                 Location = new Point(16, 55),
                 AutoSize = true,
                 ForeColor = SystemColors.GrayText
@@ -280,9 +291,16 @@ namespace EsgSignalCreator.Ui.Instrument
         /// the user cancelled or never connected) and the edited <see cref="RfPathSafety"/>. Convenience
         /// wrapper around constructing the form and reading <see cref="ConnectedVsa"/> / <see cref="Safety"/>.
         /// </summary>
-        public static new Result Show(IWin32Window owner)
+        public static new Result Show(IWin32Window owner) => Show(owner, VsaModel.E4406A);
+
+        /// <summary>
+        /// Show the dialog modally targeting <paramref name="targetModel"/> and return a <see cref="Result"/>
+        /// holding the connected analyzer (null if the user cancelled or never connected) and the edited
+        /// <see cref="RfPathSafety"/>. Connect is refused unless the instrument identifies as that model.
+        /// </summary>
+        public static Result Show(IWin32Window owner, VsaModel targetModel)
         {
-            using (var form = new VsaConnectionForm())
+            using (var form = new VsaConnectionForm(targetModel))
             {
                 bool ok = form.ShowDialog(owner) == DialogResult.OK;
                 return new Result(ok ? form.ConnectedVsa : null, form.Safety);
@@ -397,11 +415,13 @@ namespace EsgSignalCreator.Ui.Instrument
                 InstrumentIdentity idn = vsa.Identify();
                 string[] options = vsa.Options();
 
-                if (!vsa.IsModel(VsaModel.E4406A))
+                if (!vsa.IsModel(_targetModel))
                 {
-                    SetStatus("Refused: connected instrument is not an E4406A.", Color.DarkRed);
+                    string target = VsaModels.DisplayName(_targetModel);
+                    SetStatus("Refused: connected instrument is not a " + target + ".", Color.DarkRed);
                     _detailsBox.Text =
-                        "This dialog only drives an Agilent E4406A VSA." + Environment.NewLine +
+                        "This dialog is set to connect a " + target + " (" + _targetModel + ")." + Environment.NewLine +
+                        "Switch the VSA model toggle if you meant a different analyzer." + Environment.NewLine +
                         "Resource: " + vsa.ResourceName + Environment.NewLine +
                         "*IDN?: " + idn + Environment.NewLine +
                         "*OPT?: " + (options.Length > 0 ? string.Join(", ", options) : "(none)");

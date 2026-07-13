@@ -85,6 +85,9 @@ namespace EsgSignalCreator.Ui
         private EsgController _esg;
         private VsaInstrument _vsa;
         private RfPathSafety _safety = new RfPathSafety();
+        private readonly UiSettings _uiSettings = UiSettings.Load();
+        private VsaModel _vsaModel;
+        private ToolStripDropDownButton _vsaModelToggle;
         private readonly ToolStripLabel _vsaOnline = new ToolStripLabel("VSA: offline") { ForeColor = System.Drawing.Color.Firebrick };
         private ISignalSourcePanel _sourcePanel;
         private WaveformModel _waveform;
@@ -105,7 +108,22 @@ namespace EsgSignalCreator.Ui
             bar.Items.Add(_online);
             var connectVsa = new ToolStripButton("Connect VSA…"); connectVsa.Click += (s, e) => ConnectVsa();
             bar.Items.Add(connectVsa);
+            // VSA model toggle (#108): choose which analyzer the Connect VSA… dialog targets.
+            _vsaModel = _uiSettings.VsaModel;
+            _vsaModelToggle = new ToolStripDropDownButton("VSA model: " + _vsaModel)
+            {
+                ToolTipText = "Switch the analyzer the app drives (E4406A or N9010A). Affects the next connect."
+            };
+            foreach (VsaModel m in new[] { VsaModel.E4406A, VsaModel.N9010A })
+            {
+                VsaModel choice = m;
+                var item = new ToolStripMenuItem(VsaModels.DisplayName(m)) { Tag = m, Checked = m == _vsaModel };
+                item.Click += (s, e) => SelectVsaModel(choice);
+                _vsaModelToggle.DropDownItems.Add(item);
+            }
+            bar.Items.Add(_vsaModelToggle);
             bar.Items.Add(_vsaOnline);
+            UpdateVsaOffline();
             bar.Items.Add(new ToolStripSeparator());
             _calcBtn = Button("Calculate", async (s, e) => await Calculate());
             _downloadBtn = Button("Download", (s, e) => Download());
@@ -474,14 +492,37 @@ namespace EsgSignalCreator.Ui
 
         private void ConnectVsa()
         {
-            VsaConnectionForm.Result r = VsaConnectionForm.Show(this);
+            VsaConnectionForm.Result r = VsaConnectionForm.Show(this, _vsaModel);
             _safety = r.Safety ?? _safety;
             if (r.ConnectedVsa == null) return;
             _vsa = r.ConnectedVsa;
-            _vsaOnline.Text = "VSA: online";
+            _vsaOnline.Text = "VSA: " + _vsaModel + " online";
             _vsaOnline.ForeColor = System.Drawing.Color.ForestGreen;
             try { _status.Text = "VSA connected: " + _vsa.Identify().Model; }
             catch { _status.Text = "VSA connected."; }
+        }
+
+        /// <summary>
+        /// Switch which analyzer model the app targets (#108). Updates the toggle, persists the choice,
+        /// and — while no VSA is connected — the offline status label. Takes effect on the next connect.
+        /// </summary>
+        private void SelectVsaModel(VsaModel model)
+        {
+            _vsaModel = model;
+            _uiSettings.VsaModel = model;
+            _uiSettings.Save();
+            _vsaModelToggle.Text = "VSA model: " + model;
+            foreach (ToolStripItem dropItem in _vsaModelToggle.DropDownItems)
+                if (dropItem is ToolStripMenuItem mi && mi.Tag is VsaModel tagged)
+                    mi.Checked = tagged == model;
+            if (_vsa == null) UpdateVsaOffline();
+        }
+
+        /// <summary>Show the currently selected model in the offline VSA status label.</summary>
+        private void UpdateVsaOffline()
+        {
+            _vsaOnline.Text = "VSA: " + _vsaModel + " offline";
+            _vsaOnline.ForeColor = System.Drawing.Color.Firebrick;
         }
 
         /// <summary>

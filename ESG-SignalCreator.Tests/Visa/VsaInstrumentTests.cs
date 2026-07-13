@@ -63,6 +63,15 @@ namespace EsgSignalCreator.Tests.Visa
         }
 
         [Theory]
+        [InlineData(VsaModel.E4406A, "Agilent E4406A")]
+        [InlineData(VsaModel.N9010A, "Keysight N9010A (EXA)")]
+        [InlineData(VsaModel.Unknown, "Unknown")]
+        public void DisplayName_is_human_friendly(VsaModel model, string expected)
+        {
+            Assert.Equal(expected, VsaModels.DisplayName(model));
+        }
+
+        [Theory]
         [InlineData(VsaMeasurement.ChannelPower, "BASIC", "CHPower", "SA", "CHPower")]
         [InlineData(VsaMeasurement.Acp, "BASIC", "ACP", "SA", "ACPower")]
         [InlineData(VsaMeasurement.Ccdf, "BASIC", "PSTatistic", "SA", "PSTatistic")]
