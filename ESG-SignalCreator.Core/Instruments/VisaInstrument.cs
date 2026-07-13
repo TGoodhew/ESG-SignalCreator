@@ -11,7 +11,7 @@ namespace EsgSignalCreator.Instruments
     /// (TCPIP/LAN, GPIB, USB, serial). The actual provider is chosen at runtime by whatever VISA is
     /// installed; this code never references a vendor-specific assembly (#102).
     /// </summary>
-    public sealed class VisaInstrument : IInstrument
+    public sealed class VisaInstrument : IInstrument, ISupportsServiceRequest
     {
         private IMessageBasedSession _session;
 
@@ -77,6 +77,33 @@ namespace EsgSignalCreator.Instruments
             // A single RawIO.Write(byte[]) call asserts END (EOI) only on the last byte, so the
             // ASCII header and binary payload travel as one uninterrupted block.
             _session.RawIO.Write(message);
+        }
+
+        // ---- ISupportsServiceRequest (SRQ) — used to wait out arbitrary-length auto-alignments (#129) ----
+
+        public void EnableServiceRequest()
+        {
+            EnsureOpen();
+            _session.DiscardEvents(EventType.ServiceRequest);
+            _session.EnableEvent(EventType.ServiceRequest);
+        }
+
+        public void DisableServiceRequest()
+        {
+            try { _session?.DisableEvent(EventType.ServiceRequest); } catch { /* best effort */ }
+        }
+
+        public bool WaitForServiceRequest(int timeoutMs)
+        {
+            EnsureOpen();
+            try { _session.WaitOnEvent(EventType.ServiceRequest, timeoutMs); return true; }
+            catch (IOTimeoutException) { return false; }
+        }
+
+        public int ReadStatusByte()
+        {
+            EnsureOpen();
+            return (int)_session.ReadStatusByte();
         }
 
         private void EnsureOpen()

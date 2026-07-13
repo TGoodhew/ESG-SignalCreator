@@ -36,7 +36,7 @@ namespace EsgSignalCreator.Measure
             var basic = new BasicMeasurement(vsa);
             basic.Setup(VsaMeasurement.Waveform, centerHz);
 
-            double[] trace = VsaScalarParser.ParseScalars(vsa.Query(TraceQuery)); // I,Q interleaved
+            double[] trace = VsaScalarParser.ParseScalars(vsa.QueryMeasurement(TraceQuery)); // I,Q interleaved
             double[] scalars = basic.Fetch(Root);                                 // same acquisition
 
             // Peak/mean positions in the WAVeform scalar set are model-specific (E4406A peak at 0;

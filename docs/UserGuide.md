@@ -223,6 +223,10 @@ connecting an instrument that doesn't match the selected model is refused. The N
 against the Keysight X-Series manuals; the E4406A path is additionally hardware-validated. Confirm the
 N9010A's max safe input against its data sheet before driving power (see below).
 
+> The N9010A runs periodic **auto-alignments** that can pause a measurement for seconds. The app waits
+> these out using a Service-Request (SRQ) notification rather than a fixed timeout, so a measurement that
+> coincides with an alignment completes normally instead of failing spuriously.
+
 ### 9.1 Connecting the analyzer (safety first)
 **Connect VSA…** opens the VSA connection form, which includes the **RF-path safety** settings:
 

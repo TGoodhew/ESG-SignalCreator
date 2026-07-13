@@ -41,9 +41,11 @@ namespace EsgSignalCreator.Measure
             _vsa.SetCenterFrequencyHz(centerHz);
         }
 
-        public double[] Read(string root, int n = 1) => VsaScalarParser.ParseScalars(_vsa.Query(VsaCommands.Read(root, n)));
-        public double[] Measure(string root, int n = 1) => VsaScalarParser.ParseScalars(_vsa.Query(VsaCommands.Measure(root, n)));
-        public double[] Fetch(string root, int n = 1) => VsaScalarParser.ParseScalars(_vsa.Query(VsaCommands.Fetch(root, n)));
+        // Measurement reads go through QueryMeasurement so a model that opts into SRQ completion (#129)
+        // waits out an auto-alignment of any length instead of tripping a fixed read timeout.
+        public double[] Read(string root, int n = 1) => VsaScalarParser.ParseScalars(_vsa.QueryMeasurement(VsaCommands.Read(root, n)));
+        public double[] Measure(string root, int n = 1) => VsaScalarParser.ParseScalars(_vsa.QueryMeasurement(VsaCommands.Measure(root, n)));
+        public double[] Fetch(string root, int n = 1) => VsaScalarParser.ParseScalars(_vsa.QueryMeasurement(VsaCommands.Fetch(root, n)));
         public void Configure(string root) => _vsa.Write(VsaCommands.Configure(root));
     }
 }

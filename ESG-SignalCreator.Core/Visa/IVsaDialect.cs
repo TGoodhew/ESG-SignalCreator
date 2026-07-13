@@ -95,5 +95,12 @@ namespace EsgSignalCreator.Visa
 
         /// <summary>Offset count and adjacent-channel positions of the <c>:READ:ACP?</c> scalar set.</summary>
         AcpScalarLayout AcpScalars { get; }
+
+        /// <summary>
+        /// True if measurement reads should wait for completion via SRQ (Status-Byte MAV) rather than a
+        /// fixed read timeout, so an auto-alignment of arbitrary length can't trip a spurious timeout
+        /// (#129). The N9010A opts in; the E4406A uses the plain blocking read.
+        /// </summary>
+        bool UsesServiceRequestCompletion { get; }
     }
 }

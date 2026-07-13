@@ -155,6 +155,57 @@ namespace EsgSignalCreator.Visa
         public void Write(string command) => _io.Write(command);
         public string Query(string command) => _io.Query(command);
 
+        // #129: measurement reads on an analyzer that opts into SRQ completion (the N9010A) wait for the
+        // response via the Status-Byte MAV bit, re-arming short SRQ waits, so an auto-alignment of any
+        // length can't trip a fixed timeout. Other models (and transports without SRQ) fall back to a
+        // blocking query (with a raised, alignment-tolerant timeout when the dialect asks for it).
+        private const int SrqPerWaitMs = 2000;
+        private const int CompletionOverallMs = 120000;
+
+        /// <summary>Read a measurement query result, tolerating an arbitrary-length auto-alignment.</summary>
+        public string QueryMeasurement(string command)
+        {
+            if (Dialect.UsesServiceRequestCompletion && _io is ISupportsServiceRequest srq)
+                return QueryViaServiceRequest(srq, command);
+
+            if (!Dialect.UsesServiceRequestCompletion)
+                return _io.Query(command);
+
+            // Opted in but the transport has no SRQ: block, but raise the timeout to ride out an alignment.
+            int previous = _io.TimeoutMilliseconds;
+            try { _io.TimeoutMilliseconds = Math.Max(previous, CompletionOverallMs); return _io.Query(command); }
+            finally { _io.TimeoutMilliseconds = previous; }
+        }
+
+        private string QueryViaServiceRequest(ISupportsServiceRequest srq, string command)
+        {
+            const int Mav = 0x10; // Status-Byte MAV (message available)
+            _io.Write("*CLS");
+            _io.Write("*SRE 16"); // MAV summary -> Status Byte -> asserts SRQ when a response is ready
+            srq.EnableServiceRequest();
+            try
+            {
+                _io.Write(command);
+                int waited = 0;
+                while (true)
+                {
+                    if (srq.WaitForServiceRequest(SrqPerWaitMs) && (srq.ReadStatusByte() & Mav) != 0)
+                        break;
+                    waited += SrqPerWaitMs;
+                    if (waited >= CompletionOverallMs)
+                        throw new TimeoutException(
+                            "Analyzer response not ready within " + (CompletionOverallMs / 1000) +
+                            " s (possible prolonged auto-alignment).");
+                }
+                return _io.ReadString();
+            }
+            finally
+            {
+                srq.DisableServiceRequest();
+                try { _io.Write("*SRE 0"); } catch { /* best effort */ }
+            }
+        }
+
         public void Dispose() => _io.Dispose();
     }
 }

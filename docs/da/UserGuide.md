@@ -160,6 +160,10 @@ Med en **VSA** på generatorens RF-udgang bliver appen til et closed-loop *gener
 
 **Valg af analysator.** **VSA model**-knappen på handlingslinjen (ved siden af **Connect VSA…**) vælger, hvilken analysator appen målretter — **E4406A** eller **N9010A** — og huskes mellem sessioner. Valget styrer forbindelsesdialogens titel, dens standardgrænseflade og adresse-hint (E4406A bruger som standard GPIB, f.eks. `GPIB0::17::INSTR`; N9010A bruger som standard LAN/USB, f.eks. `TCPIP0::<ip>::hislip0::INSTR`), den modelspecifikke input-skade-standard og identitetskontrollen — det afvises at forbinde et instrument, der ikke matcher den valgte model. N9010A er valideret mod Keysight X-Series-manualerne; E4406A-stien er derudover hardware-valideret. Bekræft N9010A'ens maksimale sikre input mod dens datablad, før du driver effekt (se nedenfor).
 
+> N9010A'en kører periodiske **auto-alignments**, der kan pause en måling i sekunder. Appen venter dem ud
+> via en Service-Request-notifikation (SRQ) i stedet for en fast timeout, så en måling, der falder sammen
+> med en alignment, fuldføres normalt i stedet for at fejle uberettiget.
+
 ### 9.1 Tilslutning af analysatoren (sikkerhed først)
 **Connect VSA…** åbner VSA-forbindelsesformularen, som inkluderer **RF-vejens sikkerhedsindstillinger**:
 
