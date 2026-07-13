@@ -16,6 +16,9 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
   - **VSA model toggle** in the UI: choose whether the app targets the E4406A or the N9010A; the
     connect dialog's title, interface defaults (GPIB@17 vs LAN/USB), resource hint, and identity
     guard follow the selection. The choice is persisted between sessions (#108).
+  - **Per-model input-damage safety limit**: the RF-path safety gate is seeded with a max-safe-input
+    default chosen from the selected model — E4406A +30 dBm; N9010A a conservative +25 dBm backstop
+    (unconfirmed by the supplied manuals, flagged in the UI to confirm against the data sheet) (#109).
 
 ### Notes
 - Still in progress for full N9010A verification: the SA-mode Channel Power / ACP / CCDF and IQ

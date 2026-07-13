@@ -24,9 +24,10 @@ namespace EsgSignalCreator.Verify
         public bool Armed { get; set; } = false;
 
         /// <summary>
-        /// Maximum safe RF input power at the analyzer, in dBm. The E4406A type-N RF input is rated
-        /// for a maximum input of +35 dBm (CW); this defaults to +30 dBm as a 5 dB damage backstop.
-        /// Confirm against the specific analyzer unit's specifications.
+        /// Maximum safe RF input power at the analyzer, in dBm. Defaults to +30 dBm (the E4406A backstop,
+        /// 5 dB below its +35 dBm rated max input). The connect dialog re-seeds this from the selected
+        /// analyzer model via <see cref="AnalyzerInputLimits.DefaultMaxSafeInputDbm"/> (the N9010A default
+        /// differs). Confirm against the specific analyzer unit's specifications.
         /// </summary>
         [DataMember]
         public double AnalyzerMaxSafeInputDbm { get; set; } = 30.0;
