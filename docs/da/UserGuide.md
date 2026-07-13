@@ -2,7 +2,7 @@
 
 > 🌐 English: [User Guide](../UserGuide.md) · **Dansk** (denne side)
 
-En komplet reference for **ESG-SignalCreator**, en Windows-applikation der bygger vilkårlige I/Q-bølgeformer, afspiller dem på en Agilent/Keysight **E4438C** ESG-vektorsignalgenerator og (valgfrit) verificerer resultatet på en **E4406A** VSA — med en indbygget **Claude-assistent** der kan drive hele forløbet i naturligt sprog.
+En komplet reference for **ESG-SignalCreator**, en Windows-applikation der bygger vilkårlige I/Q-bølgeformer, afspiller dem på en Agilent/Keysight **E4438C** ESG-vektorsignalgenerator og (valgfrit) verificerer resultatet på en **VSA** (en Agilent **E4406A** eller en Keysight **N9010A**) — med en indbygget **Claude-assistent** der kan drive hele forløbet i naturligt sprog.
 
 Dette dokument forklarer *hvad appen gør, og hvordan hver enkelt funktion virker*. For trinvise gennemgange, se [Tutorials.md](Tutorials.md).
 
@@ -14,7 +14,7 @@ ESG-SignalCreator omsætter *hensigt* ("et 4-tones signal ved 1 GHz, −10 dBm, 
 
 - **Signalpersonligheder** — pluggbare *kilder* der hver producerer en normaliseret baseband-**I/Q-bølgeform** (CW, Multitone, Multi-Carrier, Custom Digital Modulation, AWGN, Import I/Q).
 - **En bevidst pipeline** — du **Calculate** (beregner) bølgeformen på pc'en, **Download** (henter) den til generatorens ARB-hukommelse og **Play** (afspiller) den derefter (armerer ARB'en + tænder RF). Hvert trin er eksplicit, så du altid ved, hvad der er på instrumentet.
-- **Closed-loop (lukket sløjfe) verifikation** — med en E4406A forbundet til generatorens RF-udgang måler appen det afspillede signal (kanaleffekt, PAPR, tonefrekvens, ACP, …) og sammenligner **forventet vs. målt**.
+- **Closed-loop (lukket sløjfe) verifikation** — med en VSA (E4406A eller N9010A) forbundet til generatorens RF-udgang måler appen det afspillede signal (kanaleffekt, PAPR, tonefrekvens, ACP, …) og sammenligner **forventet vs. målt**.
 - **En assistent** — en tilvalgsrude hvor Claude bruger de *samme* operationer som du gør, gennem en beskyttet værktøjsflade (intet når DAC'en eller RF uden din eksplicitte godkendelse).
 
 Alt undtagen live instrument-I/O virker **offline**: du kan bygge, forhåndsvise, validere og gemme bølgeformer uden et instrument tilsluttet.
@@ -40,7 +40,7 @@ Appen er C#/.NET Framework 4.7.2 / WinForms. Start den moderne skal (`StudioForm
 - **Windows** med **.NET Framework 4.7.2** eller nyere.
 - For **live instrumentstyring**, en hvilken som helst **IVI-kompatibel VISA-runtime** installeret — Keysight IO Libraries Suite, NI-VISA, Rohde & Schwarz, Rigol osv. Appen kommunikerer med instrumenter gennem den leverandørneutrale **IVI `GlobalResourceManager`**, så uanset hvilken provider der er installeret, bruges den automatisk (for TCPIP/LAN-, GPIB-, USB- og serielle ressourcer).
 - **Installér** fra MSI'en på projektets Releases-side (per-machine, x64; Start-menu + valgfrie skrivebordsgenveje; ren afinstallation). Installationsprogrammet håndhæver .NET 4.7.2 og detekterer en VISA-runtime. Se [Packaging.md](../Packaging.md) for build/CI-detaljer.
-- **Afspilning på instrumentet** kræver en E4438C med en baseband/ARB-option (001/601 eller 002/602). **Verifikation** kræver en E4406A på generatorens RF-udgang.
+- **Afspilning på instrumentet** kræver en E4438C med en baseband/ARB-option (001/601 eller 002/602). **Verifikation** kræver en VSA (E4406A eller N9010A) på generatorens RF-udgang.
 
 ---
 
@@ -53,14 +53,15 @@ Skallen er opdelt i fire områder:
 | Knap | Hvad den gør |
 |--------|--------------|
 | **Connect…** | Åbn forbindelsesmanageren og forbind til ESG'en (VISA-ressource eller GPIB-board/-adresse). |
-| **Connect VSA…** | Forbind E4406A-analysatoren, inklusive RF-vejens sikkerhedsindstillinger (§9). |
+| **Connect VSA…** | Forbind analysatoren (E4406A eller N9010A, iht. **VSA model**-knappen), inklusive RF-vejens sikkerhedsindstillinger (§9). |
 | **Calculate** | Generér I/Q-bølgeformen ud fra den aktuelle kilde + impairments (uden for UI-tråden, med en fremdriftslinje). Opdaterer plots, validering og aflæsning. Ingen hardware. |
 | **Download** | Indkod bølgeformen og skub den til generatorens ARB-hukommelse (WFM1). Kræver en forbindelse. |
 | **Play** | Armér ARB'en og tænd RF **on**. |
 | **Stop** | Disarmér ARB'en og sluk RF **off**. |
-| **Verify** | Closed-loop-mål det afspillede signal på E4406A og vis forventet-vs-målt (§9). |
+| **Verify** | Closed-loop-mål det afspillede signal på analysatoren og vis forventet-vs-målt (§9). |
 | **Path cal…** | Kør guiden til vejkalibrering for at opfange kabeltab + analysatoroffset (§9). |
-| **Reference** | Lås ESG og E4406A til uafhængige tidsbaser eller en fælles ekstern 10 MHz. |
+| **Reference** | Lås ESG og analysatoren til uafhængige tidsbaser eller en fælles ekstern 10 MHz. |
+| **VSA model** | Skift hvilken analysator appen målretter — E4406A eller N9010A (§9). |
 | **VSA Mode** | Vælg analysatorens måletilstand blandt de tilstande, der faktisk er installeret på enheden. |
 | **Calc → DL → Play** | Kør alle tre pipeline-trin i rækkefølge. |
 | **Save… / Open…** | Gem eller indlæs et projekt (`.ssproj`). |
@@ -152,15 +153,17 @@ Fejl bør løses før download; verifikationsvejen og assistenten kører begge d
 
 ---
 
-## 9. E4406A-verifikation
+## 9. VSA-verifikation (E4406A eller N9010A)
 
-Med en **E4406A** VSA på generatorens RF-udgang bliver appen til et closed-loop *generér → mål → sammenlign*-system. Analysatoren **modtager** kun nogensinde RF.
+Med en **VSA** på generatorens RF-udgang bliver appen til et closed-loop *generér → mål → sammenlign*-system. Analysatoren **modtager** kun nogensinde RF. To analysatorer understøttes: Agilent **E4406A** og Keysight **N9010A (EXA)**.
+
+**Valg af analysator.** **VSA model**-knappen på handlingslinjen (ved siden af **Connect VSA…**) vælger, hvilken analysator appen målretter — **E4406A** eller **N9010A** — og huskes mellem sessioner. Valget styrer forbindelsesdialogens titel, dens standardgrænseflade og adresse-hint (E4406A bruger som standard GPIB, f.eks. `GPIB0::17::INSTR`; N9010A bruger som standard LAN/USB, f.eks. `TCPIP0::<ip>::hislip0::INSTR`), den modelspecifikke input-skade-standard og identitetskontrollen — det afvises at forbinde et instrument, der ikke matcher den valgte model. N9010A er valideret mod Keysight X-Series-manualerne; E4406A-stien er derudover hardware-valideret. Bekræft N9010A'ens maksimale sikre input mod dens datablad, før du driver effekt (se nedenfor).
 
 ### 9.1 Tilslutning af analysatoren (sikkerhed først)
 **Connect VSA…** åbner VSA-forbindelsesformularen, som inkluderer **RF-vejens sikkerhedsindstillinger**:
 
 - **Armed** — slå denne til, når analysatoren fysisk er på ESG-udgangen og skal beskyttes.
-- **Analyzer max safe input (dBm)** — skadetærsklen (E4406A type-N-indgang ≈ +35 dBm; standardgate +30 dBm).
+- **Analyzer max safe input (dBm)** — skadetærsklen, sået fra den valgte model (E4406A type-N-indgang ≈ +35 dBm, standardgate +30 dBm; N9010A en konservativ +25 dBm-backstop, indtil databladet er bekræftet). Tilsidesæt den for din enhed.
 - **Path loss (dB)** — enhver inline-pad/-dæmper mellem ESG'en og analysatoren.
 
 Når armeret, blokerer **power-sikkerhedsgaten** enhver kommanderet ESG-effekt, der ville lægge mere end det sikre niveau på analysatorindgangen (med hensyntagen til path loss). Denne gate beskytter både det manuelle UI og assistenten.
@@ -176,13 +179,13 @@ Når armeret, blokerer **power-sikkerhedsgaten** enhver kommanderet ESG-effekt, 
 **Path cal…** driver en ren umoduleret bærebølge ved et kendt niveau, måler den på analysatoren og registrerer *kommanderet − målt* som det inline **path loss** — anvendt på både sikkerhedsgaten og Verify, så efterfølgende kørsler er selvkonsistente. RF returneres slukket, når det er færdigt.
 
 ### 9.4 Referencelåsning
-**Reference**-menuen sætter ESG og E4406A til **uafhængige** interne tidsbaser eller til en **fælles 10 MHz ekstern** reference (en husreference eller ESG'ens 10 MHz OUT kablet til analysatoren) for rene frekvenssammenligninger. Den rapporterer den resulterende kilde for hvert instrument.
+**Reference**-menuen sætter ESG og analysatoren til **uafhængige** interne tidsbaser eller til en **fælles 10 MHz ekstern** reference (en husreference eller ESG'ens 10 MHz OUT kablet til analysatoren) for rene frekvenssammenligninger. Den rapporterer den resulterende kilde for hvert instrument.
 
 ### 9.5 VSA-måletilstand
 **VSA Mode**-menuen viser de måletilstande, der faktisk er installeret på enheden (læst live fra analysatorens `:INSTrument:CATalog?`): altid **Basic**, plus alle option-gatede kommunikationsstandard-personligheder (GSM, EDGE, cdmaOne, cdma2000, 1xEV-DO, W-CDMA, NADC, PDC, iDEN). Når du vælger en, skifter analysatorens tilstand.
 
 ### 9.6 Målinger
-Under motorhjelmen leverer appen typede E4406A **Basic-mode**-målinger (også eksponeret for assistenten, §10): **Channel Power**, **ACP/ACPR**, **CCDF / PAPR** (Power Statistics), **Spectrum**-markør (tonefrekvens/-effekt, optaget BW), **Waveform** (tidsdomæne-peak/-mean/-peak-to-mean) og **Power-vs-Time** med en konfigurerbar **power mask** (pass/fail over tidsvinduer) for burst-signaler.
+Under motorhjelmen leverer appen typede VSA-målinger (også eksponeret for assistenten, §10): **Channel Power**, **ACP/ACPR**, **CCDF / PAPR** (Power Statistics), **Spectrum**-markør (tonefrekvens/-effekt, optaget BW), **Waveform** (tidsdomæne-peak/-mean/-peak-to-mean) og **Power-vs-Time** med en konfigurerbar **power mask** (pass/fail over tidsvinduer) for burst-signaler.
 
 ---
 

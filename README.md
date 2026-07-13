@@ -42,7 +42,7 @@ core library, the WinForms app, and an xUnit test project.
   Libraries, NI-VISA, R&S, Rigol, …), for TCPIP/LAN, GPIB, USB or serial resources, with discovery
   and `*IDN?`/`*OPT?`; an instrument-settings panel (frequency, amplitude, RF/modulation, ARB sample
   clock, runtime scaling) with read-back; and a raw-SCPI console with a timestamped log.
-- **In-app closed-loop verification (E4406A)** — connect an E4406A VSA, then **Verify**
+- **In-app closed-loop verification (E4406A / N9010A)** — connect a VSA, then **Verify**
   measures the played signal (channel power, PAPR, and — for a tone — frequency) and shows
   it against the expected values (from the generated I/Q) in an Expected-vs-Measured
   **Verification** view with pass/fail. A guided **Path cal…** wizard captures cable loss +
@@ -59,7 +59,7 @@ core library, the WinForms app, and an xUnit test project.
   instrument settings). Guardrails are enforced in the dispatcher, not the prompt: read/configure run
   freely, but anything that touches the instrument requires an inline Approve/Decline card (RF and bus
   takeover always confirm), and a pre-execution validation gate refuses hardware actions on a hard
-  validation failure — even if approved. It can also **measure + verify** on the E4406A (channel power,
+  validation failure — even if approved. It can also **measure + verify** on the connected analyzer (channel power,
   ACP, CCDF/PAPR, spectrum peak, waveform, and a closed-loop `verify_signal`), and exposes an opt-in,
   always-confirmed **raw-SCPI** escape hatch (off by default). Read tool_uses run concurrently while
   configure/hardware stay serialized; long chats are compacted. Tool output is treated as data, never
@@ -117,21 +117,25 @@ VSA SCPI parsing, …). To validate the real instruments, run the headless harne
 # ESG-only: RF stays OFF (power -30 dBm) unless --rf-on briefly enables it.
 ESG-SignalCreator.HilHarness.exe "TCPIP0::192.168.1.82::inst1::INSTR"
 
-# Comprehensive closed-loop battery (ESG -> E4406A) across the frequency range:
+# Comprehensive closed-loop battery (ESG -> VSA) across the frequency range:
 # verifies EVERY signal type on the analyzer, with a machine-readable report.
 ESG-SignalCreator.HilHarness.exe --vsa GPIB0::17::INSTR --all --dwell-seconds 3 --json report.json
+
+# Target a Keysight N9010A instead of the E4406A (LAN address, --vsa-model):
+ESG-SignalCreator.HilHarness.exe --vsa TCPIP0::192.168.1.90::hislip0::INSTR --vsa-model n9010a --all
 
 # A single signal type, or the amplitude-flatness power sweep:
 ESG-SignalCreator.HilHarness.exe --vsa --signal multitone
 ESG-SignalCreator.HilHarness.exe --vsa --flatness
-#   options: --points N --start-hz --stop-hz --carrier-hz --offset-hz
+#   options: --vsa-model e4406a|n9010a --points N --start-hz --stop-hz --carrier-hz --offset-hz
 #            --verify-power-dbm --max-input-dbm --path-loss-db --dwell-seconds --json
 ```
 
 ESG-only mode checks `*IDN?`/`*OPT?`, downloads a CW to `WFM1`, arms the ARB, and reads
-back frequency/amplitude. The **closed-loop battery** (`--all`) connects the E4406A (refusing
-a non-E4406A), enforces the **input-damage safety gate** (E4406A rated +35 dBm; gate default
-+30 dBm), and for each signal type — **CW, multitone, AWGN, custom-mod (QAM), multi-carrier,
+back frequency/amplitude. The **closed-loop battery** (`--all`) connects the analyzer selected by
+`--vsa-model` (E4406A default, or N9010A; refusing a mismatched model), enforces the **input-damage
+safety gate** (per-model default — E4406A +30 dBm below its +35 dBm rating; N9010A a conservative
++25 dBm), and for each signal type — **CW, multitone, AWGN, custom-mod (QAM), multi-carrier,
 I/Q-impairment, import-I/Q** — drives the ESG at a safe level across a frequency sweep and
 verifies on the analyzer:
 
@@ -149,6 +153,10 @@ hardware-free.
 > e.g. multitone PAPR ≈3.8 dB (exp 2.9), AWGN crest ≈10.2 dB, 16-QAM ACPR ≈−48 dBc, a 3 dB
 > I/Q gain imbalance → image at −15.4 dBc (matches theory), and amplitude accuracy within a
 > consistent ~0.76 dB cable roll-off at 3 GHz.
+>
+> N9010A support is derived from the Keysight X-Series manuals and unit-tested for the SCPI dialect
+> (mode routing, measurement roots, and result-scalar orderings), but is **not yet bench-validated** —
+> confirm the ACP result layout and the max-safe-input limit against your unit.
 
 ## Installer
 
@@ -193,7 +201,7 @@ The solution is split into a UI-free core library, the WinForms app, and a test 
 | [Core/Project/](ESG-SignalCreator.Core/Project/) | `SsProject` + `ProjectStore` (`.ssproj` save/load) |
 | [App/Ui/](ESG-SignalCreator.App/Ui/) | `StudioForm` shell, signal-flow canvas, source panels, plot panes, instrument UI |
 | [ESG-SignalCreator.App/](ESG-SignalCreator.App/) | WinForms application — references Core (entry point `Program.cs`) |
-| [Core/Measure/](ESG-SignalCreator.Core/Measure/) | E4406A Basic-mode measurements: Channel Power, ACP, CCDF, Spectrum, Waveform, Power-vs-Time + mask |
+| [Core/Measure/](ESG-SignalCreator.Core/Measure/) | VSA measurements (E4406A Basic-mode / N9010A SA + IQ Analyzer, via a per-model SCPI dialect): Channel Power, ACP, CCDF, Spectrum, Waveform, Power-vs-Time + mask |
 | [Core/Verify/](ESG-SignalCreator.Core/Verify/) | Closed-loop verification harness/profile/result, RF-path safety gate, path calibration |
 | [ESG-SignalCreator.Assistant/](ESG-SignalCreator.Assistant/) | In-app Claude assistant: Messages API client, agent loop, tool surface (read/configure/hardware), guardrails, DPAPI secrets |
 | [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (356: framing, encoder, DSP, personalities, validation, sequencing, measurements, verification, assistant tools + guardrails + acceptance, …) |

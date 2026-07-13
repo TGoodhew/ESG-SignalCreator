@@ -6,7 +6,7 @@ Praktiske, trinvise gennemgange for **ESG-SignalCreator** (appen **ESG Signal St
 tutorial er en kort, selvstændig øvelse, du kan udføre ved arbejdsbænken. De starter med ting, du
 kan gøre fuldstændig **offline** (ingen instrument nødvendigt), og udvikler sig derefter til at styre en rigtig **E4438C**-generator,
 udforske hver signaltype, anvende impairments (signalforringelser), sekvensere og eksportere projekter,
-lukke sløjfen med en **E4406A**-analysator, lade den indbyggede **Claude-assistent** drive flowet
+lukke sløjfen med en **VSA** (E4406A eller N9010A), lade den indbyggede **Claude-assistent** drive flowet
 og endelig automatisere og pakke appen.
 
 Denne fil er *øvelsesledsageren* til [UserGuide.md](UserGuide.md), som er den autoritative
@@ -22,7 +22,7 @@ afsnit i User Guide (f.eks. "se UserGuide §5.2"). For et overblik samt build- o
   **Calculate** og plottene. De dele af B, D–H, der berører instrumentet, er tydeligt markeret i
   **Forudsætninger**.
 - **Vær sikker.** Alt, der udsender RF eller kan beskadige analysatoren, er beskyttet af en gate. Læs sikkerheds-
-  noterne i [UserGuide §15](UserGuide.md#15-sikkerhedsnoter), før du driver effekt ind i E4406A.
+  noterne i [UserGuide §15](UserGuide.md#15-sikkerhedsnoter), før du driver effekt ind i analysatoren.
 - **Pipelinen er bevidst.** Du **Calculate** på pc'en, **Download** til generatoren og derefter
   **Play**. Intet når DAC'en eller RF, før du siger til (se UserGuide §7).
 - **Når et tal ikke er angivet, så aflæs det fra appen.** Standardværdier og eksakte værdier findes i appens
@@ -56,8 +56,8 @@ afsnit i User Guide (f.eks. "se UserGuide §5.2"). For et overblik samt build- o
 11. [Sekvensering af flere segmenter](#tutorial-11--sekvensering-af-flere-segmenter)
 12. [Brug af SCPI-konsollen](#tutorial-12--brug-af-scpi-konsollen)
 
-**Del F — E4406A-verifikation**
-13. [Forbind E4406A sikkert](#tutorial-13--forbind-e4406a-sikkert)
+**Del F — VSA-verifikation (E4406A / N9010A)**
+13. [Forbind VSA'en sikkert](#tutorial-13--forbind-vsaen-sikkert)
 14. [Stikalibrering](#tutorial-14--stikalibrering)
 15. [Closed-loop Verify](#tutorial-15--closed-loop-verify)
 16. [Analysatormålinger, mode og reference](#tutorial-16--analysatormålinger-mode-og-reference)
@@ -549,34 +549,43 @@ log.
 
 ---
 
-## Del F — E4406A-verifikation
+## Del F — VSA-verifikation (E4406A / N9010A)
 
-## Tutorial 13 — Forbind E4406A sikkert
+> Disse tutorials bruger **analysatoren** / **VSA** til at betyde den model, du vælger med **VSA
+> model**-knappen — en Agilent **E4406A** eller en Keysight **N9010A (EXA)**. Trinnene er de samme for
+> begge; kun adresseringen og standard-input-skade-grænsen er forskellig (nævnt hvor det er relevant).
 
-**Mål:** Forbind E4406A-analysatoren, og arm RF-sti-sikkerheden, så appen blokerer enhver effekt, der
-kunne beskadige analysatorens indgang.
+## Tutorial 13 — Forbind VSA'en sikkert
+
+**Mål:** Vælg analysatormodellen, forbind den, og arm RF-sti-sikkerheden, så appen blokerer enhver
+effekt, der kunne beskadige analysatorens indgang.
 
 **Du lærer:**
-- Hvordan **Connect VSA…** åbner VSA-forbindelsesformularen med RF-sti-sikkerhedsindstillinger (se UserGuide §9.1).
+- Hvordan **VSA model**-knappen vælger E4406A vs N9010A, og hvordan **Connect VSA…** åbner
+  VSA-forbindelsesformularen med RF-sti-sikkerhedsindstillinger (se UserGuide §9).
 - Hvad **Armed**, **Analyzer max safe input** og **Path loss** gør, og hvordan **damage gate**'en
   fungerer.
 
-**Forudsætninger:** En E4406A på generatorens RF-udgang, en installeret VISA-runtime og dens VISA-
-resource (f.eks. `GPIB0::17::INSTR`). En forbundet ESG (Tutorial 2) er nyttig.
+**Forudsætninger:** En VSA (E4406A eller N9010A) på generatorens RF-udgang, en installeret VISA-runtime
+og dens VISA-resource (E4406A f.eks. `GPIB0::17::INSTR`; N9010A f.eks. `TCPIP0::<ip>::hislip0::INSTR`).
+En forbundet ESG (Tutorial 2) er nyttig.
 
 **Trin:**
 1. Sørg for, at analysatoren fysisk sidder på ESG'ens RF-udgang (analysatoren **modtager** kun nogensinde
    RF — UserGuide §9).
-2. Klik på **Connect VSA…** for at åbne VSA-forbindelsesformularen. Indtast analysatorens VISA-resource og
-   forbind (appen afviser en ikke-E4406A).
-3. I **RF-sti-sikkerheds**-indstillingerne:
+2. Sæt **VSA model**-knappen (ved siden af **Connect VSA…**) til din analysator — **E4406A** eller
+   **N9010A**. Valget huskes mellem sessioner og sætter forbindelsesdialogens standarder.
+3. Klik på **Connect VSA…** for at åbne VSA-forbindelsesformularen. Indtast analysatorens VISA-resource og
+   forbind (appen afviser et instrument, der ikke matcher den valgte model).
+4. I **RF-sti-sikkerheds**-indstillingerne:
    - Slå **Armed** til — dette aktiverer beskyttelsen, nu hvor analysatoren er på udgangen.
-   - Indstil **Analyzer max safe input (dBm)** — beskadigelsestærsklen (E4406A type-N-indgangen er
-     ≈ +35 dBm; standard-gaten er +30 dBm).
+   - Indstil **Analyzer max safe input (dBm)** — beskadigelsestærsklen, sået fra modellen (E4406A
+     type-N-indgang ≈ +35 dBm, standard-gate +30 dBm; N9010A en konservativ +25 dBm — bekræft mod
+     dens datablad).
    - Indstil **Path loss (dB)** — enhver inline pad/dæmpning mellem ESG'en og analysatoren.
 
 **Hvad du bør se:**
-- Analysatoren forbinder og rapporterer som en E4406A; sikkerhedsindstillingerne viser **Armed** med din maksimale
+- Analysatoren forbinder og rapporterer som den valgte model; sikkerhedsindstillingerne viser **Armed** med din maksimale
   sikre indgang og path loss.
 - Fra nu af **blokeres** enhver kommanderet ESG-effekt, der ville overstige det sikre niveau ved analysatorindgangen
   (med hensyntagen til path loss) — denne gate beskytter både det manuelle UI og assistenten.
@@ -599,7 +608,7 @@ analysatoren og anvender det overalt.
 - Hvordan **Path cal…** fanger path loss (se UserGuide §9.3).
 - Hvor det fangede tab anvendes (sikkerheds-gate og Verify).
 
-**Forudsætninger:** En forbundet ESG (Tutorial 2) og en forbundet, armed E4406A (Tutorial 13).
+**Forudsætninger:** En forbundet ESG (Tutorial 2) og en forbundet, armed VSA (Tutorial 13).
 
 **Trin:**
 1. Klik på **Path cal…** for at åbne stikalibrerings-wizarden.
@@ -621,14 +630,14 @@ analysatoren og anvender det overalt.
 
 ## Tutorial 15 — Closed-loop Verify
 
-**Mål:** Brug **Verify** til at måle et afspillet signal på E4406A og læse Expected-vs-Measured-
+**Mål:** Brug **Verify** til at måle et afspillet signal på analysatoren og læse Expected-vs-Measured-
 tabellen — for en CW-tone og en multitone.
 
 **Du lærer:**
 - Hvordan **Verify** forvandler generér → mål → sammenlign til en pass/fail-tabel (se UserGuide §9.2).
 - Hvordan du læser kanaleffekt, PAPR og tonefrekvens mod forventningerne.
 
-**Forudsætninger:** Forbundet ESG (Tutorial 2), forbundet + armed E4406A med path loss fanget
+**Forudsætninger:** Forbundet ESG (Tutorial 2), forbundet + armed VSA med path loss fanget
 (Tutorial 13–14).
 
 **Trin:**
@@ -668,7 +677,7 @@ sammenligninger, og forstå de Basic-mode-målinger, appen bruger.
 - Hvordan **Reference** låser instrumenterne til uafhængige eller fælles 10 MHz-tidsbaser (UserGuide §9.4).
 - Hvilke Basic-mode-målinger der underbygger Verify (UserGuide §9.6).
 
-**Forudsætninger:** Forbundet ESG og E4406A (Tutorial 2, 13).
+**Forudsætninger:** Forbundet ESG og VSA (Tutorial 2, 13).
 
 **Trin:**
 1. Klik på **VSA Mode**. Menuen lister de modes, enheden faktisk har (læst live fra
@@ -775,7 +784,7 @@ configure-værktøjer, uden hardware involveret.
 - Hvad **Auto-approve hardware** gør — og hvilke værktøjer der *altid* bekræfter uanset.
 - Den opt-in **Allow raw SCPI**-nødudgang.
 
-**Forudsætninger:** Tutorial 17–18, en forbundet ESG (og en forbundet + armed E4406A til verify-
+**Forudsætninger:** Tutorial 17–18, en forbundet ESG (og en forbundet + armed VSA til verify-
 trinnet, Tutorial 2, 13–15).
 
 **Trin:**
@@ -823,8 +832,8 @@ closed-loop-batteri med en JSON-rapport.
 - At harnesset håndhæver sikkerheds-gaten og kan udsende en maskinlæsbar rapport.
 
 **Forudsætninger:** En bygget `ESG-SignalCreator.HilHarness.exe`, en installeret VISA-runtime, en rigtig
-E4438C (og en E4406A på dens RF-udgang til closed-loop-kørslen). Dette er et konsolværktøj, adskilt fra
-GUI'en.
+E4438C (og en VSA — E4406A eller N9010A — på dens RF-udgang til closed-loop-kørslen). Dette er et
+konsolværktøj, adskilt fra GUI'en.
 
 **Trin:**
 1. **ESG-kun** — forbind, kør `*IDN?`/`*OPT?`, download en CW, arm ARB'en, og aflæs (RF forbliver
@@ -836,7 +845,11 @@ GUI'en.
    JSON-rapport:
    ```powershell
    ESG-SignalCreator.HilHarness.exe --vsa GPIB0::17::INSTR --all --dwell-seconds 3 --json report.json
+   # For en Keysight N9010A i stedet (LAN-adresse + model-flag):
+   ESG-SignalCreator.HilHarness.exe --vsa TCPIP0::192.168.1.90::hislip0::INSTR --vsa-model n9010a --all
    ```
+   `--vsa-model` (`e4406a` standard | `n9010a`) vælger analysatoren, dens identitetskontrol og dens
+   modelspecifikke input-skade-standard.
 3. Eller kør en enkelt signaltype, eller amplitude-flathed-effekt-sweepet:
    ```powershell
    ESG-SignalCreator.HilHarness.exe --vsa --signal multitone
@@ -851,7 +864,7 @@ GUI'en.
   med per-trin PASS/FAIL, en exit-kode forskellig fra nul ved fejl, og en maskinlæsbar `report.json`.
 
 **Tips / fejlfinding:**
-- Harnesset **håndhæver input-damage-sikkerheds-gaten** (E4406A rated +35 dBm; standard-gate +30 dBm)
+- Harnesset **håndhæver input-damage-sikkerheds-gaten** (modelspecifik standard — E4406A +30 dBm, N9010A +25 dBm)
   og holder analysatoren sweepende under dwell, så frontpanelet følger live; den ender RF-off.
 - Den afslutter med **non-zero ved fejl** — ideel som en CI-gate.
 - Brug sweep-optionerne (`--points`, `--start-hz`, `--stop-hz`, `--carrier-hz`, `--offset-hz`,

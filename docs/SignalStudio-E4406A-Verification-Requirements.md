@@ -15,6 +15,17 @@
 
 > Status: v1 draft assembled from the uploaded E4406A manuals. §10 lists items to confirm against the actual unit before coding the SCPI layer.
 
+> **Update (2026-07):** This E4406A layer was implemented, and then **generalized to also support a
+> Keysight N9010A (EXA)** analyzer, selectable at runtime via a UI toggle (epic #105 / issues
+> #106–#113). The two share a vendor-neutral VISA transport and a per-model **SCPI dialect**
+> (`IVsaDialect`) that captures the differences: instrument mode (E4406A Basic vs N9010A IQ-Analyzer /
+> SA), measurement roots (`ACP`→`ACPower`), the CCDF scalar result index (n=1 vs n=2), the Waveform
+> peak position, the ACP offset layout, and the per-model input-damage default. The N9010A mapping is
+> derived from the Keysight X-Series manuals (IQ Analyzer 9018-02190; SA Programmer's Reference
+> 9018-06099) and unit-tested, but is **not yet bench-validated** — confirm the ACP layout and the max
+> safe input against the physical unit. See the CHANGELOG and the user docs (UserGuide §9, Tutorials
+> Part F) for the operator-facing behavior.
+
 ---
 
 ## 1. What the E4406A is, and why it matters here
