@@ -39,8 +39,11 @@ namespace EsgSignalCreator.Measure
             double[] trace = VsaScalarParser.ParseScalars(vsa.Query(TraceQuery)); // I,Q interleaved
             double[] scalars = basic.Fetch(Root);                                 // same acquisition
 
-            double peakDbm = scalars.Length > 0 ? scalars[0] : double.NaN;
-            double meanDbm = scalars.Length > 1 ? scalars[1] : double.NaN;
+            // Peak/mean positions in the WAVeform scalar set are model-specific (E4406A peak at 0;
+            // N9010A peak — the Maximum — at 5). Read them via the dialect layout.
+            WaveformScalarLayout layout = vsa.Dialect.WaveformScalars;
+            double peakDbm = At(scalars, layout.PeakIndex);
+            double meanDbm = At(scalars, layout.MeanIndex);
 
             int n = trace.Length / 2;
             var times = new double[n];
@@ -78,5 +81,9 @@ namespace EsgSignalCreator.Measure
             if (mask != null) result.Mask = mask.Evaluate(times, power);
             return result;
         }
+
+        /// <summary>Scalar at <paramref name="index"/>, or NaN when the response is too short.</summary>
+        private static double At(double[] scalars, int index) =>
+            scalars != null && index >= 0 && index < scalars.Length ? scalars[index] : double.NaN;
     }
 }

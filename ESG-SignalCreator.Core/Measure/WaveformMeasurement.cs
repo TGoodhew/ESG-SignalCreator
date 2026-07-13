@@ -10,14 +10,12 @@ namespace EsgSignalCreator.Measure
     /// result set and maps it to a <see cref="WaveformResult"/>.
     /// </summary>
     /// <remarks>
-    /// Per the E4406A Programmer's Guide the <c>:READ:WAVeform?</c> scalar result set (n omitted / n = 1)
-    /// is comma-separated in this order:
-    /// <list type="number">
-    /// <item><description>Peak power (dBm)</description></item>
-    /// <item><description>Mean power (dBm)</description></item>
-    /// <item><description>Mean power, averaged (dBm)</description></item>
-    /// <item><description>Peak power, averaged / aux (dBm)</description></item>
-    /// <item><description>Peak-to-mean ratio (dB)</description></item>
+    /// The <c>:READ:WAVeform?</c> scalar ordering differs by model, so the peak / mean / peak-to-mean
+    /// positions come from the dialect (<see cref="IVsaDialect.WaveformScalars"/>):
+    /// <list type="bullet">
+    /// <item><description>E4406A: [peak, mean, mean-avg, aux, peak-to-mean] (bench-validated).</description></item>
+    /// <item><description>N9010A: [sample-time, mean, mean-avg, num-samples, peak-to-mean, max] — peak is
+    /// the Maximum at index 5 (IQ Analyzer Mode Reference).</description></item>
     /// </list>
     /// Waveform is time-domain, so the center frequency is the only tuning parameter (no frequency span).
     /// A short/empty response yields <see cref="double.NaN"/> for the missing field(s) rather than throwing.
@@ -45,15 +43,20 @@ namespace EsgSignalCreator.Measure
             basic.Setup(VsaMeasurement.Waveform, centerHz);
 
             double[] scalars = basic.Read(Root);
+            WaveformScalarLayout layout = vsa.Dialect.WaveformScalars;
 
             return new WaveformResult
             {
                 Measurement = Root,
                 Raw = scalars,
-                PeakPowerDbm = scalars.Length > 0 ? scalars[0] : double.NaN,
-                MeanPowerDbm = scalars.Length > 1 ? scalars[1] : double.NaN,
-                PeakToMeanDb = scalars.Length > 4 ? scalars[4] : double.NaN
+                PeakPowerDbm = At(scalars, layout.PeakIndex),
+                MeanPowerDbm = At(scalars, layout.MeanIndex),
+                PeakToMeanDb = At(scalars, layout.PeakToMeanIndex)
             };
         }
+
+        /// <summary>Scalar at <paramref name="index"/>, or NaN when the response is too short.</summary>
+        private static double At(double[] scalars, int index) =>
+            scalars != null && index >= 0 && index < scalars.Length ? scalars[index] : double.NaN;
     }
 }

@@ -19,6 +19,10 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
   - **Per-model input-damage safety limit**: the RF-path safety gate is seeded with a max-safe-input
     default chosen from the selected model — E4406A +30 dBm; N9010A a conservative +25 dBm backstop
     (unconfirmed by the supplied manuals, flagged in the UI to confirm against the data sheet) (#109).
+  - **N9010A Spectrum & Waveform measurements**: the Spectrum marker workflow (span + peak-search
+    markers) is identical SCPI across both analyzers and now works on the N9010A via the mode routing;
+    the Waveform measurement reads peak/mean/peak-to-mean from model-specific scalar positions (the
+    N9010A's peak is the Maximum at index 5, not index 0), driven by the dialect (#110).
 
 ### Notes
 - Still in progress for full N9010A verification: the SA-mode Channel Power / ACP / CCDF and IQ

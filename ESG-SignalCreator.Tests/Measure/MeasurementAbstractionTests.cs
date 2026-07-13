@@ -85,5 +85,36 @@ namespace EsgSignalCreator.Tests.Measure
             Assert.Contains(":INSTrument:SELect BASIC", io.Writes);
             Assert.DoesNotContain(":INSTrument:SELect SA", io.Writes);
         }
+
+        // #110: the WAVeform scalar ordering differs by model — peak is at [0] on the E4406A but at [5]
+        // (the Maximum) on the N9010A; mean [1] and peak-to-mean [4] are shared.
+        [Theory]
+        [InlineData("Agilent Technologies, E4406A, US1, A.05.00", 1.0)]
+        [InlineData("Keysight Technologies,N9010A,MY1,A.20.14", 6.0)]
+        public void Waveform_peak_uses_the_model_specific_index(string idn, double expectedPeak)
+        {
+            var io = new FakeVsa { IdnResponse = idn, ScalarResponse = "1,2,3,4,5,6" };
+            var wf = WaveformMeasurement.Measure(new VsaInstrument(io), 1e9);
+            Assert.Equal(expectedPeak, wf.PeakPowerDbm, 9);
+            Assert.Equal(2.0, wf.MeanPowerDbm, 9);   // mean at [1] on both
+            Assert.Equal(5.0, wf.PeakToMeanDb, 9);   // peak-to-mean at [4] on both
+        }
+
+        // #110: the Spectrum marker workflow is identical SCPI on both models (only the mode differs,
+        // and Spectrum is BASIC on both).
+        [Theory]
+        [InlineData("Agilent Technologies, E4406A, US1, A.05.00")]
+        [InlineData("Keysight Technologies,N9010A,MY1,A.20.14")]
+        public void Spectrum_marker_emits_the_same_scpi_for_both_models(string idn)
+        {
+            var io = new FakeVsa { IdnResponse = idn, ScalarResponse = "1000000000,-20" };
+            SpectrumMarker.MeasurePeak(new VsaInstrument(io), 1e9, 5e6);
+            Assert.Contains(":INSTrument:SELect BASIC", io.Writes);
+            Assert.Contains(io.Writes, w => w.StartsWith(":SENSe:SPECtrum:FREQuency:SPAN"));
+            Assert.Contains(":CALCulate:SPECtrum:MARKer1:TRACe ASP", io.Writes);
+            Assert.Contains(":CALCulate:SPECtrum:MARKer1:MAXimum", io.Writes);
+            Assert.Contains(":CALCulate:SPECtrum:MARKer1:X?", io.Writes);
+            Assert.Contains(":CALCulate:SPECtrum:MARKer1:Y?", io.Writes);
+        }
     }
 }
