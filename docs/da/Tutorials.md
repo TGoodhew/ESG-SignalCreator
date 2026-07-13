@@ -633,6 +633,9 @@ analysatoren og anvender det overalt.
 **Mål:** Brug **Verify** til at måle et afspillet signal på analysatoren og læse Expected-vs-Measured-
 tabellen — for en CW-tone og en multitone.
 
+> **Tip:** for et étkliks end-to-end-tjek af hele installationen, brug **Verify install…** i stedet — det
+> afspiller et CW → AM → FM → I/Q-batteri og måler hvert på analysatoren (UserGuide §9.7).
+
 **Du lærer:**
 - Hvordan **Verify** forvandler generér → mål → sammenlign til en pass/fail-tabel (se UserGuide §9.2).
 - Hvordan du læser kanaleffekt, PAPR og tonefrekvens mod forventningerne.

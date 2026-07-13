@@ -87,6 +87,7 @@ The shell is split into four regions:
 | **Stop** | Disarm the ARB and turn RF **off**. |
 | **Verify** | Closed-loop measure the played signal on the analyzer and show expected-vs-measured (§9). |
 | **Path cal…** | Run the path-calibration wizard to capture cable loss + analyzer offset (§9). |
+| **Verify install…** | Run the install self-test — a CW → AM → FM → I/Q battery measured on the analyzer (§9.7). |
 | **Reference** | Lock the ESG and the analyzer to independent timebases or a common external 10 MHz. |
 | **VSA model** | Toggle which analyzer the app targets — E4406A or N9010A (§9). |
 | **VSA Mode** | Pick the analyzer measurement mode from the modes actually installed on the unit. |
@@ -264,6 +265,20 @@ Under the hood the app provides typed VSA measurements (also exposed to the
 assistant, §10): **Channel Power**, **ACP/ACPR**, **CCDF / PAPR** (Power Statistics), **Spectrum**
 marker (tone frequency/power, occupied BW), **Waveform** (time-domain peak/mean/peak-to-mean), and
 **Power-vs-Time** with a configurable **power mask** (pass/fail over time windows) for bursted signals.
+
+### 9.7 Install verification self-test
+**Verify install…** runs a short, guided **generate → play → measure → compare** battery that proves the
+whole install and configuration works end-to-end, across signal types rather than one. It synthesizes
+four signals as ARB I/Q and plays each through the ESG, measuring each on the connected analyzer:
+
+1. **CW** — an unmodulated tone; checks channel power, PAPR (≈ 0 dB), and tone frequency (carrier + offset).
+2. **AM** — 50% at 100 kHz; the elevated PAPR fingerprints the amplitude path.
+3. **FM** — 500 kHz deviation at 100 kHz; the constant-envelope PAPR (≈ 0 dB) fingerprints the frequency path.
+4. **I/Q multitone** — a 4-tone Newman signal; channel power + PAPR for the full complex path.
+
+Results appear in the **Verification** view (expected vs measured per step) with an overall **PASS/FAIL**.
+It needs a baseband-capable ESG and a connected analyzer; the **input-damage safety gate** is enforced
+before any RF, and RF is returned off when done. AM/FM are verified via power/PAPR (not analog demod).
 
 ---
 
