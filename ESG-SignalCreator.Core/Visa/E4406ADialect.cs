@@ -25,6 +25,9 @@ namespace EsgSignalCreator.Visa
         public AcpScalarLayout AcpScalars =>
             new AcpScalarLayout(offsetCount: 5, offsetBaseIndex: 4, upperAdjacentDbcIndex: 0, lowerAdjacentDbcIndex: 2);
 
+        // The E4406A path uses the plain blocking read (its fixed timeout is adequate).
+        public bool UsesServiceRequestCompletion => false;
+
         public string InstrumentModeFor(VsaMeasurement measurement) => "BASIC";
 
         public string RootFor(VsaMeasurement measurement)

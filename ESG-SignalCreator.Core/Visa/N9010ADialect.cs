@@ -38,6 +38,10 @@ namespace EsgSignalCreator.Visa
         public AcpScalarLayout AcpScalars =>
             new AcpScalarLayout(offsetCount: 6, offsetBaseIndex: 4, upperAdjacentDbcIndex: 6, lowerAdjacentDbcIndex: 4);
 
+        // Wait for measurement completion via SRQ so an X-Series auto-alignment of any length can't trip
+        // a fixed read timeout (#129).
+        public bool UsesServiceRequestCompletion => true;
+
         public string InstrumentModeFor(VsaMeasurement measurement)
         {
             switch (measurement)

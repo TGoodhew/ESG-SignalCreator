@@ -18,6 +18,11 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
   It targets a single analyzer per run — cover both by running it twice.
 
 ### Changed
+- **N9010A auto-alignment handling** (#129): N9010A measurement reads now wait for completion via an SRQ
+  (Status-Byte MAV) notification — re-arming short waits up to a long overall deadline — instead of a
+  fixed read timeout, so a periodic auto-alignment that coincides with a measurement no longer fails it
+  spuriously. Added an optional `ISupportsServiceRequest` transport capability (implemented by the VISA
+  transport); the E4406A path is unchanged. Model-selected via the dialect.
 - **Live capability binding** (core of #120): on ESG connect, the capability profile is now reconciled
   with the connected unit's `*IDN?` model, `*OPT?` installed options, and queried frequency range,
   instead of a static `E4438C` profile. The memory cap reflects only the **installed** baseband option
