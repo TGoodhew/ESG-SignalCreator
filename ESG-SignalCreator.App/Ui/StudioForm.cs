@@ -140,6 +140,8 @@ namespace EsgSignalCreator.Ui
             bar.Items.Add(verifyBtn);
             var pathCalBtn = Button("Path cal…", (s, e) => PathCalibrate());
             bar.Items.Add(pathCalBtn);
+            var verifyInstallBtn = Button("Verify install…", async (s, e) => await VerifyInstall());
+            bar.Items.Add(verifyInstallBtn);
             var refBtn = new ToolStripDropDownButton("Reference");
             refBtn.DropDownItems.Add("Independent (each internal)", null, (s, e) => ApplyReference(ReferenceScheme.Independent));
             refBtn.DropDownItems.Add("Common 10 MHz (external)", null, (s, e) => ApplyReference(ReferenceScheme.CommonExternal));
@@ -585,6 +587,50 @@ namespace EsgSignalCreator.Ui
             {
                 _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Verify failed: " + ex.Message));
                 _status.Text = "Verify failed.";
+            }
+        }
+
+        /// <summary>
+        /// Install/configuration self-test (#125): play a short CW → AM → FM → I/Q battery through the ARB
+        /// and measure each on the connected analyzer, showing expected-vs-measured in the Verification
+        /// view. Runs off the UI thread; the input-damage safety gate is enforced before any RF.
+        /// </summary>
+        private async Task VerifyInstall()
+        {
+            if (_esg == null) { _status.Text = "Connect the ESG first."; return; }
+            if (_vsa == null) { _status.Text = "Connect the VSA first (Connect VSA…)."; return; }
+            if (_installedOptions != null && _installedOptions.Length > 0 &&
+                (_profile == null || _profile.BasebandOptions == null || _profile.BasebandOptions.Length == 0))
+            {
+                _status.Text = "Verify install: the connected ESG has no baseband option (001/002/601/602).";
+                return;
+            }
+
+            var opts = new InstallVerificationOptions
+            {
+                CarrierHz = _settings.FrequencyHz > 0 ? _settings.FrequencyHz : 1e9,
+                PathLossDb = _safety.PathLossDb
+                // PowerDbm left at the conservative default (-10 dBm) for a predictable self-test.
+            };
+
+            try
+            {
+                _status.Text = "Install verification running…";
+                var ui = System.Threading.SynchronizationContext.Current;
+                InstallVerificationReport report = await Task.Run(() =>
+                    InstallVerification.Run(_esg, _vsa, _safety, opts,
+                        msg => ui?.Post(_ => _status.Text = msg, null)));
+
+                _verification.Show(report.Flatten());
+                ShowCard("verification");
+                _status.Text = report.AllPass
+                    ? "Verify install: PASS (see Verification)"
+                    : "Verify install: FAIL (see Verification)";
+            }
+            catch (Exception ex)
+            {
+                _notifications.Append(new ValidationResult(ValidationSeverity.Error, "Verify install failed: " + ex.Message));
+                _status.Text = "Verify install failed.";
             }
         }
 

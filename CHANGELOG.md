@@ -6,6 +6,13 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Added
+- **Install verification self-test** (#125): a **Verify install…** action runs a guided
+  CW → AM → FM → I/Q multitone battery — synthesized as ARB I/Q, played through the ESG and measured on
+  the connected analyzer (E4406A or N9010A) — showing expected-vs-measured per step with an overall
+  PASS/FAIL in the Verification view. The input-damage safety gate is enforced before any RF. The
+  reusable `InstallVerification` orchestrator lives in Core (to be shared by the automated harness, #126).
+
 ### Changed
 - **Live capability binding** (core of #120): on ESG connect, the capability profile is now reconciled
   with the connected unit's `*IDN?` model, `*OPT?` installed options, and queried frequency range,

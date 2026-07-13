@@ -60,6 +60,7 @@ Skallen er opdelt i fire områder:
 | **Stop** | Disarmér ARB'en og sluk RF **off**. |
 | **Verify** | Closed-loop-mål det afspillede signal på analysatoren og vis forventet-vs-målt (§9). |
 | **Path cal…** | Kør guiden til vejkalibrering for at opfange kabeltab + analysatoroffset (§9). |
+| **Verify install…** | Kør installations-selvtesten — et CW → AM → FM → I/Q-batteri målt på analysatoren (§9.7). |
 | **Reference** | Lås ESG og analysatoren til uafhængige tidsbaser eller en fælles ekstern 10 MHz. |
 | **VSA model** | Skift hvilken analysator appen målretter — E4406A eller N9010A (§9). |
 | **VSA Mode** | Vælg analysatorens måletilstand blandt de tilstande, der faktisk er installeret på enheden. |
@@ -186,6 +187,21 @@ Når armeret, blokerer **power-sikkerhedsgaten** enhver kommanderet ESG-effekt, 
 
 ### 9.6 Målinger
 Under motorhjelmen leverer appen typede VSA-målinger (også eksponeret for assistenten, §10): **Channel Power**, **ACP/ACPR**, **CCDF / PAPR** (Power Statistics), **Spectrum**-markør (tonefrekvens/-effekt, optaget BW), **Waveform** (tidsdomæne-peak/-mean/-peak-to-mean) og **Power-vs-Time** med en konfigurerbar **power mask** (pass/fail over tidsvinduer) for burst-signaler.
+
+### 9.7 Selvtest af installationen
+**Verify install…** kører et kort, guidet **generér → afspil → mål → sammenlign**-batteri, der beviser, at
+hele installationen og konfigurationen virker fra ende til ende, på tværs af signaltyper frem for én. Det
+syntetiserer fire signaler som ARB-I/Q og afspiller hvert gennem ESG'en, mens hvert måles på den forbundne
+analysator:
+
+1. **CW** — en umoduleret tone; tjekker kanaleffekt, PAPR (≈ 0 dB) og tonefrekvens (bærebølge + offset).
+2. **AM** — 50% ved 100 kHz; den forhøjede PAPR fingeraftrykker amplitude-stien.
+3. **FM** — 500 kHz deviation ved 100 kHz; den konstante-indhylningskurve-PAPR (≈ 0 dB) fingeraftrykker frekvens-stien.
+4. **I/Q-multitone** — et 4-tone Newman-signal; kanaleffekt + PAPR for den fulde komplekse sti.
+
+Resultaterne vises i **Verification**-visningen (forventet vs. målt pr. trin) med et samlet **PASS/FAIL**.
+Det kræver en baseband-kapabel ESG og en forbundet analysator; **input-skade-sikkerheds-gaten** håndhæves
+før enhver RF, og RF returneres slukket, når det er færdigt. AM/FM verificeres via effekt/PAPR (ikke analog demodulation).
 
 ---
 

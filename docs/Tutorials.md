@@ -635,6 +635,9 @@ analyzer, and applies it everywhere.
 **Goal:** Use **Verify** to measure a played signal on the analyzer and read the Expected-vs-Measured
 table — for a CW tone and a multitone.
 
+> **Tip:** for a one-click end-to-end check of the whole install, use **Verify install…** instead — it
+> plays a CW → AM → FM → I/Q battery and measures each on the analyzer (UserGuide §9.7).
+
 **You'll learn:**
 - How **Verify** turns generate → measure → compare into a pass/fail table (see UserGuide §9.2).
 - How to read channel power, PAPR, and tone frequency against expectations.
