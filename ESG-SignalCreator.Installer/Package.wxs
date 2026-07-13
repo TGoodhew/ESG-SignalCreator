@@ -13,8 +13,13 @@
       Scope="perMachine"
       Compressed="yes">
 
-    <!-- Stable UpgradeCode + MajorUpgrade: installing a newer version replaces the old one cleanly. -->
-    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed. Setup will now exit." />
+    <!-- Stable UpgradeCode + MajorUpgrade: installing a newer version replaces the old one cleanly.
+         AllowSameVersionUpgrades so re-installing the SAME a.b.c (a rebuilt/re-run release at an
+         unchanged version, which carries a fresh auto ProductCode) replaces the existing install
+         instead of leaving a duplicate Add/Remove-Programs entry. Windows Installer compares only
+         the first three version fields, so this also covers builds that differ only in the 4th field. -->
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of [ProductName] is already installed. Setup will now exit." />
     <MediaTemplate EmbedCab="yes" />
 
     <!-- Prerequisite: .NET Framework 4.7.2. Uses the WixToolset.Netfx extension's canonical detection
