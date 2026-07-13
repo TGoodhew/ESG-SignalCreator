@@ -20,6 +20,13 @@ namespace EsgSignalCreator.Measure
         public VsaInstrument Vsa => _vsa;
 
         /// <summary>
+        /// The analyzer's SCPI dialect (issue #106 seam). Measurement classes read model-varying
+        /// mnemonics — measurement roots, per-measurement vs global span, mode entry — from here so the
+        /// same measurement code drives either the E4406A or the N9010A.
+        /// </summary>
+        public IVsaDialect Dialect => _vsa.Dialect;
+
+        /// <summary>
         /// Put the analyzer into Basic single-measurement mode at the given center frequency. Span is
         /// per-measurement on the E4406A, so each concrete measurement sets its own span after this.
         /// </summary>

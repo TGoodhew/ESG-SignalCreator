@@ -30,18 +30,55 @@ namespace EsgSignalCreator.Tests.Visa
         }
 
         [Fact]
-        public void Identify_and_IsE4406A_recognize_the_analyzer()
+        public void Identify_and_model_recognize_the_e4406a()
         {
             var vsa = new VsaInstrument(new FakeVsa());
             Assert.Equal("E4406A", vsa.Identify().Model);
-            Assert.True(vsa.IsE4406A());
+            Assert.Equal(VsaModel.E4406A, vsa.Model);
+            Assert.True(vsa.IsModel(VsaModel.E4406A));
+            Assert.False(vsa.IsModel(VsaModel.N9010A));
+            Assert.IsType<E4406ADialect>(vsa.Dialect);
         }
 
         [Fact]
-        public void IsE4406A_is_false_for_a_different_model()
+        public void Model_recognizes_the_n9010a_from_keysight_idn()
+        {
+            var io = new FakeVsa { IdnResponse = "Keysight Technologies,N9010A,MY51234567,A.20.14" };
+            var vsa = new VsaInstrument(io);
+            Assert.Equal(VsaModel.N9010A, vsa.Model);
+            Assert.True(vsa.IsModel(VsaModel.N9010A));
+            Assert.False(vsa.IsModel(VsaModel.E4406A));
+            Assert.IsType<N9010ADialect>(vsa.Dialect);
+        }
+
+        [Fact]
+        public void Model_is_unknown_for_a_different_model()
         {
             var io = new FakeVsa { IdnResponse = "Agilent Technologies, E4438C, US123, C.05.85" };
-            Assert.False(new VsaInstrument(io).IsE4406A());
+            var vsa = new VsaInstrument(io);
+            Assert.Equal(VsaModel.Unknown, vsa.Model);
+            Assert.False(vsa.IsModel(VsaModel.E4406A));
+        }
+
+        [Theory]
+        [InlineData(VsaMeasurement.ChannelPower, "BASIC", "CHPower", "SA", "CHPower")]
+        [InlineData(VsaMeasurement.Acp, "BASIC", "ACP", "SA", "ACPower")]
+        [InlineData(VsaMeasurement.Ccdf, "BASIC", "PSTatistic", "SA", "PSTatistic")]
+        [InlineData(VsaMeasurement.Spectrum, "BASIC", "SPECtrum", "BASIC", "SPECtrum")]
+        [InlineData(VsaMeasurement.Waveform, "BASIC", "WAVeform", "BASIC", "WAVeform")]
+        public void Dialects_map_mode_and_root_per_model(
+            VsaMeasurement meas, string e4406Mode, string e4406Root, string n9010Mode, string n9010Root)
+        {
+            IVsaDialect e4406 = new E4406ADialect();
+            IVsaDialect n9010 = new N9010ADialect();
+
+            Assert.Equal(e4406Mode, e4406.InstrumentModeFor(meas));
+            Assert.Equal(e4406Root, e4406.RootFor(meas));
+            Assert.False(e4406.HasGlobalSpan);
+
+            Assert.Equal(n9010Mode, n9010.InstrumentModeFor(meas));
+            Assert.Equal(n9010Root, n9010.RootFor(meas));
+            Assert.True(n9010.HasGlobalSpan);
         }
 
         [Fact]

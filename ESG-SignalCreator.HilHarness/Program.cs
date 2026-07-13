@@ -237,7 +237,7 @@ namespace EsgSignalCreator.HilHarness
                 {
                     InstrumentIdentity id = vsa.Identify();
                     Console.WriteLine("            " + id.Manufacturer + " / " + id.Model + " / FW " + id.FirmwareRevision);
-                    if (!vsa.IsE4406A()) throw new Exception("Model is not E4406A: '" + id.Model + "'");
+                    if (!vsa.IsModel(VsaModel.E4406A)) throw new Exception("Model is not E4406A: '" + id.Model + "'");
                 });
                 Step("VSA options", () => Console.WriteLine("            *OPT? = " + string.Join(",", vsa.Options())));
                 vsa.Clear();
@@ -395,7 +395,7 @@ namespace EsgSignalCreator.HilHarness
                 var vsa = new VsaInstrument(vio);
                 vsa.TimeoutMilliseconds = 30000;
                 try { vsa.Write(":ABORt"); vsa.Clear(); } catch { /* recover */ }
-                Step("VSA *IDN? identifies an E4406A", () => { if (!vsa.IsE4406A()) throw new Exception("not an E4406A"); });
+                Step("VSA *IDN? identifies an E4406A", () => { if (!vsa.IsModel(VsaModel.E4406A)) throw new Exception("not an E4406A"); });
 
                 var src = new CwPersonality();
                 src.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = 1e6 });
