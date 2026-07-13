@@ -12,6 +12,10 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
   the connected analyzer (E4406A or N9010A) — showing expected-vs-measured per step with an overall
   PASS/FAIL in the Verification view. The input-damage safety gate is enforced before any RF. The
   reusable `InstallVerification` orchestrator lives in Core (to be shared by the automated harness, #126).
+- **Headless install-verification** (#126): the HIL harness gains an `--install-verify` flag that runs the
+  same CW/AM/FM/I/Q battery (via the shared `InstallVerification` orchestrator) on the **one** analyzer
+  selected by `--vsa-model` (`e4406a` | `n9010a`), emitting a JSON report and a non-zero exit on failure.
+  It targets a single analyzer per run — cover both by running it twice.
 
 ### Changed
 - **Live capability binding** (core of #120): on ESG connect, the capability profile is now reconciled

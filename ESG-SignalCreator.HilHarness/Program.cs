@@ -89,6 +89,8 @@ namespace EsgSignalCreator.HilHarness
             // Which signal personalities to verify. --all runs the full battery; --signal X runs one.
             _jsonPath = Opt(opts, "--json");
             bool flatness = flags.Contains("--flatness");
+            bool installVerify = flags.Contains("--install-verify");
+            if (installVerify) closedLoop = true; // install-verify drives the analyzer + RF like closed-loop
             string[] signals = flags.Contains("--all")
                 ? new[] { "cw", "multitone", "awgn", "custom-mod", "multi-carrier", "iq-impair", "import-iq" }
                 : new[] { Opt(opts, "--signal") ?? "cw" };
@@ -163,7 +165,11 @@ namespace EsgSignalCreator.HilHarness
                     if (Math.Abs(back - SafeAmplitudeDbm) > 0.5) throw new Exception("read back " + back + " dBm");
                 });
 
-                if (closedLoop)
+                if (installVerify)
+                {
+                    RunInstallVerify(esg, vsaResource, vsaModel, carrierOverride, verifyPowerDbm, maxInputDbm, pathLossDb);
+                }
+                else if (closedLoop)
                 {
                     double[] sweep = BuildSweep(esg, carrierOverride, points, startHz, stopHz, AnalyzerCeilingHz(vsaModel));
                     if (flatness)
@@ -227,6 +233,58 @@ namespace EsgSignalCreator.HilHarness
         /// <summary>Upper frequency the analyzer can measure to, used to cap the auto sweep (the ESG's own
         /// max usually limits first). The E4406A tops out ~4 GHz; the N9010A (EXA) reaches much higher.</summary>
         private static double AnalyzerCeilingHz(VsaModel model) => model == VsaModel.N9010A ? 44e9 : 4e9;
+
+        /// <summary>Headless install/configuration self-test (#126): run the shared InstallVerification
+        /// battery (CW/AM/FM/I/Q) on the one user-selected analyzer, recording each expected-vs-measured
+        /// result into the harness pass/fail + JSON report.</summary>
+        private static void RunInstallVerify(EsgController esg, string vsaResource, VsaModel vsaModel,
+            double carrierOverride, double verifyPowerDbm, double maxInputDbm, double pathLossDb)
+        {
+            Console.WriteLine(new string('-', 64));
+            Console.WriteLine("Install verification (" + vsaModel + ") — CW / AM / FM / I/Q");
+
+            var safety = new RfPathSafety { Armed = true, AnalyzerMaxSafeInputDbm = maxInputDbm, PathLossDb = pathLossDb };
+            Step("Safety gate allows verify power", () => PowerSafetyGate.Guard(verifyPowerDbm, safety));
+
+            IInstrument vio = Step("Open VSA VISA session", () => new VisaInstrument(vsaResource));
+            if (vio == null) return;
+            try
+            {
+                var vsa = new VsaInstrument(vio);
+                vsa.TimeoutMilliseconds = 30000;
+                try { vsa.Write(":ABORt"); vsa.Clear(); } catch { /* recover a prior run */ }
+                Step("VSA *IDN? identifies a " + vsaModel, () =>
+                {
+                    InstrumentIdentity id = vsa.Identify();
+                    Console.WriteLine("            " + id.Manufacturer + " / " + id.Model + " / FW " + id.FirmwareRevision);
+                    if (!vsa.IsModel(vsaModel)) throw new Exception("Model is not " + vsaModel + ": '" + id.Model + "'");
+                });
+
+                var opts = new InstallVerificationOptions
+                {
+                    CarrierHz = carrierOverride > 0 ? carrierOverride : 1e9,
+                    PowerDbm = verifyPowerDbm,
+                    PathLossDb = pathLossDb
+                };
+
+                InstallVerificationReport report = InstallVerification.Run(esg, vsa, safety, opts,
+                    msg => Console.WriteLine("            " + msg));
+
+                foreach (InstallVerificationStep step in report.Steps)
+                {
+                    Console.WriteLine("Signal '" + step.Name + "' — " + step.Detail);
+                    foreach (VerificationResult r in step.Results)
+                        Compare(step.Name + " · " + r.Metric, r.Expected, r.Measured, r.Tolerance, r.Unit);
+                    CheckErrorQueueVsa(vsa, step.Name);
+                }
+            }
+            catch (Exception ex) { Fail("Install verification", ex.Message); }
+            finally
+            {
+                try { esg.SetArbState(false); esg.SetRfOutput(false); } catch { /* best effort */ }
+                try { vio?.Dispose(); } catch { /* best effort */ }
+            }
+        }
 
         private static void RunClosedLoop(EsgController esg, string vsaResource, VsaModel vsaModel, double[] sweepHz, string[] signals,
             double verifyPowerDbm, double offsetHz, double maxInputDbm, double pathLossDb, double dwellSeconds)

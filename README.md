@@ -124,6 +124,9 @@ ESG-SignalCreator.HilHarness.exe --vsa GPIB0::17::INSTR --all --dwell-seconds 3 
 # Target a Keysight N9010A instead of the E4406A (LAN address, --vsa-model):
 ESG-SignalCreator.HilHarness.exe --vsa TCPIP0::192.168.1.90::hislip0::INSTR --vsa-model n9010a --all
 
+# Install self-test: the CW/AM/FM/IQ battery on the one selected analyzer (JSON + exit code):
+ESG-SignalCreator.HilHarness.exe --install-verify --vsa GPIB0::17::INSTR --vsa-model e4406a --json verify.json
+
 # A single signal type, or the amplitude-flatness power sweep:
 ESG-SignalCreator.HilHarness.exe --vsa --signal multitone
 ESG-SignalCreator.HilHarness.exe --vsa --flatness

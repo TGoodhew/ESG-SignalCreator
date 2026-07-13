@@ -855,6 +855,12 @@ tool, separate from the GUI.
    ```
    `--vsa-model` (`e4406a` default | `n9010a`) selects the analyzer, its identity guard, and its
    per-model input-damage default.
+4. **Install self-test** — run the CW → AM → FM → I/Q battery (the headless twin of the in-app
+   **Verify install…**, UserGuide §9.7) on the one selected analyzer, with a JSON report + exit code:
+   ```powershell
+   ESG-SignalCreator.HilHarness.exe --install-verify --vsa GPIB0::17::INSTR --vsa-model e4406a --json verify.json
+   ```
+   It targets a single analyzer per run (`--vsa-model`); to cover both, run it twice.
 3. Or run a single signal type, or the amplitude-flatness power sweep:
    ```powershell
    ESG-SignalCreator.HilHarness.exe --vsa --signal multitone
