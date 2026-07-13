@@ -7,7 +7,8 @@ using Newtonsoft.Json.Linq;
 namespace EsgSignalCreator.Assistant.Tools
 {
     /// <summary>
-    /// E4406A measurement + verification tools (#90, §8/§9): get_vsa_state, measure_channel_power,
+    /// Analyzer measurement + verification tools (#90, §8/§9) — work with the connected VSA, an E4406A
+    /// or a Keysight N9010A: get_vsa_state, measure_channel_power,
     /// measure_acp, measure_ccdf, measure_spectrum_peak, measure_waveform, and verify_signal. All are
     /// <see cref="ToolEffect.Read"/> — they read the analyzer and never emit RF, so they run without a
     /// confirmation. (They are excluded from the read-parallelization classifier so concurrent sweeps
@@ -44,7 +45,7 @@ namespace EsgSignalCreator.Assistant.Tools
         private sealed class GetVsaStateTool : MeasureTool
         {
             public override string Name => "get_vsa_state";
-            public override string Description => "E4406A analyzer state: connection, *IDN?, installed options, and current measurement mode.";
+            public override string Description => "Connected analyzer state (E4406A or N9010A): connection, *IDN?, installed options, and current measurement mode.";
             public override JObject InputSchema => Schema.Object();
             public override Task<ToolResult> ExecuteAsync(JObject a, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).GetVsaState(), "VSA state."));
@@ -53,7 +54,7 @@ namespace EsgSignalCreator.Assistant.Tools
         private sealed class MeasureChannelPowerTool : MeasureTool
         {
             public override string Name => "measure_channel_power";
-            public override string Description => "Measure total channel power (dBm) and PSD on the E4406A around a center frequency.";
+            public override string Description => "Measure total channel power (dBm) and PSD on the analyzer around a center frequency.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("center_hz", Schema.Number("center frequency, Hz"), required: true),
                 Schema.P("span_hz", Schema.Number("measurement span, Hz (default 5e6)")));
@@ -64,7 +65,7 @@ namespace EsgSignalCreator.Assistant.Tools
         private sealed class MeasureAcpTool : MeasureTool
         {
             public override string Name => "measure_acp";
-            public override string Description => "Measure adjacent-channel power ratios (dBc) on the E4406A. Optional carrier integration bandwidth (Hz).";
+            public override string Description => "Measure adjacent-channel power ratios (dBc) on the analyzer. Optional carrier integration bandwidth (Hz).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("center_hz", Schema.Number("center frequency, Hz"), required: true),
                 Schema.P("carrier_bandwidth_hz", Schema.Number("carrier integration bandwidth, Hz")));
@@ -75,7 +76,7 @@ namespace EsgSignalCreator.Assistant.Tools
         private sealed class MeasureCcdfTool : MeasureTool
         {
             public override string Name => "measure_ccdf";
-            public override string Description => "Measure CCDF / PAPR (dB) and average power on the E4406A (Power Statistics).";
+            public override string Description => "Measure CCDF / PAPR (dB) and average power on the analyzer (Power Statistics).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("center_hz", Schema.Number("center frequency, Hz"), required: true));
             public override Task<ToolResult> ExecuteAsync(JObject a, ToolContext ctx, CancellationToken ct) =>
@@ -85,7 +86,7 @@ namespace EsgSignalCreator.Assistant.Tools
         private sealed class MeasureSpectrumPeakTool : MeasureTool
         {
             public override string Name => "measure_spectrum_peak";
-            public override string Description => "Measure the spectrum peak (frequency Hz + power dBm) and occupied bandwidth on the E4406A.";
+            public override string Description => "Measure the spectrum peak (frequency Hz + power dBm) and occupied bandwidth on the analyzer.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("center_hz", Schema.Number("center frequency, Hz"), required: true),
                 Schema.P("span_hz", Schema.Number("measurement span, Hz (default 5e6)")));
@@ -96,7 +97,7 @@ namespace EsgSignalCreator.Assistant.Tools
         private sealed class MeasureWaveformTool : MeasureTool
         {
             public override string Name => "measure_waveform";
-            public override string Description => "Measure time-domain peak/mean power (dBm) and peak-to-mean (dB) on the E4406A.";
+            public override string Description => "Measure time-domain peak/mean power (dBm) and peak-to-mean (dB) on the analyzer.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("center_hz", Schema.Number("center frequency, Hz"), required: true));
             public override Task<ToolResult> ExecuteAsync(JObject a, ToolContext ctx, CancellationToken ct) =>
@@ -107,7 +108,7 @@ namespace EsgSignalCreator.Assistant.Tools
         {
             public override string Name => "verify_signal";
             public override string Description =>
-                "Closed-loop verify: measure the played signal on the E4406A and compare expected-vs-measured " +
+                "Closed-loop verify: measure the played signal on the analyzer and compare expected-vs-measured " +
                 "(channel power, PAPR from the generated I/Q, and — with a tone offset — tone frequency). Omitted " +
                 "parameters default to the ESG's commanded carrier/power. Requires a calculated waveform + a connected analyzer.";
             public override JObject InputSchema => Schema.Object(
