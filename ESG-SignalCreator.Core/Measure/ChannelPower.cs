@@ -32,11 +32,12 @@ namespace EsgSignalCreator.Measure
         /// <c>:SENSe:CHPower:BANDwidth:INTegration</c> before the read; 0 leaves the analyzer's setting.
         /// </param>
         /// <remarks>
-        /// By the E4406A Programmer's Guide convention the <c>CHPower</c> scalar result set is
-        /// <c>[total power dBm, power spectral density dBm/Hz]</c>. NOTE: the exact SCPI root and the
-        /// <c>[n]</c> result-index mapping are still to be confirmed against the physical unit
-        /// (see §10 of the requirements doc). A short/empty response yields <see cref="double.NaN"/>
-        /// for the missing field(s) rather than throwing.
+        /// The <c>CHPower</c> scalar result set is <c>[total power dBm, power spectral density dBm/Hz]</c>.
+        /// This measurement is cross-model with no SCPI change: the N9010A (SA-mode Channel Power) uses
+        /// the same root, the same <c>:SENSe:CHPower:FREQuency:SPAN</c> / <c>:SENSe:CHPower:BANDwidth:INTegration</c>
+        /// commands, and the same <c>[0]=power, [1]=PSD</c> ordering at n=1 (SA Reference 9018-06099); the
+        /// only difference — SA vs Basic mode — is handled by <see cref="BasicMeasurement.Setup"/>. A
+        /// short/empty response yields <see cref="double.NaN"/> for the missing field(s) rather than throwing.
         /// </remarks>
         public static ChannelPowerResult Measure(
             VsaInstrument vsa,

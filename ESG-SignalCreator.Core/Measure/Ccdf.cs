@@ -55,7 +55,9 @@ namespace EsgSignalCreator.Measure
             if (counts > 0)
                 vsa.Write(":SENSe:PSTatistic:COUNts " + counts.ToString(CultureInfo.InvariantCulture));
 
-            double[] scalars = basic.Read(Root);
+            // The scalar set lives at a model-specific result index (E4406A n=1; N9010A n=2 — n=0/1 are
+            // trace data there). The within-set ordering is the same, so the field mapping below is shared.
+            double[] scalars = basic.Read(Root, vsa.Dialect.CcdfScalarResultIndex);
 
             return new CcdfResult
             {

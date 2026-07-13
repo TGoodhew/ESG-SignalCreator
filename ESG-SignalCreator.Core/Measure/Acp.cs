@@ -18,17 +18,19 @@ namespace EsgSignalCreator.Measure
     /// reference) scalar set is 24 values: [0] upper-adjacent rel (dB), [1] upper-adjacent abs (dBm),
     /// [2] lower-adjacent rel, [3] lower-adjacent abs, then offsets 1..5 as (neg rel, neg abs, pos rel,
     /// pos abs) at [4..23]. Inactive channels report ~ -999. A short response yields fewer entries.
+    /// <para>
+    /// The N9010A (SA-mode <c>ACPower</c>, Total-power reference) differs — its header is
+    /// [0.0, total-carrier, 0.0, ref-carrier] and it carries 6 offsets (A..F) with the same per-offset
+    /// block from index 4, so the adjacent dBc comes from offset A. The offset count and adjacent-channel
+    /// positions therefore come from the dialect (<see cref="IVsaDialect.AcpScalars"/>); the per-offset
+    /// block layout (lowerRel, lowerAbs, upperRel, upperAbs) is shared. The N9010A ACPower root is
+    /// supplied by the dialect too. N9010A layout is manual-derived (9018-06099) — confirm on hardware.
+    /// </para>
     /// </remarks>
     public static class Acp
     {
         /// <summary>Carrier reference integration bandwidth command (valid on Basic-mode ACP).</summary>
         private const string IntegrationBwCommand = ":SENSe:ACP:BANDwidth:INTegration";
-
-        /// <summary>SCPI measurement root for Adjacent Channel Power.</summary>
-        private const string Root = "ACP";
-
-        /// <summary>Number of offset channels per side the Basic-mode scalar set carries.</summary>
-        private const int MaxOffsets = 5;
 
         /// <summary>
         /// Perform an Adjacent Channel Power measurement using the analyzer's offset definitions.
@@ -49,34 +51,40 @@ namespace EsgSignalCreator.Measure
             if (carrierBandwidthHz > 0)
                 vsa.Write(IntegrationBwCommand + " " + carrierBandwidthHz.ToString("G17", CultureInfo.InvariantCulture) + " Hz");
 
-            double[] s = basic.Read(Root);
+            string root = vsa.Dialect.RootFor(VsaMeasurement.Acp); // E4406A "ACP" / N9010A "ACPower"
+            AcpScalarLayout layout = vsa.Dialect.AcpScalars;
+            double[] s = basic.Read(root);
 
             var lowerDbc = new List<double>();
             var lowerDbm = new List<double>();
             var upperDbc = new List<double>();
             var upperDbm = new List<double>();
 
-            // Offsets 1..5 begin at index 4, four values each (neg rel, neg abs, pos rel, pos abs).
-            for (int k = 0; k < MaxOffsets; k++)
+            // Each offset is four values from the base index: (lowerRel, lowerAbs, upperRel, upperAbs).
+            for (int k = 0; k < layout.OffsetCount; k++)
             {
-                int negRel = 4 + 4 * k, negAbs = 5 + 4 * k, posRel = 6 + 4 * k, posAbs = 7 + 4 * k;
-                if (negRel < s.Length) lowerDbc.Add(s[negRel]);
-                if (negAbs < s.Length) lowerDbm.Add(s[negAbs]);
-                if (posRel < s.Length) upperDbc.Add(s[posRel]);
-                if (posAbs < s.Length) upperDbm.Add(s[posAbs]);
+                int b = layout.OffsetBaseIndex + 4 * k;
+                if (b < s.Length) lowerDbc.Add(s[b]);
+                if (b + 1 < s.Length) lowerDbm.Add(s[b + 1]);
+                if (b + 2 < s.Length) upperDbc.Add(s[b + 2]);
+                if (b + 3 < s.Length) upperDbm.Add(s[b + 3]);
             }
 
             return new AcpResult
             {
-                Measurement = Root,
+                Measurement = root,
                 Raw = s,
-                UpperAdjacentDbc = s.Length > 0 ? s[0] : double.NaN,
-                LowerAdjacentDbc = s.Length > 2 ? s[2] : double.NaN,
+                UpperAdjacentDbc = At(s, layout.UpperAdjacentDbcIndex),
+                LowerAdjacentDbc = At(s, layout.LowerAdjacentDbcIndex),
                 LowerOffsetsDbc = lowerDbc.ToArray(),
                 LowerOffsetsDbm = lowerDbm.ToArray(),
                 UpperOffsetsDbc = upperDbc.ToArray(),
                 UpperOffsetsDbm = upperDbm.ToArray()
             };
         }
+
+        /// <summary>Scalar at <paramref name="index"/>, or NaN when the response is too short.</summary>
+        private static double At(double[] s, int index) =>
+            s != null && index >= 0 && index < s.Length ? s[index] : double.NaN;
     }
 }
