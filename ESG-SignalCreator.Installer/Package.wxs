@@ -21,7 +21,7 @@
     <Property Id="NETFRAMEWORK472">
       <RegistrySearch Id="Net472Release" Root="HKLM"
                       Key="SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
-                      Name="Release" Type="raw" />
+                      Name="Release" Type="integer" />
     </Property>
     <Launch Condition="Installed OR (NETFRAMEWORK472 &gt;= 461808)"
             Message="ESG-SignalCreator requires .NET Framework 4.7.2 or later. Please install it and run setup again." />
