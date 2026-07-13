@@ -17,13 +17,13 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed. Setup will now exit." />
     <MediaTemplate EmbedCab="yes" />
 
-    <!-- Prerequisite: .NET Framework 4.7.2 (release key 461808). Blocks install with a clear message. -->
-    <Property Id="NETFRAMEWORK472">
-      <RegistrySearch Id="Net472Release" Root="HKLM"
-                      Key="SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full"
-                      Name="Release" Type="raw" />
-    </Property>
-    <Launch Condition="Installed OR (NETFRAMEWORK472 &gt;= 461808)"
+    <!-- Prerequisite: .NET Framework 4.7.2. Uses the WixToolset.Netfx extension's canonical detection
+         property, which reads the NDP\v4\Full\Release key with the correct per-OS thresholds. The earlier
+         hand-rolled RegistrySearch used Type="raw" (yielding "#461808", so the numeric compare failed and
+         the installer wrongly blocked when 4.7.2 was present); "integer" is not a legal RegistrySearch type
+         in WiX v5. The extension property avoids both traps. Blocks install with a clear message. -->
+    <PropertyRef Id="WIX_IS_NETFRAMEWORK_472_OR_LATER_INSTALLED" />
+    <Launch Condition="Installed OR WIX_IS_NETFRAMEWORK_472_OR_LATER_INSTALLED"
             Message="ESG-SignalCreator requires .NET Framework 4.7.2 or later. Please install it and run setup again." />
 
     <!-- Prerequisite (soft): an IVI-compliant VISA runtime, needed for live instrument I/O. The app
