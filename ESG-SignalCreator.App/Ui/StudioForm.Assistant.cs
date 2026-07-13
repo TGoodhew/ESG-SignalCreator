@@ -40,8 +40,9 @@ namespace EsgSignalCreator.Ui
     {
         private const string AssistantSystemPrompt =
             "You are an assistant embedded in ESG-SignalCreator, a tool that builds I/Q waveforms and " +
-            "plays them on a Keysight E4438C signal generator, with optional verification on an E4406A " +
-            "analyzer. Drive the app ONLY through the provided tools — never invent file paths or values " +
+            "plays them on a Keysight E4438C signal generator, with optional verification on a connected " +
+            "analyzer (an Agilent E4406A or a Keysight N9010A). Drive the app ONLY through the provided tools " +
+            "— never invent file paths or values " +
             "the user did not give. Read tools (get_app_state, get_current_config, get_validation_results, " +
             "get_results_readout, list_personalities) run freely; call get_app_state first to orient. " +
             "Configure tools change project state only. Hardware actions require the user to approve an " +

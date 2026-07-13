@@ -43,6 +43,20 @@ namespace EsgSignalCreator.Tests.Assistant
             Assert.Equal(7, MeasureTools.All().Count());
         }
 
+        // #112: tool descriptions must be model-neutral so they read correctly whether an E4406A or an
+        // N9010A is connected. get_vsa_state may name both models; the rest name neither.
+        [Fact]
+        public void Tool_descriptions_are_model_neutral()
+        {
+            foreach (IAppTool t in MeasureTools.All())
+            {
+                if (t.Name == "get_vsa_state")
+                    Assert.Contains("N9010A", t.Description);
+                else
+                    Assert.DoesNotContain("E4406A", t.Description);
+            }
+        }
+
         [Fact]
         public void Measurement_tools_require_a_center_frequency()
         {

@@ -28,6 +28,10 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
     n=1, N9010A n=2 — PAPR still at [8]); ACP uses a per-model layout (E4406A 5 offsets with adjacent
     dBc in the header; N9010A `ACPower` with 6 offsets A–F and adjacent dBc from offset A). With these,
     the closed-loop **Verify** (channel power + PAPR + spectrum tone) works on the N9010A (#111).
+  - **Headless harness + assistant** target either analyzer: the HIL harness takes a `--vsa-model`
+    flag (`e4406a` | `n9010a`) that drives the identity guard, the per-model input-damage default, and
+    the sweep ceiling; the assistant's measure_*/verify_signal tool text and system prompt are now
+    model-neutral, and `get_vsa_state` reports the connected analyzer's model (#112).
 
 ### Notes
 - Still in progress for full N9010A verification: the SA-mode Channel Power / ACP / CCDF and IQ

@@ -56,7 +56,7 @@ namespace EsgSignalCreator.HilHarness
             var opts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var valueFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { "--esg", "--vsa", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz", "--signal", "--json" };
+                { "--esg", "--vsa", "--vsa-model", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz", "--signal", "--json" };
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -73,9 +73,11 @@ namespace EsgSignalCreator.HilHarness
             bool rfOn = flags.Contains("--rf-on");
             bool closedLoop = flags.Contains("--vsa") || opts.ContainsKey("--vsa");
             string vsaResource = Opt(opts, "--vsa") ?? DefaultVsaResource;
+            VsaModel vsaModel = ParseVsaModel(Opt(opts, "--vsa-model"));
             double verifyPowerDbm = Num(opts, "--verify-power-dbm", -10.0);
             double offsetHz = Num(opts, "--offset-hz", 1e6);
-            double maxInputDbm = Num(opts, "--max-input-dbm", 30.0);
+            // Default the input-damage limit from the target analyzer (E4406A +30 dBm, N9010A +25 dBm).
+            double maxInputDbm = Num(opts, "--max-input-dbm", AnalyzerInputLimits.DefaultMaxSafeInputDbm(vsaModel));
             double pathLossDb = Num(opts, "--path-loss-db", 0.0);
             double dwellSeconds = Num(opts, "--dwell-seconds", 0.0);
             // Frequency sweep across the E4438C's range (the default for hardware tests). A single
@@ -93,7 +95,7 @@ namespace EsgSignalCreator.HilHarness
 
             Console.WriteLine("ESG-SignalCreator hardware-in-the-loop harness");
             Console.WriteLine("ESG       : " + esgResource);
-            Console.WriteLine("VSA       : " + (closedLoop ? vsaResource + "  (CLOSED-LOOP)" : "(not used)"));
+            Console.WriteLine("VSA       : " + (closedLoop ? vsaResource + "  (" + vsaModel + ", CLOSED-LOOP)" : "(not used)"));
             Console.WriteLine(closedLoop
                 ? "RF        : WILL be enabled at " + verifyPowerDbm.ToString(CultureInfo.InvariantCulture) +
                   " dBm into the analyzer (limit " + maxInputDbm.ToString(CultureInfo.InvariantCulture) +
@@ -163,11 +165,11 @@ namespace EsgSignalCreator.HilHarness
 
                 if (closedLoop)
                 {
-                    double[] sweep = BuildSweep(esg, carrierOverride, points, startHz, stopHz);
+                    double[] sweep = BuildSweep(esg, carrierOverride, points, startHz, stopHz, AnalyzerCeilingHz(vsaModel));
                     if (flatness)
-                        RunFlatness(esg, vsaResource, sweep, maxInputDbm, pathLossDb, dwellSeconds);
+                        RunFlatness(esg, vsaResource, vsaModel, sweep, maxInputDbm, pathLossDb, dwellSeconds);
                     else
-                        RunClosedLoop(esg, vsaResource, sweep, signals, verifyPowerDbm, offsetHz, maxInputDbm, pathLossDb, dwellSeconds);
+                        RunClosedLoop(esg, vsaResource, vsaModel, sweep, signals, verifyPowerDbm, offsetHz, maxInputDbm, pathLossDb, dwellSeconds);
                 }
                 else if (rfOn)
                 {
@@ -196,14 +198,14 @@ namespace EsgSignalCreator.HilHarness
         // ---- closed-loop (ESG -> E4406A) ----
 
         /// <summary>Build the carrier sweep: a single --carrier-hz override, else N points start→stop
-        /// (stop defaults to the ESG's queried max, capped to the E4406A's ~4 GHz ceiling).</summary>
-        private static double[] BuildSweep(EsgController esg, double carrierOverride, int points, double startHz, double stopHz)
+        /// (stop defaults to the ESG's queried max, capped to the analyzer's frequency ceiling).</summary>
+        private static double[] BuildSweep(EsgController esg, double carrierOverride, int points, double startHz, double stopHz, double analyzerCeilingHz)
         {
             if (carrierOverride > 0) return new[] { carrierOverride };
             if (points < 1) points = 1;
             if (stopHz <= 0)
             {
-                try { stopHz = Math.Min(esg.GetMaxFrequencyHz(), 4e9); } // the E4406A tops out ~4 GHz
+                try { stopHz = Math.Min(esg.GetMaxFrequencyHz(), analyzerCeilingHz); }
                 catch { stopHz = 3e9; }
             }
             if (stopHz < startHz) stopHz = startHz;
@@ -214,11 +216,23 @@ namespace EsgSignalCreator.HilHarness
             return f;
         }
 
-        private static void RunClosedLoop(EsgController esg, string vsaResource, double[] sweepHz, string[] signals,
+        /// <summary>Parse --vsa-model (e.g. "e4406a" / "n9010a"); defaults to E4406A when absent/unknown.</summary>
+        private static VsaModel ParseVsaModel(string arg)
+        {
+            if (string.IsNullOrWhiteSpace(arg)) return VsaModel.E4406A;
+            VsaModel m = VsaModels.Detect(arg);
+            return m == VsaModel.Unknown ? VsaModel.E4406A : m;
+        }
+
+        /// <summary>Upper frequency the analyzer can measure to, used to cap the auto sweep (the ESG's own
+        /// max usually limits first). The E4406A tops out ~4 GHz; the N9010A (EXA) reaches much higher.</summary>
+        private static double AnalyzerCeilingHz(VsaModel model) => model == VsaModel.N9010A ? 44e9 : 4e9;
+
+        private static void RunClosedLoop(EsgController esg, string vsaResource, VsaModel vsaModel, double[] sweepHz, string[] signals,
             double verifyPowerDbm, double offsetHz, double maxInputDbm, double pathLossDb, double dwellSeconds)
         {
             Console.WriteLine(new string('-', 64));
-            Console.WriteLine("Closed-loop verification (E4406A) — signals: " + string.Join(", ", signals));
+            Console.WriteLine("Closed-loop verification (" + vsaModel + ") — signals: " + string.Join(", ", signals));
             Console.WriteLine("Sweep: " + sweepHz.Length + " point(s): "
                 + string.Join(", ", sweepHz.Select(x => (x / 1e6).ToString("0.###", CultureInfo.InvariantCulture) + " MHz")));
 
@@ -233,11 +247,11 @@ namespace EsgSignalCreator.HilHarness
                 var vsa = new VsaInstrument(vio);
                 vsa.TimeoutMilliseconds = 30000; // averaged measurements (CCDF/ACP) can take many seconds
                 try { vsa.Write(":ABORt"); vsa.Clear(); } catch { /* recover any measurement left running by a prior run */ }
-                Step("VSA *IDN? identifies an E4406A", () =>
+                Step("VSA *IDN? identifies a " + vsaModel, () =>
                 {
                     InstrumentIdentity id = vsa.Identify();
                     Console.WriteLine("            " + id.Manufacturer + " / " + id.Model + " / FW " + id.FirmwareRevision);
-                    if (!vsa.IsModel(VsaModel.E4406A)) throw new Exception("Model is not E4406A: '" + id.Model + "'");
+                    if (!vsa.IsModel(vsaModel)) throw new Exception("Model is not " + vsaModel + ": '" + id.Model + "'");
                 });
                 Step("VSA options", () => Console.WriteLine("            *OPT? = " + string.Join(",", vsa.Options())));
                 vsa.Clear();
@@ -376,7 +390,7 @@ namespace EsgSignalCreator.HilHarness
         /// Amplitude accuracy / flatness (#99): a CW carrier stepped over several power levels at each
         /// frequency, verifying the measured channel power tracks the commanded level (path-loss aware).
         /// </summary>
-        private static void RunFlatness(EsgController esg, string vsaResource, double[] sweepHz,
+        private static void RunFlatness(EsgController esg, string vsaResource, VsaModel vsaModel, double[] sweepHz,
             double maxInputDbm, double pathLossDb, double dwellSeconds)
         {
             double[] powers = { -40, -30, -20, -10 };
@@ -395,7 +409,7 @@ namespace EsgSignalCreator.HilHarness
                 var vsa = new VsaInstrument(vio);
                 vsa.TimeoutMilliseconds = 30000;
                 try { vsa.Write(":ABORt"); vsa.Clear(); } catch { /* recover */ }
-                Step("VSA *IDN? identifies an E4406A", () => { if (!vsa.IsModel(VsaModel.E4406A)) throw new Exception("not an E4406A"); });
+                Step("VSA *IDN? identifies a " + vsaModel, () => { if (!vsa.IsModel(vsaModel)) throw new Exception("not a " + vsaModel); });
 
                 var src = new CwPersonality();
                 src.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = 1e6 });
