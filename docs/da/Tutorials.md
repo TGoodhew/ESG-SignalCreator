@@ -853,6 +853,13 @@ konsolværktøj, adskilt fra GUI'en.
    ```
    `--vsa-model` (`e4406a` standard | `n9010a`) vælger analysatoren, dens identitetskontrol og dens
    modelspecifikke input-skade-standard.
+4. **Installations-selvtest** — kør CW → AM → FM → I/Q-batteriet (den headless-tvilling til den
+   indbyggede **Verify install…**, UserGuide §9.7) på den ene valgte analysator, med en JSON-rapport +
+   exit-kode:
+   ```powershell
+   ESG-SignalCreator.HilHarness.exe --install-verify --vsa GPIB0::17::INSTR --vsa-model e4406a --json verify.json
+   ```
+   Den kører mod én analysator pr. kørsel (`--vsa-model`); kør den to gange for at dække begge.
 3. Eller kør en enkelt signaltype, eller amplitude-flathed-effekt-sweepet:
    ```powershell
    ESG-SignalCreator.HilHarness.exe --vsa --signal multitone
