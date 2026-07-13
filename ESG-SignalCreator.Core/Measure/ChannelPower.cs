@@ -47,7 +47,7 @@ namespace EsgSignalCreator.Measure
             if (vsa == null) throw new ArgumentNullException(nameof(vsa));
 
             var basic = new BasicMeasurement(vsa);
-            basic.Setup(centerHz);
+            basic.Setup(VsaMeasurement.ChannelPower, centerHz);
 
             if (spanHz > 0)
             {

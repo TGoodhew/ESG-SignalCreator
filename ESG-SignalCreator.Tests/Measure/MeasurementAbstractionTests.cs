@@ -12,6 +12,7 @@ namespace EsgSignalCreator.Tests.Measure
         {
             public readonly List<string> Writes = new List<string>();
             public string ScalarResponse = "-10.2,-50.1";
+            public string IdnResponse = "Agilent Technologies, E4406A, US44210123, A.05.00";
             public string ResourceName => "GPIB0::17::INSTR";
             public bool IsConnected => true;
             public int TimeoutMilliseconds { get; set; }
@@ -20,6 +21,7 @@ namespace EsgSignalCreator.Tests.Measure
             public string Query(string command)
             {
                 Writes.Add(command);
+                if (command == "*IDN?") return IdnResponse;
                 return command.EndsWith("?") ? ScalarResponse : "";
             }
             public void WriteBinaryBlock(byte[] message) { }
@@ -54,13 +56,34 @@ namespace EsgSignalCreator.Tests.Measure
         {
             var io = new FakeVsa { ScalarResponse = "-10.2,-50.1" };
             var m = new BasicMeasurement(new VsaInstrument(io));
-            m.Setup(1e9);
+            m.Setup(VsaMeasurement.ChannelPower, 1e9);
             double[] result = m.Read("CHPower");
 
             Assert.Equal(new[] { -10.2, -50.1 }, result);
             Assert.Contains(":INSTrument:SELect BASIC", io.Writes);
             Assert.Contains(io.Writes, w => w.StartsWith(":SENSe:FREQuency:CENTer"));
             Assert.Contains(":READ:CHPower?", io.Writes);
+        }
+
+        // #107: Setup enters the correct instrument mode per model. On the E4406A every measurement is
+        // BASIC; on the N9010A, Channel Power/ACP/CCDF are SA-mode while Spectrum/Waveform stay BASIC.
+        [Theory]
+        [InlineData("Agilent Technologies, E4406A, US1, A.05.00", ":INSTrument:SELect BASIC")]
+        [InlineData("Keysight Technologies,N9010A,MY51234567,A.20.14", ":INSTrument:SELect SA")]
+        public void Setup_selects_the_right_mode_for_channel_power_per_model(string idn, string expectedMode)
+        {
+            var io = new FakeVsa { IdnResponse = idn };
+            new BasicMeasurement(new VsaInstrument(io)).Setup(VsaMeasurement.ChannelPower, 1e9);
+            Assert.Contains(expectedMode, io.Writes);
+        }
+
+        [Fact]
+        public void Setup_selects_basic_for_spectrum_on_the_n9010a()
+        {
+            var io = new FakeVsa { IdnResponse = "Keysight Technologies,N9010A,MY51234567,A.20.14" };
+            new BasicMeasurement(new VsaInstrument(io)).Setup(VsaMeasurement.Spectrum, 1e9);
+            Assert.Contains(":INSTrument:SELect BASIC", io.Writes);
+            Assert.DoesNotContain(":INSTrument:SELect SA", io.Writes);
         }
     }
 }
