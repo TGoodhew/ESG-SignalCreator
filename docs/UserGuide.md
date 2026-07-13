@@ -283,6 +283,8 @@ four signals as ARB I/Q and plays each through the ESG, measuring each on the co
 Results appear in the **Verification** view (expected vs measured per step) with an overall **PASS/FAIL**.
 It needs a baseband-capable ESG and a connected analyzer; the **input-damage safety gate** is enforced
 before any RF, and RF is returned off when done. AM/FM are verified via power/PAPR (not analog demod).
+On a **FAIL**, a **troubleshooting dialog** lists each failed check's likely cause and ordered fixes
+(e.g. excessive AM → over-driven ESG or analyzer mis-read → lower level / check ARB scaling / re-run Path cal…).
 
 ---
 
