@@ -202,7 +202,9 @@ namespace EsgSignalCreator.Ui.Instrument
         }
 
         /// <summary>Carrier frequency in hertz, from the numeric value and its unit.</summary>
-        private double FrequencyHz
+        /// <summary>The carrier frequency currently entered in the panel, in hertz. Used by the
+        /// Calculate-time validation to check the intended carrier against the instrument's range.</summary>
+        public double FrequencyHz
         {
             get
             {
