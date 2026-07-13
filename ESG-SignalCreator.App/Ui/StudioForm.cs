@@ -80,7 +80,11 @@ namespace EsgSignalCreator.Ui
 
         private readonly SplitContainer _outerSplit;
         private readonly SplitContainer _rightSplit;
-        private readonly InstrumentProfile _profile = InstrumentProfiles.Load("E4438C");
+        // The static profile is the offline/base fallback; _profile is reconciled with the live unit's
+        // *IDN?/*OPT?/range on connect (issue #120) so validation reflects the actual instrument.
+        private readonly InstrumentProfile _baseProfile = InstrumentProfiles.Load("E4438C");
+        private InstrumentProfile _profile;
+        private string[] _installedOptions;
         private EsgInstrument _instrument;
         private EsgController _esg;
         private VsaInstrument _vsa;
@@ -94,6 +98,7 @@ namespace EsgSignalCreator.Ui
 
         public StudioForm()
         {
+            _profile = _baseProfile; // reconciled with the live unit on connect (§120)
             Text = "ESG Signal Studio";
             Width = 1200;
             Height = 760;
@@ -367,6 +372,17 @@ namespace EsgSignalCreator.Ui
         {
             if (_waveform == null) { _status.Text = "Calculate a waveform first."; return false; }
             if (_esg == null) { _status.Text = "Connect to an instrument first."; return false; }
+            // Gate on the baseband-generator option (§120): if *OPT? was read and reports no ARB option,
+            // the download would be silently rejected instrument-side — fail fast with a clear message.
+            if (_installedOptions != null && _installedOptions.Length > 0 &&
+                (_profile == null || _profile.BasebandOptions == null || _profile.BasebandOptions.Length == 0))
+            {
+                _notifications.Append(new ValidationResult(ValidationSeverity.Error,
+                    "The connected instrument reports no baseband-generator option (001/002/601/602); " +
+                    "it cannot play ARB waveforms."));
+                _status.Text = "Download blocked: no baseband option.";
+                return false;
+            }
             try
             {
                 string seg = SegmentName();
@@ -416,7 +432,11 @@ namespace EsgSignalCreator.Ui
 
         private void RunValidation(WaveformModel wf)
         {
-            double carrier = _profile != null ? (_profile.MinFrequencyHz + _profile.MaxFrequencyHz) / 2 : 1e9;
+            // Validate against the intended carrier from the settings panel (§120) rather than a range
+            // midpoint placeholder; fall back to the midpoint only if no frequency is entered.
+            double carrier = _settings.FrequencyHz > 0
+                ? _settings.FrequencyHz
+                : (_profile != null ? (_profile.MinFrequencyHz + _profile.MaxFrequencyHz) / 2 : 1e9);
             var results = new System.Collections.Generic.List<ValidationResult>(WaveformValidator.Validate(wf, _profile, wf.SampleRateHz, carrier));
             if (!SeamlessGuard.IsSeamless(wf))
                 results.Add(new ValidationResult(ValidationSeverity.Warning,
@@ -484,7 +504,17 @@ namespace EsgSignalCreator.Ui
             try
             {
                 InstrumentIdentity id = inst.Identify();
-                _statusModel.Text = id.Model + "  " + id.FirmwareRevision;
+                // Reconcile the capability profile with the live unit (§120): model, installed baseband
+                // options (memory cap), and queried frequency range. Failures fall back to the base profile.
+                string[] opts;
+                try { opts = inst.Options(); } catch { opts = null; }
+                double maxF = 0, minF = 0;
+                try { maxF = _esg.GetMaxFrequencyHz(); } catch { /* range query optional */ }
+                try { minF = _esg.GetMinFrequencyHz(); } catch { /* range query optional */ }
+                _installedOptions = opts;
+                _profile = EffectiveProfile.Reconcile(_baseProfile, id.Model, opts, maxF, minF) ?? _baseProfile;
+                _statusModel.Text = id.Model + "  " + id.FirmwareRevision +
+                    (opts != null && opts.Length > 0 ? "  [" + string.Join(",", opts) + "]" : "");
             }
             catch { _statusModel.Text = inst.ResourceName; }
             UpdatePipelineEnabled();

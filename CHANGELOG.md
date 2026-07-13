@@ -6,6 +6,15 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Changed
+- **Live capability binding** (core of #120): on ESG connect, the capability profile is now reconciled
+  with the connected unit's `*IDN?` model, `*OPT?` installed options, and queried frequency range,
+  instead of a static `E4438C` profile. The memory cap reflects only the **installed** baseband option
+  (e.g. a 001/601 unit is 8.3M samples, not the model-max 67M), Calculate-time validation checks the
+  **intended carrier** from the settings panel (not a range midpoint), and **ARB download is gated on
+  the baseband-generator option** — an incapable unit fails fast with a clear message instead of a
+  silent instrument-side rejection. Offline mode still uses the static profile.
+
 ### Added
 - **Keysight N9010A (EXA) analyzer support — in progress** (epic #105). Delivered so far:
   - Analyzer **model abstraction**: `VsaModel` resolved from `*IDN?`, with an `IVsaDialect`
