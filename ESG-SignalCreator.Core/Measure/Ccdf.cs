@@ -49,7 +49,7 @@ namespace EsgSignalCreator.Measure
             if (vsa == null) throw new ArgumentNullException(nameof(vsa));
 
             var basic = new BasicMeasurement(vsa);
-            basic.Setup(centerHz);
+            basic.Setup(VsaMeasurement.Ccdf, centerHz);
 
             // Bound the sample count so READ:PSTatistic? returns promptly (factory default is 10,000,000).
             if (counts > 0)

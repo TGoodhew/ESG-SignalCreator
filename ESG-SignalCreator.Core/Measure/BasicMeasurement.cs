@@ -27,12 +27,16 @@ namespace EsgSignalCreator.Measure
         public IVsaDialect Dialect => _vsa.Dialect;
 
         /// <summary>
-        /// Put the analyzer into Basic single-measurement mode at the given center frequency. Span is
-        /// per-measurement on the E4406A, so each concrete measurement sets its own span after this.
+        /// Put the analyzer into the correct instrument mode for <paramref name="measurement"/>, single
+        /// measurement, at the given center frequency. The mode comes from the dialect: on the E4406A
+        /// every measurement is <c>BASIC</c>; on the N9010A, Spectrum/Waveform run in the IQ Analyzer
+        /// (<c>BASIC</c>) mode while Channel Power/ACP/CCDF run in Spectrum Analyzer (<c>SA</c>) mode.
+        /// Span is applied by each concrete measurement afterwards (per-measurement on the E4406A;
+        /// global on the N9010A — see <see cref="IVsaDialect.HasGlobalSpan"/>).
         /// </summary>
-        public void Setup(double centerHz)
+        public void Setup(VsaMeasurement measurement, double centerHz)
         {
-            _vsa.SelectBasicMode();
+            _vsa.SelectMode(_vsa.Dialect.InstrumentModeFor(measurement));
             _vsa.SetSingleMeasurement();
             _vsa.SetCenterFrequencyHz(centerHz);
         }

@@ -44,7 +44,7 @@ namespace EsgSignalCreator.Measure
             if (vsa == null) throw new ArgumentNullException(nameof(vsa));
 
             var basic = new BasicMeasurement(vsa);
-            basic.Setup(centerHz);
+            basic.Setup(VsaMeasurement.Acp, centerHz);
 
             if (carrierBandwidthHz > 0)
                 vsa.Write(IntegrationBwCommand + " " + carrierBandwidthHz.ToString("G17", CultureInfo.InvariantCulture) + " Hz");

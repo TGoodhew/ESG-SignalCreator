@@ -100,8 +100,13 @@ namespace EsgSignalCreator.Visa
         public string GetMode() => (_io.Query(":INSTrument:SELect?") ?? string.Empty).Trim().Trim('"');
 
         /// <summary>
-        /// The measurement modes installed on this unit, from <c>:INSTrument:CATalog?</c> (a quoted,
-        /// comma-separated name list). This is the authoritative option gate for standard personalities.
+        /// The measurement modes installed on this unit, from <c>:INSTrument:CATalog?</c>. This is the
+        /// authoritative option gate for standard personalities.
+        /// <para>
+        /// Handles both response dialects: the E4406A returns individually quoted items
+        /// (<c>"BASIC","GSM","WCDMA"</c>) while the X-Series/N9010A returns a single quoted CSV
+        /// (<c>"SA,PNOISE,BASIC"</c>). Splitting on comma then trimming quotes from each part parses both.
+        /// </para>
         /// </summary>
         public string[] ModeCatalog()
         {

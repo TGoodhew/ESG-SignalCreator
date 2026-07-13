@@ -12,6 +12,7 @@ namespace EsgSignalCreator.Tests.Visa
             public readonly List<string> Writes = new List<string>();
             public string IdnResponse = "Agilent Technologies, E4406A, US44210123, A.05.00";
             public string OptResponse = "B7C,200,202";
+            public string CatalogResponse = "";
 
             public string ResourceName => "GPIB0::17::INSTR";
             public bool IsConnected => true;
@@ -22,6 +23,7 @@ namespace EsgSignalCreator.Tests.Visa
             {
                 if (command == "*IDN?") return IdnResponse;
                 if (command == "*OPT?") return OptResponse;
+                if (command == ":INSTrument:CATalog?") return CatalogResponse;
                 if (command == ":SYSTem:ERRor?") return "+0,\"No error\"";
                 return "";
             }
@@ -79,6 +81,21 @@ namespace EsgSignalCreator.Tests.Visa
             Assert.Equal(n9010Mode, n9010.InstrumentModeFor(meas));
             Assert.Equal(n9010Root, n9010.RootFor(meas));
             Assert.True(n9010.HasGlobalSpan);
+        }
+
+        // #107: ModeCatalog must parse both the E4406A per-item-quoted list and the X-Series/N9010A
+        // single-quoted CSV.
+        [Theory]
+        [InlineData("\"BASIC\",\"GSM\",\"WCDMA\"")]              // E4406A dialect
+        [InlineData("\"SA,PNOISE,BASIC,GSM,WCDMA\"")]           // X-Series/N9010A dialect
+        public void ModeCatalog_parses_both_response_dialects(string catalog)
+        {
+            var vsa = new VsaInstrument(new FakeVsa { CatalogResponse = catalog });
+            string[] modes = vsa.ModeCatalog();
+            Assert.Contains("BASIC", modes);
+            Assert.Contains("GSM", modes);
+            Assert.Contains("WCDMA", modes);
+            Assert.DoesNotContain(modes, m => m.Contains("\""));
         }
 
         [Fact]

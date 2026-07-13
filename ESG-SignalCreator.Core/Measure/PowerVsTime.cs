@@ -34,7 +34,7 @@ namespace EsgSignalCreator.Measure
             if (vsa == null) throw new ArgumentNullException(nameof(vsa));
 
             var basic = new BasicMeasurement(vsa);
-            basic.Setup(centerHz);
+            basic.Setup(VsaMeasurement.Waveform, centerHz);
 
             double[] trace = VsaScalarParser.ParseScalars(vsa.Query(TraceQuery)); // I,Q interleaved
             double[] scalars = basic.Fetch(Root);                                 // same acquisition
