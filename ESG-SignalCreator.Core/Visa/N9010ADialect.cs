@@ -23,6 +23,10 @@ namespace EsgSignalCreator.Visa
         // X-Series exposes a single global :SENSe:FREQuency:SPAN rather than per-measurement spans.
         public bool HasGlobalSpan => true;
 
+        // N9010A :READ:WAVeform? -> [sample-time, mean, mean-avg, num-samples, peak-to-mean, max(peak)]
+        // (IQ Analyzer Mode Reference 9018-02190): peak is the Maximum at index 5, not index 0.
+        public WaveformScalarLayout WaveformScalars => new WaveformScalarLayout(peakIndex: 5, meanIndex: 1, peakToMeanIndex: 4);
+
         public string InstrumentModeFor(VsaMeasurement measurement)
         {
             switch (measurement)

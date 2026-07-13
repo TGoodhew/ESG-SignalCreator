@@ -14,6 +14,13 @@ namespace EsgSignalCreator.Measure
     /// <c>:CALCulate:SPECtrum:MARKer1:TRACe ASP</c> (average spectrum) → <c>:MARKer1:MAXimum</c>
     /// (peak search) → <c>:MARKer1:X?</c> (absolute frequency, Hz) / <c>:MARKer1:Y?</c> (dBm).
     /// Mirrors the established 8563E MKPK → MKF?/MKA? workflow.
+    /// <para>
+    /// This same SCPI drives the N9010A: the X-Series IQ Analyzer (Basic) mode exposes the identical
+    /// <c>:SENSe:SPECtrum:FREQuency:SPAN</c> and <c>:CALCulate:SPECtrum:MARKer1:{TRACe ASPectrum|MAXimum|
+    /// X?|Y?}</c> commands (IQ Analyzer Mode Reference 9018-02190), and <c>ASP</c> is the accepted short
+    /// form of <c>ASPectrum</c>. The only per-model difference — the instrument mode — is handled by
+    /// <see cref="BasicMeasurement.Setup"/>, so no dialect branch is needed here.
+    /// </para>
     /// </remarks>
     public static class SpectrumMarker
     {

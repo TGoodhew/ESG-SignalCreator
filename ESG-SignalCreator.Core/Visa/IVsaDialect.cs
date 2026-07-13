@@ -11,6 +11,25 @@ namespace EsgSignalCreator.Visa
     }
 
     /// <summary>
+    /// 0-based positions of the peak, mean and peak-to-mean scalars within the <c>:READ:WAVeform?</c>
+    /// result set. The ordering differs by model: the E4406A returns [peak, mean, mean-avg, aux,
+    /// peak-to-mean]; the N9010A returns [sample-time, mean, mean-avg, num-samples, peak-to-mean, max].
+    /// </summary>
+    public struct WaveformScalarLayout
+    {
+        public WaveformScalarLayout(int peakIndex, int meanIndex, int peakToMeanIndex)
+        {
+            PeakIndex = peakIndex;
+            MeanIndex = meanIndex;
+            PeakToMeanIndex = peakToMeanIndex;
+        }
+
+        public int PeakIndex { get; }
+        public int MeanIndex { get; }
+        public int PeakToMeanIndex { get; }
+    }
+
+    /// <summary>
     /// The model-varying parts of the analyzer's SCPI, so measurement code can stay instrument-agnostic
     /// and read the right mnemonics from <see cref="VsaInstrument.Dialect"/> instead of hard-coding an
     /// E4406A dialect. This is the seam introduced for the N9010A port (issue #106); the concrete
@@ -40,5 +59,8 @@ namespace EsgSignalCreator.Visa
         /// false when span is per-measurement (<c>:SENSe:CHPower:FREQuency:SPAN</c> etc., the E4406A).
         /// </summary>
         bool HasGlobalSpan { get; }
+
+        /// <summary>Where peak/mean/peak-to-mean sit in the <c>:READ:WAVeform?</c> scalar set for this model.</summary>
+        WaveformScalarLayout WaveformScalars { get; }
     }
 }

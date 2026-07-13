@@ -14,6 +14,9 @@ namespace EsgSignalCreator.Visa
 
         public bool HasGlobalSpan => false;
 
+        // E4406A :READ:WAVeform? -> [peak, mean, mean-avg, aux, peak-to-mean] (bench-validated).
+        public WaveformScalarLayout WaveformScalars => new WaveformScalarLayout(peakIndex: 0, meanIndex: 1, peakToMeanIndex: 4);
+
         public string InstrumentModeFor(VsaMeasurement measurement) => "BASIC";
 
         public string RootFor(VsaMeasurement measurement)

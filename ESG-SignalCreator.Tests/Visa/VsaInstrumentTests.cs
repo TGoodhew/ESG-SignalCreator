@@ -92,6 +92,20 @@ namespace EsgSignalCreator.Tests.Visa
             Assert.True(n9010.HasGlobalSpan);
         }
 
+        [Fact]
+        public void Waveform_scalar_layout_is_per_model()
+        {
+            WaveformScalarLayout e = new E4406ADialect().WaveformScalars;
+            Assert.Equal(0, e.PeakIndex);
+            Assert.Equal(1, e.MeanIndex);
+            Assert.Equal(4, e.PeakToMeanIndex);
+
+            WaveformScalarLayout n = new N9010ADialect().WaveformScalars;
+            Assert.Equal(5, n.PeakIndex);   // Maximum, not sample-time at [0]
+            Assert.Equal(1, n.MeanIndex);
+            Assert.Equal(4, n.PeakToMeanIndex);
+        }
+
         // #107: ModeCatalog must parse both the E4406A per-item-quoted list and the X-Series/N9010A
         // single-quoted CSV.
         [Theory]
