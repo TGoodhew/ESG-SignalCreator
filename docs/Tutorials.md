@@ -34,11 +34,12 @@ User Guide section (e.g. "see UserGuide §5.2"). For an overview, build and inst
 > Throughout, UI elements are named exactly as they appear: toolbar **Buttons**, left-tree **Nodes**,
 > and right-dock **plot views**.
 
-> 🔄 **Auto-generated images.** The plot images in Parts A/C/D come from the app's own renderer, produced
-> in one pass by `ESG-SignalCreator.exe --tutorial-images docs/images/tutorials` (issue #150). Don't edit
-> them by hand — when a signal-tutorial changes, update the harness (`TutorialImageHarness`) and re-run it
-> so the images stay in lockstep with the text. Analyzer screenshots (Part F) come from the capture tool
-> (`HilHarness --capture-dir`, #143).
+> 🔄 **Auto-generated images (don't edit by hand).** The signal-tutorial analyzer screenshots are **real
+> N9010A captures** produced in one pass by `HilHarness --tutorial-captures docs/images/tutorials` (#150);
+> the two app-only plot views the analyzer can't draw — QPSK **constellation** and **eye** — come from
+> `ESG-SignalCreator.exe --tutorial-images docs/images/tutorials`. When a signal-tutorial changes, update
+> the relevant harness and re-run it so the images stay in lockstep with the text. Verification screenshots
+> (Part F) come from `HilHarness --install-verify --capture-dir` (#143). *E4406A captures coming soon.*
 
 ## Table of contents
 
@@ -126,9 +127,13 @@ continuous-wave tone so you can read the results readout and explore the plots.
 8. **Rubber-band zoom:** drag a rectangle on any plot to zoom into a region (for example, zoom the
    **Spectrum** view onto the tone). Use the plot's reset/unzoom gesture to return to full view.
 
-**What you should see:**
+**What you should see on the analyzer** (real N9010A capture):
 
-![CW tone at +100 kHz — spectrum](images/tutorials/t01-cw-spectrum.png)
+![CW tone on the N9010A — spectrum](images/tutorials/t01-cw-n9010a.png)
+
+> 🏷️ **E4406A images coming soon** — the analyzer captures here are from a Keysight N9010A.
+
+In the app's own plot views:
 
 - On **I/Q vs time**, smooth sinusoids for I and Q.
 - On **Spectrum**, a single sharp line at the frequency offset you set.
@@ -217,11 +222,14 @@ ratio, by comparing **Newman** vs **Equal** phasing in the **results readout** a
 4. Change only the **phase strategy** to **Equal** (all tones phase-aligned) and **Calculate** again.
 5. Compare the new **PAPR** in the readout and the new **CCDF** curve against the Newman run.
 
-**What you should see:**
+**What you should see on the analyzer** (real N9010A captures — the eight tones, and the CCDF/PAPR
+difference between Newman and Equal phasing):
 
-| Newman phasing — low PAPR | Equal phasing — high PAPR |
-|---|---|
-| ![8-tone Newman CCDF](images/tutorials/t03-multitone-newman-ccdf.png) | ![8-tone Equal-phased CCDF](images/tutorials/t03-multitone-equal-ccdf.png) |
+| 8-tone spectrum | Newman — CCDF (low PAPR) | Equal — CCDF (high PAPR) |
+|---|---|---|
+| ![8-tone multitone spectrum](images/tutorials/t03-multitone-n9010a.png) | ![Newman CCDF](images/tutorials/t03-multitone-newman-ccdf-n9010a.png) | ![Equal CCDF](images/tutorials/t03-multitone-equal-ccdf-n9010a.png) |
+
+> 🏷️ **E4406A images coming soon** — the analyzer captures here are from a Keysight N9010A.
 
 - **Equal** phasing produces a noticeably **higher PAPR** — all 8 tones add up in phase, so the peak
   approaches **10·log₁₀(8) ≈ 9 dB** above average. The CCDF curve for Equal sits further to the right
@@ -261,9 +269,13 @@ crest factor on the **CCDF** view and the readout, and learn what clipping does.
 4. Now enable **peak clipping** (try a **clip level of ~6 dB** above average) and **Calculate** again.
    Compare the CCDF curve and PAPR.
 
-**What you should see:**
+**What you should see on the analyzer** (real N9010A captures):
 
-![Band-limited AWGN — CCDF (~10 dB crest)](images/tutorials/t04-awgn-ccdf.png)
+| AWGN spectrum (flat noise) | AWGN CCDF (~10 dB crest) |
+|---|---|
+| ![AWGN spectrum](images/tutorials/t04-awgn-n9010a.png) | ![AWGN CCDF](images/tutorials/t04-awgn-ccdf-n9010a.png) |
+
+> 🏷️ **E4406A images coming soon** — the analyzer captures here are from a Keysight N9010A.
 
 - A **high crest factor** for unclipped AWGN (on the order of ~10 dB) — much higher than CW or
   Newman multitone. The **CCDF** curve extends well to the right.
@@ -300,9 +312,15 @@ crest factor on the **CCDF** view and the readout, and learn what clipping does.
 4. Set the three plot panes to **Constellation**, **Eye**, and **Spectrum** so you can see all three
    at once.
 
-**What you should see:**
+**What you should see on the analyzer** (real N9010A capture — the RRC-shaped QPSK spectrum):
 
-| Constellation | Eye diagram |
+![QPSK spectrum on the N9010A](images/tutorials/t05-qpsk-n9010a.png)
+
+> 🏷️ **E4406A images coming soon** — the analyzer captures here are from a Keysight N9010A. The N9010A
+> can't render a constellation or eye diagram (no vector-demod option), so those two below are the app's
+> own plot views:
+
+| Constellation (app view) | Eye diagram (app view) |
 |---|---|
 | ![QPSK constellation](images/tutorials/t05-qpsk-constellation.png) | ![QPSK eye diagram](images/tutorials/t05-qpsk-eye.png) |
 
@@ -345,9 +363,11 @@ multi-standard scenarios.
    composite often has higher PAPR than any single carrier). Note the readout PAPR and occupied
    bandwidth.
 
-**What you should see:**
+**What you should see on the analyzer** (real N9010A capture — the three carriers):
 
-![3-carrier composite — spectrum](images/tutorials/t06-multicarrier-spectrum.png)
+![3-carrier composite on the N9010A — spectrum](images/tutorials/t06-multicarrier-n9010a.png)
+
+> 🏷️ **E4406A images coming soon** — the analyzer captures here are from a Keysight N9010A.
 
 - A composite **Spectrum** with each carrier sitting at its assigned offset, each shaped by its own
   modulation.
@@ -424,11 +444,14 @@ for the effect.
 5. Now enable **CFR (crest-factor reduction)** in the Impairments view and **Calculate** once more.
 6. Compare the **PAPR** in the readout and the **CCDF** view before vs after CFR.
 
-**What you should see:**
+**What you should see on the analyzer** (real N9010A captures — the image tone appears at −1 MHz after
+the imbalance):
 
 | Clean tone (baseline) | 3 dB I/Q gain imbalance → image tone |
 |---|---|
-| ![Clean tone spectrum](images/tutorials/t08-iq-clean-spectrum.png) | ![Gain-imbalance image tone](images/tutorials/t08-iq-imbalance-spectrum.png) |
+| ![Clean tone spectrum on N9010A](images/tutorials/t08-iq-clean-n9010a.png) | ![Gain-imbalance image tone on N9010A](images/tutorials/t08-iq-imbalance-n9010a.png) |
+
+> 🏷️ **E4406A images coming soon** — the analyzer captures here are from a Keysight N9010A.
 
 - After the gain imbalance: an **image tone** appears on the **Spectrum** (mirror of the wanted
   component about the carrier).

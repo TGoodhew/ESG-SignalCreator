@@ -34,11 +34,12 @@ afsnit i User Guide (f.eks. "se UserGuide §5.2"). For et overblik samt build- o
 > Gennemgående er UI-elementer navngivet præcis, som de fremstår: værktøjslinje-**knapper**, venstretræ-**noder**
 > og højredok-**plotvisninger**.
 
-> 🔄 **Auto-genererede billeder.** Plot-billederne i Del A/C/D kommer fra appens egen renderer, produceret
-> i én kørsel med `ESG-SignalCreator.exe --tutorial-images docs/images/tutorials` (issue #150). Redigér dem
-> ikke manuelt — når en signal-tutorial ændres, opdatér harnesset (`TutorialImageHarness`) og kør det igen,
-> så billederne følger teksten. Analysator-skærmbilleder (Del F) kommer fra optageværktøjet
-> (`HilHarness --capture-dir`, #143).
+> 🔄 **Auto-genererede billeder (redigér ikke manuelt).** Signal-tutorialernes analysator-skærmbilleder er
+> **rigtige N9010A-optagelser**, produceret i én kørsel med `HilHarness --tutorial-captures docs/images/tutorials`
+> (#150); de to app-visninger, analysatoren ikke kan tegne — QPSK **constellation** og **øjediagram** —
+> kommer fra `ESG-SignalCreator.exe --tutorial-images docs/images/tutorials`. Når en signal-tutorial ændres,
+> opdatér det relevante harness og kør det igen, så billederne følger teksten. Verifikations-skærmbilleder
+> (Del F) kommer fra `HilHarness --install-verify --capture-dir` (#143). *E4406A-optagelser kommer snart.*
 
 ## Indholdsfortegnelse
 
@@ -126,9 +127,13 @@ kontinuerlige bølge-tone, så du kan aflæse resultataflæsningen og udforske p
 8. **Rubber-band-zoom:** træk et rektangel på et hvilket som helst plot for at zoome ind på et område (zoom for eksempel
    **Spectrum**-visningen ind på tonen). Brug plottets reset-/unzoom-gestus for at vende tilbage til fuld visning.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (rigtig N9010A-optagelse):
 
-![CW-tone ved +100 kHz — spektrum](../images/tutorials/t01-cw-spectrum.png)
+![CW-tone på N9010A — spektrum](../images/tutorials/t01-cw-n9010a.png)
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
+I appens egne plot-visninger:
 
 - På **I/Q vs time**, jævne sinuskurver for I og Q.
 - På **Spectrum**, en enkelt skarp linje ved det frekvensoffset, du angav.
@@ -217,11 +222,13 @@ forholdet, ved at sammenligne **Newman** vs **Equal**-fasning i **resultataflæs
 4. Skift kun **fasestrategien** til **Equal** (alle toner fasejusteret), og **Calculate** igen.
 5. Sammenlign den nye **PAPR** i aflæsningen og den nye **CCDF**-kurve mod Newman-kørslen.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (rigtige N9010A-optagelser — de otte toner, og CCDF/PAPR-forskellen mellem Newman- og Equal-fasning):
 
-| Newman-fasning — lav PAPR | Equal-fasning — høj PAPR |
-|---|---|
-| ![8-tone Newman CCDF](../images/tutorials/t03-multitone-newman-ccdf.png) | ![8-tone Equal-faset CCDF](../images/tutorials/t03-multitone-equal-ccdf.png) |
+| 8-tone-spektrum | Newman — CCDF (lav PAPR) | Equal — CCDF (høj PAPR) |
+|---|---|---|
+| ![8-tone multitone-spektrum](../images/tutorials/t03-multitone-n9010a.png) | ![Newman CCDF](../images/tutorials/t03-multitone-newman-ccdf-n9010a.png) | ![Equal CCDF](../images/tutorials/t03-multitone-equal-ccdf-n9010a.png) |
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
 
 - **Equal**-fasning giver en mærkbart **højere PAPR** — alle 8 toner lægges sammen i fase, så peaken
   nærmer sig **10·log₁₀(8) ≈ 9 dB** over gennemsnittet. CCDF-kurven for Equal ligger længere til højre (højere
@@ -260,9 +267,13 @@ crest-faktor på **CCDF**-visningen og i aflæsningen, og lær, hvad clipping g�
 4. Slå nu **peak clipping** til (prøv et **clip-niveau på ~6 dB** over gennemsnittet), og **Calculate** igen.
    Sammenlign CCDF-kurven og PAPR.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (rigtige N9010A-optagelser):
 
-![Båndbegrænset AWGN — CCDF (~10 dB crest)](../images/tutorials/t04-awgn-ccdf.png)
+| AWGN-spektrum (fladt støj) | AWGN CCDF (~10 dB crest) |
+|---|---|
+| ![AWGN-spektrum](../images/tutorials/t04-awgn-n9010a.png) | ![AWGN CCDF](../images/tutorials/t04-awgn-ccdf-n9010a.png) |
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
 
 - En **høj crest-faktor** for uclippet AWGN (i størrelsesordenen ~10 dB) — meget højere end CW eller
   Newman-multitone. **CCDF**-kurven strækker sig langt til højre.
@@ -299,9 +310,13 @@ crest-faktor på **CCDF**-visningen og i aflæsningen, og lær, hvad clipping g�
 4. Indstil de tre plotruder til **Constellation**, **Eye** og **Spectrum**, så du kan se alle tre
    på én gang.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (rigtig N9010A-optagelse — det RRC-formede QPSK-spektrum):
 
-| Constellation | Øjediagram |
+![QPSK-spektrum på N9010A](../images/tutorials/t05-qpsk-n9010a.png)
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A. N9010A kan ikke tegne et constellation- eller øjediagram (ingen vektor-demod-option), så de to nedenfor er appens egne plot-visninger:
+
+| Constellation (app-visning) | Øjediagram (app-visning) |
 |---|---|
 | ![QPSK-constellation](../images/tutorials/t05-qpsk-constellation.png) | ![QPSK-øjediagram](../images/tutorials/t05-qpsk-eye.png) |
 
@@ -343,9 +358,11 @@ multi-standard-scenarier.
    sammensatte signal har ofte højere PAPR end nogen enkelt bærebølge). Bemærk aflæsningens PAPR og optagne
    båndbredde.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (rigtig N9010A-optagelse — de tre bærebølger):
 
-![3-bærebølge-sammensat — spektrum](../images/tutorials/t06-multicarrier-spectrum.png)
+![3-bærebølge-sammensat på N9010A — spektrum](../images/tutorials/t06-multicarrier-n9010a.png)
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
 
 - Et sammensat **Spectrum** med hver bærebølge placeret ved sit tildelte offset, hver formet af sin egen
   modulation.
@@ -422,11 +439,13 @@ for effekten.
 5. Slå nu **CFR (crest-factor reduction)** til i Impairments-visningen, og **Calculate** endnu en gang.
 6. Sammenlign **PAPR** i aflæsningen og **CCDF**-visningen før vs efter CFR.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (rigtige N9010A-optagelser — billedtonen dukker op ved −1 MHz efter imbalancen):
 
 | Ren tone (baseline) | 3 dB I/Q-gain-imbalance → billedtone |
 |---|---|
-| ![Rent tone-spektrum](../images/tutorials/t08-iq-clean-spectrum.png) | ![Gain-imbalance-billedtone](../images/tutorials/t08-iq-imbalance-spectrum.png) |
+| ![Rent tone-spektrum på N9010A](../images/tutorials/t08-iq-clean-n9010a.png) | ![Gain-imbalance-billedtone på N9010A](../images/tutorials/t08-iq-imbalance-n9010a.png) |
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
 
 - Efter gain imbalance: en **billedtone** fremkommer på **Spectrum** (spejling af den ønskede
   komponent omkring bærebølgen).

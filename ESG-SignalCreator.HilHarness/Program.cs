@@ -57,7 +57,8 @@ namespace EsgSignalCreator.HilHarness
             var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var valueFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 { "--esg", "--vsa", "--vsa-model", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz", "--signal", "--json",
-                  "--capture-screen", "--capture-dir", "--capture-save-cmd", "--capture-data-query", "--capture-cleanup-cmd", "--capture-temp-path" };
+                  "--capture-screen", "--capture-dir", "--capture-save-cmd", "--capture-data-query", "--capture-cleanup-cmd", "--capture-temp-path",
+                  "--tutorial-captures" };
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -91,7 +92,8 @@ namespace EsgSignalCreator.HilHarness
             _jsonPath = Opt(opts, "--json");
             bool flatness = flags.Contains("--flatness");
             bool installVerify = flags.Contains("--install-verify");
-            if (installVerify) closedLoop = true; // install-verify drives the analyzer + RF like closed-loop
+            bool tutorialCaptures = opts.ContainsKey("--tutorial-captures"); // #150: real N9010A screenshots per tutorial signal
+            if (installVerify || tutorialCaptures) closedLoop = true; // both drive the analyzer + RF
             string[] signals = flags.Contains("--all")
                 ? new[] { "cw", "multitone", "awgn", "custom-mod", "multi-carrier", "iq-impair", "import-iq" }
                 : new[] { Opt(opts, "--signal") ?? "cw" };
@@ -178,7 +180,12 @@ namespace EsgSignalCreator.HilHarness
                     if (Math.Abs(back - SafeAmplitudeDbm) > 0.5) throw new Exception("read back " + back + " dBm");
                 });
 
-                if (installVerify)
+                if (tutorialCaptures)
+                {
+                    RunTutorialCaptures(esg, vsaResource, vsaModel, Opt(opts, "--tutorial-captures"),
+                        verifyPowerDbm, maxInputDbm, pathLossDb);
+                }
+                else if (installVerify)
                 {
                     var capture = new CaptureOptions
                     {
@@ -447,6 +454,165 @@ namespace EsgSignalCreator.HilHarness
                 try { esg.SetArbState(false); esg.SetRfOutput(false); } catch { /* best effort */ }
                 try { vio?.Dispose(); } catch { /* best effort */ }
             }
+        }
+
+        // ---- tutorial captures (#150): real N9010A screenshots of each tutorial signal ----
+
+        private sealed class TutShot
+        {
+            public string File;          // base name (extension added per model)
+            public string Tutorial;      // "Tutorial 3"
+            public string Caption;
+            public WaveformModel Waveform;
+            public bool Ccdf;            // true = Power Stat CCDF view; false = spectrum
+            public double SpanHz;        // spectrum span
+        }
+
+        /// <summary>
+        /// Play each tutorial signal on the ESG, put the analyzer in the matching view (spectrum, or
+        /// Power Stat CCDF for the PAPR tutorials), and capture the screen — real analyzer images for the
+        /// signal tutorials, the counterpart to the automated verification captures (#143/#150). The
+        /// analyzer can't render constellation/eye, so QPSK is captured as its spectrum.
+        /// </summary>
+        private static void RunTutorialCaptures(EsgController esg, string vsaResource, VsaModel vsaModel,
+            string outputDir, double powerDbm, double maxInputDbm, double pathLossDb)
+        {
+            Console.WriteLine(new string('-', 64));
+            Console.WriteLine("Tutorial captures (" + vsaModel + ") -> " + outputDir);
+            Directory.CreateDirectory(outputDir);
+
+            const double carrierHz = 1e9;
+            var safety = new RfPathSafety { Armed = true, AnalyzerMaxSafeInputDbm = maxInputDbm, PathLossDb = pathLossDb };
+            Step("Safety gate allows capture power", () => PowerSafetyGate.Guard(powerDbm, safety));
+
+            IInstrument vio = Step("Open VSA VISA session", () => new VisaInstrument(vsaResource));
+            if (vio == null) return;
+            var captured = new List<KeyValuePair<string, string>>();
+            try
+            {
+                var vsa = new VsaInstrument(vio);
+                vsa.TimeoutMilliseconds = 30000;
+                try { vsa.Write(":ABORt"); vsa.Clear(); } catch { /* recover a prior run */ }
+                Step("VSA *IDN? identifies a " + vsaModel, () =>
+                {
+                    if (!vsa.IsModel(vsaModel)) throw new Exception("Model is not " + vsaModel + ": '" + vsa.Identify().Model + "'");
+                });
+
+                ScreenCaptureRecipe recipe = vsa.Dialect.ScreenCapture;
+                string ext = CaptureExtension(vsaModel);
+                bool rfArmed = false;
+
+                foreach (TutShot shot in BuildTutorialShots())
+                {
+                    PowerSafetyGate.Guard(powerDbm, safety);
+                    esg.DownloadWaveform("TUTCAP", shot.Waveform);
+                    esg.PlayWaveform("TUTCAP", shot.Waveform.SampleRateHz);
+                    esg.SetFrequencyHz(carrierHz);
+                    esg.SetAmplitudeDbm(powerDbm);
+                    esg.SetArbState(true);
+                    esg.SetModulation(true);
+                    if (!rfArmed) { esg.SetRfOutput(true); rfArmed = true; }
+                    Thread.Sleep(3000); // ALC re-level + analyzer auto-range
+
+                    // Drive the analyzer into the view we want to capture (leaves it on the display).
+                    if (shot.Ccdf) Ccdf.Measure(vsa, carrierHz);
+                    else SpectrumMarker.MeasurePeak(vsa, carrierHz, shot.SpanHz);
+
+                    byte[] img = vsa.CaptureScreen(recipe);
+                    string file = shot.File + ext;
+                    File.WriteAllBytes(Path.Combine(outputDir, file), img);
+                    captured.Add(new KeyValuePair<string, string>(shot.Tutorial, file + " — " + shot.Caption));
+                    Console.WriteLine("  captured " + file + "  (" + shot.Tutorial + " — " + shot.Caption + ", " + img.Length + " bytes)");
+                }
+
+                WriteTutorialCaptureManifest(outputDir, vsaModel, captured);
+                Console.WriteLine("Captured " + captured.Count + " tutorial images + index.md.");
+            }
+            catch (Exception ex) { Fail("Tutorial captures", ex.Message); }
+            finally
+            {
+                try { esg.SetArbState(false); esg.SetRfOutput(false); } catch { /* best effort */ }
+                try { vio?.Dispose(); } catch { /* best effort */ }
+            }
+        }
+
+        private static IEnumerable<TutShot> BuildTutorialShots()
+        {
+            TutShot Spec(string f, string t, string c, WaveformModel wf, double span) =>
+                new TutShot { File = f, Tutorial = t, Caption = c, Waveform = wf, Ccdf = false, SpanHz = span };
+            TutShot Cdf(string f, string t, string c, WaveformModel wf) =>
+                new TutShot { File = f, Tutorial = t, Caption = c, Waveform = wf, Ccdf = true };
+
+            var shots = new List<TutShot>();
+            shots.Add(Spec("t01-cw-n9010a", "Tutorial 1", "CW tone at +100 kHz — spectrum", TutCw(100e3), 2e6));
+
+            WaveformModel mtN = TutMultitone(PhaseStrategy.Newman), mtE = TutMultitone(PhaseStrategy.Equal);
+            shots.Add(Spec("t03-multitone-n9010a", "Tutorial 3", "8-tone multitone — spectrum", mtN, 20e6));
+            shots.Add(Cdf("t03-multitone-newman-ccdf-n9010a", "Tutorial 3", "8-tone Newman — CCDF (low PAPR)", mtN));
+            shots.Add(Cdf("t03-multitone-equal-ccdf-n9010a", "Tutorial 3", "8-tone Equal — CCDF (high PAPR)", mtE));
+
+            WaveformModel awgn = TutAwgn();
+            shots.Add(Spec("t04-awgn-n9010a", "Tutorial 4", "Band-limited AWGN — spectrum", awgn, 20e6));
+            shots.Add(Cdf("t04-awgn-ccdf-n9010a", "Tutorial 4", "AWGN — CCDF (~10 dB crest)", awgn));
+
+            shots.Add(Spec("t05-qpsk-n9010a", "Tutorial 5", "QPSK RRC α=0.35 — spectrum", TutQpsk(), 10e6));
+            shots.Add(Spec("t06-multicarrier-n9010a", "Tutorial 6", "3-carrier composite — spectrum", TutMultiCarrier(), 20e6));
+
+            shots.Add(Spec("t08-iq-clean-n9010a", "Tutorial 8", "Clean tone at +1 MHz — spectrum", TutCw(1e6), 5e6));
+            shots.Add(Spec("t08-iq-imbalance-n9010a", "Tutorial 8", "3 dB I/Q gain imbalance — image tone", IqImpairments.Apply(TutCw(1e6), new IqImpairmentConfig { GainImbalanceDb = 3.0 }), 5e6));
+            return shots;
+        }
+
+        private static WaveformModel TutCw(double offsetHz)
+        {
+            var p = new CwPersonality();
+            p.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = offsetHz });
+            return p.Calculate(new Progress<int>());
+        }
+
+        private static WaveformModel TutMultitone(PhaseStrategy phase)
+        {
+            var p = new MultitonePersonality();
+            p.LoadConfig(new MultitoneConfig { SampleRateHz = 10e6, Length = 16384, Phase = phase, Tones = MultitonePersonality.AutoSpacing(8, 1e6, 0, 0) });
+            return p.Calculate(new Progress<int>());
+        }
+
+        private static WaveformModel TutAwgn()
+        {
+            var p = new AwgnPersonality();
+            p.LoadConfig(new AwgnConfig { SampleRateHz = 10e6, Length = 32768, NoiseBandwidthHz = 5e6, CrestFactorDb = 10 });
+            return p.Calculate(new Progress<int>());
+        }
+
+        private static WaveformModel TutQpsk()
+        {
+            var p = new CustomModPersonality();
+            p.LoadConfig(new CustomModConfig { Modulation = Modulation.QPSK, SymbolRateHz = 1e6, SamplesPerSymbol = 8, Alpha = 0.35, SymbolCount = 1024 });
+            return p.Calculate(new Progress<int>());
+        }
+
+        private static WaveformModel TutMultiCarrier()
+        {
+            var p = new MultiCarrierPersonality();
+            p.LoadConfig(new MultiCarrierConfig { SampleRateHz = 10e6, Length = 16384, Carriers = MultiCarrierPersonality.EvenlySpaced(3, 5e6, 0) });
+            return p.Calculate(new Progress<int>());
+        }
+
+        private static void WriteTutorialCaptureManifest(string dir, VsaModel model, List<KeyValuePair<string, string>> captured)
+        {
+            var md = new StringBuilder();
+            md.AppendLine("# Tutorial analyzer captures (" + model + ")");
+            md.AppendLine();
+            md.AppendLine("Real analyzer screenshots of each tutorial signal, captured by");
+            md.AppendLine("`HilHarness --tutorial-captures <dir>` (#150). E4406A captures coming soon.");
+            md.AppendLine();
+            string last = null;
+            foreach (var kv in captured)
+            {
+                if (kv.Key != last) { md.AppendLine("## " + kv.Key); md.AppendLine(); last = kv.Key; }
+                md.AppendLine("- " + kv.Value);
+            }
+            File.WriteAllText(Path.Combine(dir, "index-n9010a.md"), md.ToString());
         }
 
         private static void RunClosedLoop(EsgController esg, string vsaResource, VsaModel vsaModel, double[] sweepHz, string[] signals,
