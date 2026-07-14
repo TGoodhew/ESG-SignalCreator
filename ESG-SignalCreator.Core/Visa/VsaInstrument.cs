@@ -217,15 +217,31 @@ namespace EsgSignalCreator.Visa
             return response;
         }
 
+        // Set once the SRQ mechanism proves unusable on this session (e.g. an older N9010A over VXI-11
+        // that accepts the SRQ setup but never delivers the Service Request). From then on the session
+        // uses the blocking read below, so one broken read doesn't make every measurement pay the cost.
+        private bool _serviceRequestUnusable;
+
         private string QueryMeasurementCore(string command)
         {
-            if (Dialect.UsesServiceRequestCompletion && _io is ISupportsServiceRequest srq)
-                return QueryViaServiceRequest(srq, command);
+            if (Dialect.UsesServiceRequestCompletion && !_serviceRequestUnusable && _io is ISupportsServiceRequest srq)
+            {
+                try { return QueryViaServiceRequest(srq, command); }
+                catch (Exception ex) when (!(ex is TimeoutException))
+                {
+                    // SRQ setup was accepted but the Service Request was never delivered (seen on an
+                    // N9010A/A.07.05 over VXI-11, which raises a miscellaneous VISA error rather than a
+                    // clean timeout). Disable SRQ for the rest of the session, clear the aborted state,
+                    // and fall through to a blocking read — never turn this into a hard failure.
+                    _serviceRequestUnusable = true;
+                    try { _io.Write("*CLS"); _io.Write("*SRE 0"); } catch { /* best effort */ }
+                }
+            }
 
             if (!Dialect.UsesServiceRequestCompletion)
                 return _io.Query(command);
 
-            // Opted in but the transport has no SRQ: block, but raise the timeout to ride out an alignment.
+            // SRQ not used (or fell back): block, but raise the timeout to ride out an auto-alignment.
             int previous = _io.TimeoutMilliseconds;
             try { _io.TimeoutMilliseconds = Math.Max(previous, CompletionOverallMs); return _io.Query(command); }
             finally { _io.TimeoutMilliseconds = previous; }

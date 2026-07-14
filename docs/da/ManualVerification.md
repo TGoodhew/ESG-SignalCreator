@@ -163,6 +163,19 @@ sådan her:
 
 *(Alle channel-power-tal forudsætter 0 dB banetab og et −10 dBm kommanderet niveau; træk dit banetab fra.)*
 
+### Eksempeloptagelser (N9010A, FW A.07.05)
+
+Rigtige analysatorskærme fra en automatisk `--install-verify --capture-dir`-kørsel (Power Stat CCDF, viser
+Average Power og Peak/PAPR-aflæsningen):
+
+| CW | AM |
+|---|---|
+| ![CW-resultat på N9010A](images/vsa/cw.png) | ![AM-resultat på N9010A](images/vsa/am.png) |
+
+| FM | I/Q-multitone |
+|---|---|
+| ![FM-resultat på N9010A](images/vsa/fm.png) | ![I/Q-multitone-resultat på N9010A](images/vsa/iq-multitone.png) |
+
 ---
 
 ## Optagelse af skærmbilleder til dokumentationen
@@ -202,7 +215,8 @@ Referér til et optaget billede fra et trin med f.eks. `![CW-resultat på analys
 | Symptom | Sandsynlig årsag | Løsning |
 |---|---|---|
 | **Alle niveauer ~banetab-lave** | Uindfanget kabel-/pad-tab | Kør **Path cal…** (Trin 3) eller sæt banetab. |
-| **Alt ~40–48 dB lavt, PAPR enormt** | På en N9010A returnerer CCDF et 5001-punkts-spor, ikke skalarer | Rettet i appen (PAPR fra spor); opdatér til den seneste udgivelse. |
+| **N9010A PAPR helt forkert (AM/IQ fastlåst nær 50 dB)** | CCDF-resultatet ved `:READ:PSTatistic2?` er en display-opløsningskurve på denne firmware, ikke de 10 skalarer | Rettet i appen — PAPR læses fra 10-skalar-sættet ved `:READ:PSTatistic?` (indeks [8]); opdatér til den seneste udgivelse. |
+| **N9010A-læsninger timeout under måling** | Ældre firmware over VXI-11 leverer ikke den SRQ, appen venter på | Rettet i appen — den falder nu tilbage til en blokerende læsning; opdatér til den seneste udgivelse. |
 | **AM-bærer ~60 dB lav** | Rå ren-reel AM-basisbånd med DC | Brug **+1 MHz-underbærer**-AM (hvad **Verify install…** bygger). |
 | **Multitone channel power periodisk lav** | Aflæst før ALC'en re-niveauerede | Øg indsvingning til ~3 s og aflæs igen. |
 | **Tonefrekvens forskudt med > 50 kHz** | Uafhængige tidsbaser | Lås en **fælles 10 MHz**-reference (**Reference**-knap). |

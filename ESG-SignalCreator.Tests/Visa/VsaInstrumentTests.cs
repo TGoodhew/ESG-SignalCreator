@@ -113,7 +113,8 @@ namespace EsgSignalCreator.Tests.Visa
         public void Ccdf_index_and_acp_layout_are_per_model()
         {
             Assert.Equal(1, new E4406ADialect().CcdfScalarResultIndex);
-            Assert.Equal(2, new N9010ADialect().CcdfScalarResultIndex);
+            Assert.Equal(1, new N9010ADialect().CcdfScalarResultIndex); // A.07.05: 10 scalars at index 1, PAPR at [8]
+            Assert.False(new N9010ADialect().CcdfResultIsTrace);
 
             AcpScalarLayout e = new E4406ADialect().AcpScalars;
             Assert.Equal(5, e.OffsetCount);
