@@ -11,7 +11,7 @@ namespace EsgSignalCreator.Instruments
     /// (TCPIP/LAN, GPIB, USB, serial). The actual provider is chosen at runtime by whatever VISA is
     /// installed; this code never references a vendor-specific assembly (#102).
     /// </summary>
-    public sealed class VisaInstrument : IInstrument, ISupportsServiceRequest
+    public sealed class VisaInstrument : IInstrument, ISupportsServiceRequest, ISupportsBinaryRead
     {
         private IMessageBasedSession _session;
 
@@ -77,6 +77,37 @@ namespace EsgSignalCreator.Instruments
             // A single RawIO.Write(byte[]) call asserts END (EOI) only on the last byte, so the
             // ASCII header and binary payload travel as one uninterrupted block.
             _session.RawIO.Write(message);
+        }
+
+        // ---- ISupportsBinaryRead — read a raw binary response (e.g. a screen-capture block, #143) ----
+
+        public byte[] ReadRaw(int maxBytes = 8 * 1024 * 1024)
+        {
+            EnsureOpen();
+            const int Chunk = 64 * 1024;
+            bool prevTermEnabled = _session.TerminationCharacterEnabled;
+            // Binary payloads can contain 0x0A; stopping on the termination character would truncate them.
+            _session.TerminationCharacterEnabled = false;
+            try
+            {
+                using (var buffer = new System.IO.MemoryStream())
+                {
+                    while (buffer.Length < maxBytes)
+                    {
+                        byte[] part = _session.RawIO.Read(Chunk, out ReadStatus status);
+                        if (part != null && part.Length > 0) buffer.Write(part, 0, part.Length);
+                        // END/EOI (or a termination char, though disabled) marks the end of the response.
+                        if (status == ReadStatus.EndReceived || status == ReadStatus.TerminationCharacterEncountered)
+                            break;
+                        if (part == null || part.Length == 0) break; // nothing more available
+                    }
+                    return buffer.ToArray();
+                }
+            }
+            finally
+            {
+                _session.TerminationCharacterEnabled = prevTermEnabled;
+            }
         }
 
         // ---- ISupportsServiceRequest (SRQ) — used to wait out arbitrary-length auto-alignments (#129) ----

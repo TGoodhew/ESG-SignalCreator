@@ -165,6 +165,28 @@ this:
 
 ---
 
+## Capturing screenshots for the docs
+
+Each step above has a "what you should see on the VSA" description. To attach a real screenshot of the
+analyzer result, capture its display over VISA with the harness (analyzer-only — no ESG, no RF):
+
+```powershell
+# Drive/settle the signal first (app or a --signal run), then, in another window:
+ESG-SignalCreator.HilHarness.exe --capture-screen docs/images/vsa/cw-result.png ^
+    --vsa GPIB0::17::INSTR --vsa-model e4406a
+```
+
+It reads the screen back as an image (PNG on the N9010A, GIF on the E4406A) and writes the file. Drop the
+captured images under `docs/images/vsa/` and reference them from the step, e.g.
+`![CW result on the analyzer](images/vsa/cw-result.png)`.
+
+> The default capture SCPI (`:MMEMory:STORe:SCReen` + `:MMEMory:DATA?` + `:MMEMory:DELete`) is
+> manual-derived and **needs bench confirmation**. If your firmware differs, override it without a
+> rebuild: `--capture-save-cmd`, `--capture-data-query`, `--capture-cleanup-cmd`, `--capture-temp-path`
+> (each `*-cmd`/`*-query` takes the instrument-side path as `{0}`).
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |

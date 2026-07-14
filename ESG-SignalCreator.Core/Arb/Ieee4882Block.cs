@@ -43,6 +43,64 @@ namespace EsgSignalCreator.Arb
         }
 
         /// <summary>
+        /// Extract the payload from a definite-length block <b>response</b> (the inverse of
+        /// <see cref="Frame"/>). Skips any bytes before the leading <c>#</c>, reads the length prefix,
+        /// and returns exactly that many payload bytes. Tolerant of a trailing terminator after the
+        /// payload. If no <c>#</c> header is present (or it is malformed), the raw bytes are returned
+        /// unchanged (best effort) so a non-block response still yields something usable.
+        /// <para>Special case <c>#0</c> (indefinite length): returns everything after the header, minus a
+        /// single trailing newline if present.</para>
+        /// </summary>
+        public static byte[] ParsePayload(byte[] response)
+        {
+            if (response == null) throw new ArgumentNullException(nameof(response));
+            if (response.Length == 0) return response;
+
+            // Find the '#' that starts the block (instruments may emit leading whitespace).
+            int hash = -1;
+            for (int i = 0; i < response.Length; i++)
+            {
+                if (response[i] == (byte)'#') { hash = i; break; }
+                if (response[i] == (byte)' ' || response[i] == (byte)'\r' || response[i] == (byte)'\n' || response[i] == (byte)'\t')
+                    continue;
+                break; // a non-whitespace, non-'#' byte before any '#': not a framed block
+            }
+            if (hash < 0 || hash + 1 >= response.Length) return response;
+
+            char nDigitsChar = (char)response[hash + 1];
+            if (nDigitsChar < '0' || nDigitsChar > '9') return response;
+            int nDigits = nDigitsChar - '0';
+
+            int payloadStart;
+            int payloadLen;
+            if (nDigits == 0)
+            {
+                // Indefinite length (#0): payload runs to the end, minus one trailing newline if present.
+                payloadStart = hash + 2;
+                payloadLen = response.Length - payloadStart;
+                if (payloadLen > 0 && response[response.Length - 1] == (byte)'\n') payloadLen--;
+            }
+            else
+            {
+                int lenStart = hash + 2;
+                if (lenStart + nDigits > response.Length) return response;
+                long len = 0;
+                for (int i = 0; i < nDigits; i++)
+                {
+                    byte d = response[lenStart + i];
+                    if (d < (byte)'0' || d > (byte)'9') return response;
+                    len = len * 10 + (d - (byte)'0');
+                }
+                payloadStart = lenStart + nDigits;
+                payloadLen = (int)Math.Min(len, response.Length - payloadStart);
+            }
+
+            var payload = new byte[payloadLen];
+            Buffer.BlockCopy(response, payloadStart, payload, 0, payloadLen);
+            return payload;
+        }
+
+        /// <summary>
         /// Compose a full SCPI binary message: <paramref name="commandPrefix"/> (e.g.
         /// <c>:MEMory:DATA "WFM1:seg",</c>) immediately followed by the framed definite-length block.
         /// </summary>

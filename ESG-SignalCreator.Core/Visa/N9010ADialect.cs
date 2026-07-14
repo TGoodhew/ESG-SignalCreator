@@ -43,6 +43,14 @@ namespace EsgSignalCreator.Visa
         // a fixed read timeout (#129).
         public bool UsesServiceRequestCompletion => true;
 
+        // X-Series screen capture: save a PNG to the instrument's local disk, read it back as a block,
+        // then delete it. Manual-derived (X-Series MMEMory subsystem) — confirm on hardware (#143).
+        public ScreenCaptureRecipe ScreenCapture => new ScreenCaptureRecipe(
+            dataQueryFormat: ":MMEMory:DATA? \"{0}\"",
+            saveCommandFormat: ":MMEMory:STORe:SCReen \"{0}\"",
+            cleanupCommandFormat: ":MMEMory:DELete \"{0}\"",
+            tempPath: "C:\\Temp\\ESGCAP.png");
+
         public string InstrumentModeFor(VsaMeasurement measurement)
         {
             switch (measurement)

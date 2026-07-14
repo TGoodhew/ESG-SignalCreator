@@ -114,9 +114,9 @@ NuGet `PackageReference`s).
 
 ## Hardware-in-the-loop testing
 
-The 356 unit tests run with **no instrument** (block framing, encoder, DSP, validation,
-VSA SCPI parsing, …). To validate the real instruments, run the headless harness
-([ESG-SignalCreator.HilHarness](ESG-SignalCreator.HilHarness/)):
+The unit tests run with **no instrument** (block framing, encoder, DSP, validation,
+VSA SCPI parsing, screen-capture block decoding, …). To validate the real instruments, run the headless
+harness ([ESG-SignalCreator.HilHarness](ESG-SignalCreator.HilHarness/)):
 
 ```powershell
 # ESG-only: RF stays OFF (power -30 dBm) unless --rf-on briefly enables it.
@@ -137,6 +137,12 @@ ESG-SignalCreator.HilHarness.exe --vsa --signal multitone
 ESG-SignalCreator.HilHarness.exe --vsa --flatness
 #   options: --vsa-model e4406a|n9010a --points N --start-hz --stop-hz --carrier-hz --offset-hz
 #            --verify-power-dbm --max-input-dbm --path-loss-db --dwell-seconds --json
+
+# Capture the analyzer's current display to an image (analyzer-only, no ESG/RF) — for docs & reports:
+ESG-SignalCreator.HilHarness.exe --capture-screen docs/images/vsa/cw-result.png --vsa GPIB0::17::INSTR --vsa-model e4406a
+#   SCPI overrides (confirm/adjust per firmware):
+#     --capture-data-query ":MMEMory:DATA? \"{0}\"" --capture-save-cmd ":MMEMory:STORe:SCReen \"{0}\""
+#     --capture-cleanup-cmd ":MMEMory:DELete \"{0}\"" --capture-temp-path "C:\Temp\ESGCAP.png"
 ```
 
 ESG-only mode checks `*IDN?`/`*OPT?`, downloads a CW to `WFM1`, arms the ARB, and reads
@@ -156,6 +162,14 @@ The analyzer runs in continuous mode during the per-point dwell so the front pan
 the run ends RF-off with the analyzer still sweeping. Per-step PASS/FAIL, optional JSON report,
 non-zero exit on failure. A separate console project, kept out of the unit-test run so CI stays
 hardware-free.
+
+**Screen capture** (`--capture-screen <file>`) is analyzer-only: it connects to the VSA, reads its
+display back over VISA as an IEEE-488.2 block, and writes the image file (PNG on the X-Series, GIF on
+the E4406A). Drive and settle the signal first (e.g. a `--signal`/`--install-verify` run in another
+window, or from the app), then capture the result. The default capture SCPI is manual-derived and
+**needs bench confirmation** — the `--capture-*` overrides let you tune it per firmware without a
+rebuild. Use it to grab the per-step VSA screenshots referenced in the tutorials and the
+[Manual Verification](docs/ManualVerification.md) doc (drop them under `docs/images/vsa/`).
 
 > Bench-validated (2026-06, E4406A FW A.08.10) across 50 MHz–3 GHz: all signal types PASS —
 > e.g. multitone PAPR ≈3.8 dB (exp 2.9), AWGN crest ≈10.2 dB, 16-QAM ACPR ≈−48 dBc, a 3 dB

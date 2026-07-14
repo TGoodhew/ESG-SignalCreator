@@ -260,6 +260,46 @@ namespace EsgSignalCreator.Visa
             }
         }
 
+        /// <summary>
+        /// Capture the analyzer's display and return the image bytes (issue #143). Uses the model's
+        /// <see cref="IVsaDialect.ScreenCapture"/> recipe unless <paramref name="recipe"/> overrides it:
+        /// runs the save command (if any), waits for it (<c>*OPC?</c>), reads the image back as an
+        /// IEEE-488.2 block, deletes the instrument-side file, and returns the block payload. The bytes
+        /// are whatever format the instrument wrote (PNG on the X-Series, GIF on the E4406A).
+        /// </summary>
+        /// <exception cref="NotSupportedException">
+        /// No recipe is available for the model, or the transport can't do a binary read.
+        /// </exception>
+        public byte[] CaptureScreen(ScreenCaptureRecipe recipe = null)
+        {
+            recipe = recipe ?? Dialect.ScreenCapture;
+            if (recipe == null)
+                throw new NotSupportedException("No screen-capture recipe is defined for model " + Model + ".");
+            if (string.IsNullOrWhiteSpace(recipe.DataQueryFormat))
+                throw new NotSupportedException("The screen-capture recipe has no data query.");
+            if (!(_io is ISupportsBinaryRead reader))
+                throw new NotSupportedException("This transport does not support the binary read needed for screen capture.");
+
+            string path = recipe.TempPath ?? string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(recipe.SaveCommandFormat))
+            {
+                _io.Write(string.Format(recipe.SaveCommandFormat, path));
+                if (recipe.OpcAfterSave) _io.Query("*OPC?"); // ensure the file is fully written first
+            }
+
+            _io.Write(string.Format(recipe.DataQueryFormat, path));
+            byte[] raw = reader.ReadRaw();
+            byte[] image = Arb.Ieee4882Block.ParsePayload(raw);
+
+            if (!string.IsNullOrWhiteSpace(recipe.CleanupCommandFormat))
+            {
+                try { _io.Write(string.Format(recipe.CleanupCommandFormat, path)); } catch { /* best effort */ }
+            }
+
+            return image;
+        }
+
         public void Dispose() => _io.Dispose();
     }
 }

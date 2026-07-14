@@ -56,7 +56,8 @@ namespace EsgSignalCreator.HilHarness
             var opts = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var valueFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                { "--esg", "--vsa", "--vsa-model", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz", "--signal", "--json" };
+                { "--esg", "--vsa", "--vsa-model", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz", "--signal", "--json",
+                  "--capture-screen", "--capture-save-cmd", "--capture-data-query", "--capture-cleanup-cmd", "--capture-temp-path" };
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -94,6 +95,18 @@ namespace EsgSignalCreator.HilHarness
             string[] signals = flags.Contains("--all")
                 ? new[] { "cw", "multitone", "awgn", "custom-mod", "multi-carrier", "iq-impair", "import-iq" }
                 : new[] { Opt(opts, "--signal") ?? "cw" };
+
+            // Screen-capture mode (#143): analyzer-only, no ESG/RF. Grabs the VSA display to an image file.
+            if (flags.Contains("--capture-screen") || opts.ContainsKey("--capture-screen"))
+            {
+                return RunCaptureScreen(
+                    vsaResource, vsaModel,
+                    outputPath: Opt(opts, "--capture-screen") ?? "vsa-capture.png",
+                    saveCmd: Opt(opts, "--capture-save-cmd"),
+                    dataQuery: Opt(opts, "--capture-data-query"),
+                    cleanupCmd: Opt(opts, "--capture-cleanup-cmd"),
+                    tempPath: Opt(opts, "--capture-temp-path"));
+            }
 
             Console.WriteLine("ESG-SignalCreator hardware-in-the-loop harness");
             Console.WriteLine("ESG       : " + esgResource);
@@ -233,6 +246,70 @@ namespace EsgSignalCreator.HilHarness
         /// <summary>Upper frequency the analyzer can measure to, used to cap the auto sweep (the ESG's own
         /// max usually limits first). The E4406A tops out ~4 GHz; the N9010A (EXA) reaches much higher.</summary>
         private static double AnalyzerCeilingHz(VsaModel model) => model == VsaModel.N9010A ? 44e9 : 4e9;
+
+        /// <summary>
+        /// Screen-capture mode (#143): connect to the analyzer only (no ESG, no RF), grab its display via
+        /// the model's <see cref="ScreenCaptureRecipe"/> (overridable per flag), and write the image bytes
+        /// to <paramref name="outputPath"/>. Whatever the analyzer is showing at that moment is captured —
+        /// so drive/settle the signal first (e.g. with a separate closed-loop run), then capture.
+        /// </summary>
+        private static int RunCaptureScreen(string vsaResource, VsaModel vsaModel, string outputPath,
+            string saveCmd, string dataQuery, string cleanupCmd, string tempPath)
+        {
+            Console.WriteLine("ESG-SignalCreator — VSA screen capture");
+            Console.WriteLine("VSA       : " + vsaResource + "  (requested " + vsaModel + ")");
+            Console.WriteLine("Output    : " + outputPath);
+            Console.WriteLine(new string('-', 64));
+
+            IInstrument io = null;
+            try
+            {
+                io = new VisaInstrument(vsaResource);
+                var vsa = new VsaInstrument(io);
+                InstrumentIdentity id = vsa.Identify();
+                Console.WriteLine("Connected : " + id.Manufacturer + " / " + id.Model + " / FW " + id.FirmwareRevision +
+                                  "  -> dialect " + vsa.Model);
+
+                // Start from the model's default recipe, then apply any per-flag overrides.
+                ScreenCaptureRecipe recipe = vsa.Dialect.ScreenCapture;
+                if (recipe == null && dataQuery == null)
+                {
+                    Console.WriteLine("FAIL      : no default screen-capture recipe for " + vsa.Model +
+                                      " — supply --capture-data-query (and --capture-save-cmd/--capture-temp-path).");
+                    return 2;
+                }
+                recipe = (recipe ?? new ScreenCaptureRecipe(dataQuery))
+                    .With(dataQueryFormat: dataQuery, saveCommandFormat: saveCmd,
+                          cleanupCommandFormat: cleanupCmd, tempPath: tempPath);
+
+                Console.WriteLine("Recipe    : save=" + (recipe.SaveCommandFormat ?? "(direct)") +
+                                  "  data=" + recipe.DataQueryFormat +
+                                  "  temp=" + (recipe.TempPath ?? "(none)"));
+
+                byte[] image = vsa.CaptureScreen(recipe);
+                if (image == null || image.Length == 0)
+                {
+                    Console.WriteLine("FAIL      : capture returned no data.");
+                    return 2;
+                }
+
+                string dir = Path.GetDirectoryName(Path.GetFullPath(outputPath));
+                if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                File.WriteAllBytes(outputPath, image);
+
+                Console.WriteLine("OK        : wrote " + image.Length + " bytes to " + Path.GetFullPath(outputPath));
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("FAIL      : " + ex.Message);
+                return 2;
+            }
+            finally
+            {
+                try { io?.Dispose(); } catch { /* best effort */ }
+            }
+        }
 
         /// <summary>Headless install/configuration self-test (#126): run the shared InstallVerification
         /// battery (CW/AM/FM/I/Q) on the one user-selected analyzer, recording each expected-vs-measured
