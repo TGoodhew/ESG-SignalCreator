@@ -13,6 +13,15 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
   optional `VsaInstrument.MeasurementTrace` hook (null/no-overhead by default).
 
 ### Fixed
+- **N9010A CCDF PAPR is now derived from the probability trace.** The N9010A `:READ:PSTatistic2?` returns
+  the 5001-point CCDF trace (probability % vs dB-above-average), not the 10 scalars — so reading scalar
+  `[8]` gave a probability misread as dB (AM/IQ PAPR came out ~40–48 dB). PAPR is now computed as the
+  highest dB-above-average level the signal still reaches. Constant-envelope signals read ~0; AM/multitone
+  read their true crest. The E4406A scalar path is unchanged. (#134)
+- **AM self-test signal moved onto a +1 MHz subcarrier.** The raw AM baseband (`I = 1 + m·sin`, `Q = 0`)
+  is real-only with a large DC term, which the E4438C ARB did not reproduce at level (AM channel power came
+  out ~60 dB low). It is now rotated onto a complex offset carrier (no DC, non-zero Q), like the CW tone;
+  the 3 dB PAPR is preserved. (#134)
 - **Verification channel power now accounts for the ARB crest factor.** The ARB encoder peak-normalizes
   every waveform, so a signal's measured RMS (channel) power sits its crest factor below the commanded
   level. The expected channel power in `VerificationHarness.Verify` now subtracts the crest factor

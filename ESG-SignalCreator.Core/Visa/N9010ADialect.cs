@@ -27,9 +27,10 @@ namespace EsgSignalCreator.Visa
         // (IQ Analyzer Mode Reference 9018-02190): peak is the Maximum at index 5, not index 0.
         public WaveformScalarLayout WaveformScalars => new WaveformScalarLayout(peakIndex: 5, meanIndex: 1, peakToMeanIndex: 4);
 
-        // N9010A CCDF scalars are at n=2 (:READ:PSTatistic2?); n=0/1 are I/Q trace data. Within-set
-        // ordering matches the E4406A (avg power [0], peak power / PAPR [8]). (SA Reference 9018-06099.)
+        // N9010A :READ:PSTatistic2? returns the 5001-point CCDF trace (probability % vs dB-above-average),
+        // NOT the 10 scalars — confirmed on hardware. PAPR is derived from the trace (see Ccdf.Measure).
         public int CcdfScalarResultIndex => 2;
+        public bool CcdfResultIsTrace => true;
 
         // N9010A :READ:ACPower? (Total-power-reference) -> 32 values: header [0.0, total-carrier,
         // 0.0, ref-carrier], then 6 offsets A..F x (lowerRel, lowerAbs, upperRel, upperAbs) from index 4.

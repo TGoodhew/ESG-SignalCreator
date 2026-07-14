@@ -57,16 +57,47 @@ namespace EsgSignalCreator.Measure
 
             // The scalar set lives at a model-specific result index (E4406A n=1; N9010A n=2 — n=0/1 are
             // trace data there). The within-set ordering is the same, so the field mapping below is shared.
-            double[] scalars = basic.Read(Root, vsa.Dialect.CcdfScalarResultIndex);
+            double[] data = basic.Read(Root, vsa.Dialect.CcdfScalarResultIndex);
+
+            if (vsa.Dialect.CcdfResultIsTrace)
+            {
+                // The read returned the 5001-point CCDF trace (probability % vs dB-above-average, in
+                // 0.01 dB steps), not the 10 scalars. PAPR is the highest dB-above-average level the
+                // signal still reaches; the average power isn't in the trace (use Channel Power for that).
+                return new CcdfResult
+                {
+                    Measurement = Root,
+                    Raw = data,
+                    AveragePowerDbm = double.NaN,
+                    ProbabilityAtAveragePercent = double.NaN,
+                    PaprDb = PaprFromCcdfTrace(data)
+                };
+            }
 
             return new CcdfResult
             {
                 Measurement = Root,
-                Raw = scalars,
-                AveragePowerDbm = scalars.Length > 0 ? scalars[0] : double.NaN,
-                ProbabilityAtAveragePercent = scalars.Length > 1 ? scalars[1] : double.NaN,
-                PaprDb = scalars.Length > 8 ? scalars[8] : double.NaN
+                Raw = data,
+                AveragePowerDbm = data.Length > 0 ? data[0] : double.NaN,
+                ProbabilityAtAveragePercent = data.Length > 1 ? data[1] : double.NaN,
+                PaprDb = data.Length > 8 ? data[8] : double.NaN
             };
+        }
+
+        /// <summary>
+        /// PAPR from a CCDF probability trace: probability(%) that the instantaneous power is at least
+        /// <c>i·step</c> dB above average, where the trace spans 0…50 dB. PAPR is the highest level still
+        /// reached, i.e. the largest index whose probability stays above the analyzer's ~0.0001% floor.
+        /// </summary>
+        private static double PaprFromCcdfTrace(double[] trace)
+        {
+            if (trace == null || trace.Length < 2) return double.NaN;
+            const double maxDb = 50.0;            // 5001 points span 0..50 dB above average
+            const double floorPercent = 0.0001;   // the CCDF measurement floor
+            double stepDb = maxDb / (trace.Length - 1);
+            for (int i = trace.Length - 1; i >= 0; i--)
+                if (trace[i] >= floorPercent) return i * stepDb;
+            return 0.0;
         }
     }
 }
