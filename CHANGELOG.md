@@ -10,9 +10,13 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 - **Tutorial-image harness** (#150): regenerate every signal-tutorial image in one pass so they stay in
   lockstep with the text. Two complementary generators writing `docs/images/tutorials/`:
   - **Real N9010A captures** — `HilHarness --tutorial-captures <dir>` plays each tutorial signal on the
-    E4438C and captures the analyzer showing it (spectrum, plus Power Stat CCDF for the PAPR tutorials):
-    CW, 8-tone multitone (spectrum + Newman/Equal CCDF), AWGN, QPSK, multi-carrier, I/Q-imbalance
-    (before/after image tone). Bench-verified on the N9010A; `index-n9010a.md` manifest.
+    E4438C and captures the analyzer showing it, across spectrum, Power Stat CCDF, **channel power** and
+    **ACP** views. Covers 14 of the 21 tutorials (every one with a signal to view): CW, multitone
+    (spectrum + Newman/Equal CCDF), AWGN, QPSK, multi-carrier, I/Q-imbalance, plus play/import/connect
+    (CW), path-cal (channel power), verify (CW + multitone), the analyzer-measurements showcase (QPSK
+    spectrum/channel-power/ACP/CCDF), and the assistant/HIL runs. Each analyzer image is tagged "E4406A
+    coming soon". Bench-verified on the N9010A; `index-n9010a.md` manifest. (App-UI-only tutorials —
+    validation, projects, sequencing, console, assistant-setup, installer — are Phase 2.)
   - **App-only plot views** the analyzer can't draw (QPSK constellation + eye) — `ESG-SignalCreator.exe
     --tutorial-images <dir>` renders them headlessly via the app's own renderer (`PlotSeries` /
     `PlotImageRenderer`, shared with the interactive pane); `index.md` manifest.

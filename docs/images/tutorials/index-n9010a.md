@@ -25,3 +25,12 @@ Real analyzer screenshots of each tutorial signal, captured by
 
 - t08-iq-clean-n9010a.png — Clean tone at +1 MHz — spectrum
 - t08-iq-imbalance-n9010a.png — 3 dB I/Q gain imbalance — image tone
+## Tutorial 14
+
+- t14-pathcal-chpower-n9010a.png — CW cal tone — channel power
+## Tutorial 16
+
+- t16-spectrum-n9010a.png — QPSK — spectrum marker
+- t16-chpower-n9010a.png — QPSK — channel power
+- t16-acp-n9010a.png — QPSK — adjacent channel power (ACP)
+- t16-ccdf-n9010a.png — QPSK — CCDF / PAPR

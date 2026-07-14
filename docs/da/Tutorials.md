@@ -186,7 +186,12 @@ runtime og instrumentets VISA-resourcestreng. Du har gennemført Tutorial 1.
 8. **Genvej:** i stedet for tre klik kan du trykke på **Calc → DL → Play** for at køre alle tre trin
    i rækkefølge.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (rigtig N9010A-optagelse af den afspillede CW):
+
+![CW-tone på N9010A — spektrum](../images/tutorials/t01-cw-n9010a.png)
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
 - Afspilningstilstands-indikatoren når **Playing** efter **Play** og vender tilbage til Idle efter **Stop**.
 - En CW-tone på en hvilken som helst analysator-/spektrummonitor på RF-udgangen, ved bærebølge + dit offset.
 
@@ -397,7 +402,12 @@ fil, med valgfri resampling til mål-sample-clock.
    afviger fra den sample clock, du har til hensigt at afspille ved (f.eks. 10 MHz).
 6. Klik på **Calculate**.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (den importerede CW-rundtur, afspillet og optaget på N9010A):
+
+![Importeret CW på N9010A — spektrum](../images/tutorials/t01-cw-n9010a.png)
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
 - Den importerede bølgeform på **I/Q vs time** og **Spectrum**, som matcher det, din fil indeholder.
 - Et aflæst samplingsantal/varighed, der er i overensstemmelse med din fil (og den resamplede rate, hvis du slog
   resampling til).
@@ -671,7 +681,12 @@ En forbundet ESG (Tutorial 2) er nyttig.
    - Indstil **Path loss (dB)** — **0**, hvis analysatoren er kablet direkte til ESG'en, eller værdien af
      enhver inline pad/dæmpning (f.eks. **10** for en 10 dB pad).
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (når den er forbundet, viser N9010A det signal, den modtager):
+
+![N9010A modtager et signal — spektrum](../images/tutorials/t01-cw-n9010a.png)
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
 - Analysatoren forbinder og rapporterer som den valgte model; sikkerhedsindstillingerne viser **Armed** med din maksimale
   sikre indgang og path loss.
 - Fra nu af **blokeres** enhver kommanderet ESG-effekt, der ville overstige det sikre niveau ved analysatorindgangen
@@ -703,7 +718,12 @@ analysatoren og anvender det overalt.
    registrerer *kommanderet − målt* som inline **path loss**.
 3. Afslut wizarden. RF returneres **off**, når den er færdig.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (cal-tonen målt som channel power på N9010A):
+
+![CW cal-tone — channel power på N9010A](../images/tutorials/t14-pathcal-chpower-n9010a.png)
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
 - En fanget **path loss (dB)**-værdi, der nu anvendes på både **sikkerheds-gaten** og **Verify**, så
   efterfølgende kørsler er selvkonsistente.
 - RF er slukket ved afslutningen af kalibreringen.
@@ -748,7 +768,14 @@ path loss **0 dB**. Tolerancer: kanaleffekt **±3 dB**, PAPR **±2,5 dB**, tonef
    Download → Play, og **Verify** igen. Læs tabellen — bemærk, at PAPR er den interessante metrik her (og
    der er ingen enkelt-tone-frekvensrække for multitone).
 
-**Hvad du bør se (og på analysatorens frontpanel):**
+**Hvad du bør se (og på analysatorens frontpanel)** — rigtige N9010A-optagelser af de to verificerede signaler:
+
+| CW — spektrum | Multitone — CCDF (PAPR) |
+|---|---|
+| ![CW på N9010A](../images/tutorials/t01-cw-n9010a.png) | ![Multitone CCDF på N9010A](../images/tutorials/t03-multitone-newman-ccdf-n9010a.png) |
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
 - For CW: **tonefrekvens = 1,001 GHz** (± 50 kHz), **kanaleffekt ≈ −10 dBm** (± 3 dB, minus path loss),
   **PAPR ≈ 0 dB** (± 2,5 dB) — alt PASS. På analysatorens **Spectrum**: én skarp linje ved 1,001 GHz.
 - For multitone (Newman, 4 toner): **kanaleffekt ≈ −13 til −14 dBm** (± 3 dB — under CW med crest-faktoren),
@@ -786,7 +813,18 @@ sammenligninger, og forstå de Basic-mode-målinger, appen bruger.
 3. Med Basic mode og (ideelt) en fælles reference skal du gentage en **Verify** (Tutorial 15) og bemærke den
    tættere frekvensoverensstemmelse.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** — appens typede målinger, hver en rigtig N9010A-optagelse af den samme QPSK-bærebølge:
+
+| Spectrum-markør | Channel power |
+|---|---|
+| ![QPSK-spektrum på N9010A](../images/tutorials/t16-spectrum-n9010a.png) | ![QPSK channel power på N9010A](../images/tutorials/t16-chpower-n9010a.png) |
+
+| ACP / ACPR | CCDF / PAPR |
+|---|---|
+| ![QPSK ACP på N9010A](../images/tutorials/t16-acp-n9010a.png) | ![QPSK CCDF på N9010A](../images/tutorials/t16-ccdf-n9010a.png) |
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
 - **VSA Mode**-menuen afspejler præcis, hvad der er installeret på din enhed.
 - **Reference**-menuen rapporterer hvert instruments tidsbasekilde, efter du vælger; med en fælles
   10 MHz stemmer frekvensmetrikker i Verify tættere overens.
@@ -901,7 +939,12 @@ trinnet, Tutorial 2, 13–15).
    - **Allow raw SCPI** aktiverer den gated `send_raw_scpi`-nødudgang (slået fra som standard, altid
      bekræftet pr. kald). Slå den kun til, hvis du har brug for ad hoc-kommandoer.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (assistenten afspiller en multitone — optaget på N9010A):
+
+![Assistent-afspillet multitone på N9010A — spektrum](../images/tutorials/t03-multitone-n9010a.png)
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
 - Approve/Decline-kort for hardwaretrinnene; efter godkendelse sker downloadet, RF tændes, og
   afspilningstilstands-indikatoren viser **Playing**.
 - `verify_signal` returnerer en pass/fail-sammenligning, der matcher Verification-visningen.
@@ -961,7 +1004,12 @@ konsolværktøj, adskilt fra GUI'en.
    ```
 4. Åbn `report.json`, og gennemgå de per-trin PASS/FAIL-resultater.
 
-**Hvad du bør se:**
+**Hvad du bør se på analysatoren** (closed-loop-kørslen måler hvert signal — f.eks. channel power på N9010A):
+
+![Closed-loop channel-power-måling på N9010A](../images/tutorials/t16-chpower-n9010a.png)
+
+> 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
 - ESG-kun: identitet/options, en CW downloadet til **WFM1**, ARB'en armed, og frekvens/amplitude aflæst
   tilbage — RF off og safe.
 - Closed-loop: hver signaltype drevet på et sikkert niveau hen over sweepet og verificeret på analysatoren,
