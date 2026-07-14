@@ -569,6 +569,11 @@ log.
 > VSA-indstillinger** — se [**Manuel verifikations-procedure**](ManualVerification.md). Tutorials herunder
 > lærer dig arbejdsgangen; det dokument er kopiér-tallene-referencen.
 
+> 📸 **Skærmbilleder:** du kan optage analysatorens resultatskærm over VISA med
+> `ESG-SignalCreator.HilHarness.exe --capture-screen <file>` (se README → Hardware-in-the-loop
+> testing, og Manuel verifikations-dokumentet). Optagne billeder ligger under `docs/images/vsa/` og kan
+> indlejres i disse trin.
+
 ## Tutorial 13 — Forbind VSA'en sikkert
 
 **Mål:** Vælg analysatormodellen, forbind den, og arm RF-sti-sikkerheden, så appen blokerer enhver

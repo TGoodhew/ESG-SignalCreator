@@ -7,6 +7,12 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 ## [Unreleased]
 
 ### Added
+- **VSA screen-capture tool** (#143): capture the analyzer's display over VISA to an image file, for
+  attaching real result screenshots to the tutorials and reports. New `HilHarness --capture-screen <file>`
+  (analyzer-only; no ESG/RF), backed by `VsaInstrument.CaptureScreen`, a per-model `ScreenCaptureRecipe`
+  on the dialect, and an `ISupportsBinaryRead` transport capability that reads the IEEE-488.2 image block.
+  The capture SCPI is overridable per-firmware from the CLI (`--capture-save-cmd` / `--capture-data-query`
+  / `--capture-cleanup-cmd` / `--capture-temp-path`). Default recipe is manual-derived — confirm on the bench.
 - **Manual Verification Procedure doc** (#138): a new standalone `docs/ManualVerification.md` — a
   step-by-step bench check that mirrors the automated **Verify install…** battery, with every UI control,
   concrete value (1 GHz / −10 dBm / 5 MHz span / +1 MHz tone), the expected analyzer reading per signal

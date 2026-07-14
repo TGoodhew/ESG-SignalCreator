@@ -109,5 +109,12 @@ namespace EsgSignalCreator.Visa
         /// (#129). The N9010A opts in; the E4406A uses the plain blocking read.
         /// </summary>
         bool UsesServiceRequestCompletion { get; }
+
+        /// <summary>
+        /// The default SCPI recipe for capturing the display as an image (issue #143), or null if the
+        /// model has no built-in default. The capturing tool may override any field. The defaults are
+        /// manual-derived and should be confirmed on the bench.
+        /// </summary>
+        ScreenCaptureRecipe ScreenCapture { get; }
     }
 }

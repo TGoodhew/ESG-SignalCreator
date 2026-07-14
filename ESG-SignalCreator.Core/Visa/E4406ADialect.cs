@@ -29,6 +29,16 @@ namespace EsgSignalCreator.Visa
         // The E4406A path uses the plain blocking read (its fixed timeout is adequate).
         public bool UsesServiceRequestCompletion => false;
 
+        // E4406A screen capture: save the screen to the instrument's file system, read it back as a
+        // block, then delete it. The E4406A saves a GIF; the format is whatever the instrument writes.
+        // Manual-derived (MMEMory subsystem) — confirm on hardware, and use the tool's overrides if the
+        // firmware differs (#143).
+        public ScreenCaptureRecipe ScreenCapture => new ScreenCaptureRecipe(
+            dataQueryFormat: ":MMEMory:DATA? \"{0}\"",
+            saveCommandFormat: ":MMEMory:STORe:SCReen \"{0}\"",
+            cleanupCommandFormat: ":MMEMory:DELete \"{0}\"",
+            tempPath: "C:\\ESGCAP.GIF");
+
         public string InstrumentModeFor(VsaMeasurement measurement) => "BASIC";
 
         public string RootFor(VsaMeasurement measurement)

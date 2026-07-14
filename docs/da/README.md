@@ -114,8 +114,8 @@ NuGet `PackageReference`s).
 
 ## Hardware-in-the-loop-test
 
-De 356 unit-tests kører **uden instrument** (blokindramning, encoder, DSP, validering,
-VSA-SCPI-parsing, …). For at validere de rigtige instrumenter skal du køre den headless harness
+Unit-testene kører **uden instrument** (blokindramning, encoder, DSP, validering,
+VSA-SCPI-parsing, skærmoptagelses-blokafkodning, …). For at validere de rigtige instrumenter skal du køre den headless harness
 ([ESG-SignalCreator.HilHarness](../../ESG-SignalCreator.HilHarness/)):
 
 ```powershell
@@ -137,6 +137,12 @@ ESG-SignalCreator.HilHarness.exe --vsa --signal multitone
 ESG-SignalCreator.HilHarness.exe --vsa --flatness
 #   options: --vsa-model e4406a|n9010a --points N --start-hz --stop-hz --carrier-hz --offset-hz
 #            --verify-power-dbm --max-input-dbm --path-loss-db --dwell-seconds --json
+
+# Capture the analyzer's current display to an image (analyzer-only, no ESG/RF) — for docs & reports:
+ESG-SignalCreator.HilHarness.exe --capture-screen docs/images/vsa/cw-result.png --vsa GPIB0::17::INSTR --vsa-model e4406a
+#   SCPI overrides (confirm/adjust per firmware):
+#     --capture-data-query ":MMEMory:DATA? \"{0}\"" --capture-save-cmd ":MMEMory:STORe:SCReen \"{0}\""
+#     --capture-cleanup-cmd ":MMEMory:DELete \"{0}\"" --capture-temp-path "C:\Temp\ESGCAP.png"
 ```
 
 ESG-only-tilstand tjekker `*IDN?`/`*OPT?`, downloader en CW til `WFM1`, aktiverer ARB'en og læser
@@ -156,6 +162,14 @@ Analyzeren kører i kontinuerlig tilstand under per-punkt-dwell'en, så frontpan
 kørslen slutter RF-off med analyzeren stadig sweepende. Per-trin PASS/FAIL, valgfri JSON-rapport,
 ikke-nul exit ved fejl. Et separat konsolprojekt, holdt uden for unit-test-kørslen, så CI forbliver
 hardware-fri.
+
+**Skærmoptagelse** (`--capture-screen <file>`) er kun analyzer: den forbinder til VSA'en, læser dens
+display tilbage over VISA som en IEEE-488.2-blok og skriver billedfilen (PNG på X-Series, GIF på
+E4406A). Drive og indsving signalet først (f.eks. en `--signal`/`--install-verify`-kørsel i et andet
+vindue, eller fra appen), og optag derefter resultatet. Standard-optage-SCPI'en er manuelt afledt og
+**kræver bænkbekræftelse** — `--capture-*`-tilsidesættelserne lader dig tune den pr. firmware uden en
+genbygning. Brug den til at fange de per-trin VSA-skærmbilleder, der refereres i tutorials og
+[Manuel verifikation](ManualVerification.md)-dokumentet (læg dem under `docs/images/vsa/`).
 
 > Bænkvalideret (2026-06, E4406A FW A.08.10) over 50 MHz–3 GHz: alle signaltyper PASS —
 > f.eks. multitone PAPR ≈3,8 dB (forv. 2,9), AWGN crest ≈10,2 dB, 16-QAM ACPR ≈−48 dBc, en 3 dB

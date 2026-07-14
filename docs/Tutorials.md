@@ -572,6 +572,11 @@ log.
 > [**Manual Verification Procedure**](ManualVerification.md). The tutorials below teach the workflow;
 > that document is the copy-the-numbers reference.
 
+> 📸 **Screenshots:** you can capture the analyzer's result screen over VISA with
+> `ESG-SignalCreator.HilHarness.exe --capture-screen <file>` (see the README → Hardware-in-the-loop
+> testing, and the Manual Verification doc). Captured images live under `docs/images/vsa/` and can be
+> embedded in these steps.
+
 ## Tutorial 13 — Connect the VSA safely
 
 **Goal:** Choose the analyzer model, connect it, and arm the RF-path safety so the app blocks any
