@@ -20,7 +20,13 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
   - **App-only plot views** the analyzer can't draw (QPSK constellation + eye) — `ESG-SignalCreator.exe
     --tutorial-images <dir>` renders them headlessly via the app's own renderer (`PlotSeries` /
     `PlotImageRenderer`, shared with the interactive pane); `index.md` manifest.
-  Images embedded in the tutorials (EN + DA), each analyzer image tagged "E4406A images coming soon".
+  - **App-UI screenshots** (Phase 2) for the workflow tutorials — `ESG-SignalCreator.exe
+    --tutorial-ui-images <dir>` renders the real Notifications dock, Sequence table, SCPI console, and
+    assistant pane (with a mocked-up transcript) off-screen via `Control.DrawToBitmap`, populated with
+    canned state. Covers T9/T11/T12/T17/T18/T19.
+  Images embedded in the tutorials (EN + DA); analyzer images tagged "E4406A images coming soon".
+  **19 of 21 tutorials now have images** (only Projects and Installer, which have no meaningful signal or
+  in-app panel to render, are left).
 
 ### Fixed
 - **Tutorial 3 phasing name** (#150): the tutorial said "Zero" phasing; the enum/UI value is **Equal** —

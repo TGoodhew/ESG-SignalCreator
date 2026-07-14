@@ -22,6 +22,18 @@ namespace EsgSignalCreator
                 catch (Exception ex) { Console.Error.WriteLine("Tutorial-image generation failed: " + ex); Environment.Exit(2); }
             }
 
+            // Headless app-UI screenshots for the workflow tutorials (#150 phase 2): render the app panels
+            // (Notifications, Sequence, SCPI console, assistant) to PNG and exit.
+            int uiIdx = Array.FindIndex(args, a => string.Equals(a, "--tutorial-ui-images", StringComparison.OrdinalIgnoreCase));
+            if (uiIdx >= 0)
+            {
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                string dir = uiIdx + 1 < args.Length ? args[uiIdx + 1] : "docs/images/tutorials";
+                try { Ui.TutorialImages.TutorialUiImageHarness.Run(dir); Environment.Exit(0); }
+                catch (Exception ex) { Console.Error.WriteLine("Tutorial-UI-image generation failed: " + ex); Environment.Exit(2); }
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 

@@ -23,9 +23,10 @@ core library, the WinForms app, and an xUnit test project.
 > 🔄 **Tutorial images are generated, not hand-grabbed.** The signal-tutorial analyzer screenshots
 > (`docs/images/tutorials/*-n9010a.png`) are real N9010A captures from `HilHarness --tutorial-captures <dir>`
 > (#150); the two views the analyzer can't draw (QPSK constellation/eye) come from the app renderer
-> `ESG-SignalCreator.exe --tutorial-images <dir>`; verification screenshots (`docs/images/vsa/`) come from
-> `HilHarness --install-verify --capture-dir` (#143). **When a tutorial changes, update the relevant harness
-> and regenerate the affected images in the same change.** (E4406A captures coming soon.)
+> `ESG-SignalCreator.exe --tutorial-images <dir>`; app-UI screenshots for the workflow tutorials come from
+> `ESG-SignalCreator.exe --tutorial-ui-images <dir>`; verification screenshots (`docs/images/vsa/`) come
+> from `HilHarness --install-verify --capture-dir` (#143). **When a tutorial changes, update the relevant
+> harness and regenerate the affected images in the same change.** (E4406A captures coming soon.)
 
 ## Features
 
