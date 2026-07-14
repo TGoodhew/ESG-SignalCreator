@@ -171,11 +171,13 @@ Average Power og Peak/PAPR-aflæsningen):
 
 | CW | AM |
 |---|---|
-| ![CW-resultat på N9010A](images/vsa/cw.png) | ![AM-resultat på N9010A](images/vsa/am.png) |
+| ![CW-resultat på N9010A](../images/vsa/cw.png) | ![AM-resultat på N9010A](../images/vsa/am.png) |
 
 | FM | I/Q-multitone |
 |---|---|
-| ![FM-resultat på N9010A](images/vsa/fm.png) | ![I/Q-multitone-resultat på N9010A](images/vsa/iq-multitone.png) |
+| ![FM-resultat på N9010A](../images/vsa/fm.png) | ![I/Q-multitone-resultat på N9010A](../images/vsa/iq-multitone.png) |
+
+> 🏷️ **E4406A-billeder kommer snart** — tilsvarende optagelser fra Agilent E4406A tilføjes, når de er taget på den analysator.
 
 ---
 
@@ -202,7 +204,7 @@ ESG-SignalCreator.HilHarness.exe --capture-screen docs/images/vsa/cw-result.png 
     --vsa GPIB0::17::INSTR --vsa-model e4406a
 ```
 
-Referér til et optaget billede fra et trin med f.eks. `![CW-resultat på analysatoren](images/vsa/cw.png)`.
+Referér til et optaget billede fra et trin med f.eks. `![CW-resultat på analysatoren](../images/vsa/cw.png)`.
 
 > Standard-optage-SCPI'en (`:MMEMory:STORe:SCReen` + `:MMEMory:DATA?` + `:MMEMory:DELete`) er
 > manuelt afledt og **kræver bænkbekræftelse**. Hvis din firmware afviger, kan du tilsidesætte den uden en

@@ -578,6 +578,24 @@ log.
 > shot use `--capture-screen <file>`. See the README → Hardware-in-the-loop testing and the Manual
 > Verification doc; captured images live under `docs/images/vsa/`.
 
+### What each signal looks like on the analyzer
+
+These are **real captures from an N9010A** (FW A.07.05), grabbed automatically with
+`--install-verify --capture-dir` — the Power Stat CCDF view showing Average Power and the Peak/PAPR
+reading for each signal in the verification battery:
+
+| CW — tone, PAPR ≈ 0 dB | AM — 50% at 100 kHz, PAPR ≈ 3 dB |
+|---|---|
+| ![CW result on the N9010A](images/vsa/cw.png) | ![AM result on the N9010A](images/vsa/am.png) |
+
+| FM — 500 kHz dev, PAPR ≈ 0 dB | I/Q multitone — 4-tone Newman, PAPR ≈ 3 dB |
+|---|---|
+| ![FM result on the N9010A](images/vsa/fm.png) | ![I/Q multitone result on the N9010A](images/vsa/iq-multitone.png) |
+
+> 🏷️ **E4406A images coming soon.** The captures above are from a Keysight N9010A. Equivalent Agilent
+> E4406A screenshots will be added once captured on that analyzer (the same
+> `--install-verify --capture-dir` command produces them).
+
 ## Tutorial 13 — Connect the VSA safely
 
 **Goal:** Choose the analyzer model, connect it, and arm the RF-path safety so the app blocks any

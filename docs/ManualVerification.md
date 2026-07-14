@@ -177,6 +177,8 @@ Average Power and the Peak/PAPR reading):
 |---|---|
 | ![FM result on the N9010A](images/vsa/fm.png) | ![I/Q multitone result on the N9010A](images/vsa/iq-multitone.png) |
 
+> 🏷️ **E4406A images coming soon** — equivalent captures from the Agilent E4406A will be added once taken on that analyzer.
+
 ---
 
 ## Capturing screenshots for the docs
