@@ -45,16 +45,7 @@ namespace EsgSignalCreator.Ui.Plots
             // The MS Chart throws "Height must be greater than 0px" if it is ever laid out at zero
             // size (which happens transiently during form construction); a small minimum avoids it.
             _chart = new Chart { Dock = DockStyle.Fill, MinimumSize = new Size(10, 10) };
-            var area = new ChartArea("main");
-            area.AxisX.MajorGrid.LineColor = Color.Gainsboro;
-            area.AxisY.MajorGrid.LineColor = Color.Gainsboro;
-            // Rubber-band zoom (legacy Signal Studio Tools->Zoom).
-            area.CursorX.IsUserSelectionEnabled = true;
-            area.CursorY.IsUserSelectionEnabled = true;
-            area.AxisX.ScaleView.Zoomable = true;
-            area.AxisY.ScaleView.Zoomable = true;
-            _chart.ChartAreas.Add(area);
-            _chart.Legends.Add(new Legend("legend") { Docking = Docking.Top });
+            PlotSeries.ConfigureChart(_chart); // chart area + legend + rubber-band zoom (shared with the image renderer)
 
             Controls.Add(_chart);
             Controls.Add(top);
@@ -98,123 +89,8 @@ namespace EsgSignalCreator.Ui.Plots
             a.AxisY.ScaleView.ZoomReset(0);
         }
 
-        private void Render()
-        {
-            _chart.Series.Clear();
-            _chart.Titles.Clear();
-            ChartArea a = _chart.ChartAreas[0];
-            a.AxisY.Minimum = double.NaN;
-            a.AxisY.Maximum = double.NaN;
-
-            if (_waveform == null) return;
-
-            switch (SelectedView)
-            {
-                case ViewType.Spectrum: RenderSpectrum(); break;
-                case ViewType.Constellation: RenderConstellation(); break;
-                case ViewType.Ccdf: RenderCcdf(); break;
-                case ViewType.Eye: RenderEye(); break;
-                default: RenderIq(); break;
-            }
-        }
-
-        private void RenderIq()
-        {
-            WaveformModel wf = _waveform;
-            _chart.Titles.Add("I / Q  (time domain)");
-            _chart.ChartAreas[0].AxisX.Title = "Sample";
-            _chart.ChartAreas[0].AxisY.Title = "Amplitude (norm.)";
-
-            var si = new Series("I") { ChartType = SeriesChartType.FastLine, Color = Color.RoyalBlue };
-            var sq = new Series("Q") { ChartType = SeriesChartType.FastLine, Color = Color.OrangeRed };
-            int step = Math.Max(1, wf.Length / 2000); // decimate for responsiveness
-            for (int n = 0; n < wf.Length; n += step)
-            {
-                si.Points.AddXY(n, wf.I[n]);
-                sq.Points.AddXY(n, wf.Q[n]);
-            }
-            _chart.Series.Add(si);
-            _chart.Series.Add(sq);
-        }
-
-        private void RenderSpectrum()
-        {
-            WaveformModel wf = _waveform;
-            _chart.Titles.Add("Baseband spectrum (centered on carrier)");
-            ChartArea a = _chart.ChartAreas[0];
-            a.AxisX.Title = "Frequency offset (MHz)";
-            a.AxisY.Title = "Magnitude (dB)";
-            a.AxisY.Minimum = -120;
-            a.AxisY.Maximum = 5;
-
-            double[] iD = ToDouble(wf.I);
-            double[] qD = ToDouble(wf.Q);
-            Fft.MagnitudeSpectrumDb(iD, qD, wf.SampleRateHz, out double[] f, out double[] mag);
-            var s = new Series("Spectrum") { ChartType = SeriesChartType.FastLine, Color = Color.SeaGreen };
-            for (int k = 0; k < f.Length; k++) s.Points.AddXY(f[k] / 1e6, mag[k]);
-            _chart.Series.Add(s);
-        }
-
-        private void RenderConstellation()
-        {
-            WaveformModel wf = _waveform;
-            _chart.Titles.Add("Constellation (I vs Q)");
-            ChartArea a = _chart.ChartAreas[0];
-            a.AxisX.Title = "I";
-            a.AxisY.Title = "Q";
-            var s = new Series("Constellation") { ChartType = SeriesChartType.Point, Color = Color.MediumVioletRed, MarkerSize = 3 };
-            int step = Math.Max(1, wf.Length / 4000);
-            for (int n = 0; n < wf.Length; n += step) s.Points.AddXY(wf.I[n], wf.Q[n]);
-            _chart.Series.Add(s);
-        }
-
-        private void RenderCcdf()
-        {
-            WaveformModel wf = _waveform;
-            double[] iD = ToDouble(wf.I), qD = ToDouble(wf.Q);
-            double papr = Ccdf.PaprDb(iD, qD);
-            _chart.Titles.Add(string.Format(System.Globalization.CultureInfo.InvariantCulture,
-                "CCDF   (PAPR {0:0.##} dB)", papr));
-            ChartArea a = _chart.ChartAreas[0];
-            a.AxisX.Title = "dB above average";
-            a.AxisY.Title = "Probability";
-            a.AxisY.IsLogarithmic = true;
-            Ccdf.Curve(iD, qD, out double[] db, out double[] prob);
-            var s = new Series("CCDF") { ChartType = SeriesChartType.FastLine, Color = Color.DarkSlateBlue };
-            for (int k = 0; k < db.Length; k++)
-                if (prob[k] > 0) s.Points.AddXY(db[k], prob[k]);
-            _chart.Series.Add(s);
-        }
-
-        private void RenderEye()
-        {
-            WaveformModel wf = _waveform;
-            _chart.Titles.Add("Eye diagram (I)");
-            ChartArea a = _chart.ChartAreas[0];
-            a.AxisX.Title = "Sample in window";
-            a.AxisY.Title = "I";
-
-            // Fold the I signal over a two-symbol window. Use the symbol-rate hint when available,
-            // otherwise a heuristic window so the view is meaningful for arbitrary waveforms.
-            int sps = _samplesPerSymbol > 0 ? _samplesPerSymbol : Math.Max(8, Math.Min(128, wf.Length / 200));
-            int win = sps * 2;
-            if (win < 2 || win > wf.Length) return;
-
-            var color = System.Drawing.Color.FromArgb(60, System.Drawing.Color.Teal);
-            int traces = 0;
-            for (int start = 0; start + win <= wf.Length && traces < 200; start += sps, traces++)
-            {
-                var s = new Series("eye" + traces) { ChartType = SeriesChartType.FastLine, Color = color, IsVisibleInLegend = false };
-                for (int k = 0; k < win; k++) s.Points.AddXY(k, wf.I[start + k]);
-                _chart.Series.Add(s);
-            }
-        }
-
-        private static double[] ToDouble(float[] x)
-        {
-            var d = new double[x.Length];
-            for (int n = 0; n < x.Length; n++) d[n] = x[n];
-            return d;
-        }
+        // Rendering lives in PlotSeries so the interactive pane and the headless image renderer draw
+        // identically (issue #150).
+        private void Render() => PlotSeries.Render(_chart, SelectedView, _waveform, _samplesPerSymbol);
     }
 }
