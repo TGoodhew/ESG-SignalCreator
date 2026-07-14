@@ -138,9 +138,13 @@ ESG-SignalCreator.HilHarness.exe --vsa --flatness
 #   options: --vsa-model e4406a|n9010a --points N --start-hz --stop-hz --carrier-hz --offset-hz
 #            --verify-power-dbm --max-input-dbm --path-loss-db --dwell-seconds --json
 
-# Capture the analyzer's current display to an image (analyzer-only, no ESG/RF) — for docs & reports:
+# AUTOMATISERET skærmbillede: driv CW/AM/FM/IQ, mål hver, og optag analyzer-skærmen pr. trin —
+# én kommando, ingen manuel opsætning. Skriver cw/am/fm/iq-multitone-billeder + en index.md i mappen:
+ESG-SignalCreator.HilHarness.exe --install-verify --vsa GPIB0::17::INSTR --vsa-model e4406a --capture-dir docs/images/vsa
+
+# Eller optag blot analyzerens NUVÆRENDE display (kun analyzer, ingen ESG/RF), til et ad-hoc-billede:
 ESG-SignalCreator.HilHarness.exe --capture-screen docs/images/vsa/cw-result.png --vsa GPIB0::17::INSTR --vsa-model e4406a
-#   SCPI overrides (confirm/adjust per firmware):
+#   SCPI-tilsidesættelser for begge modes (bekræft/justér pr. firmware):
 #     --capture-data-query ":MMEMory:DATA? \"{0}\"" --capture-save-cmd ":MMEMory:STORe:SCReen \"{0}\""
 #     --capture-cleanup-cmd ":MMEMory:DELete \"{0}\"" --capture-temp-path "C:\Temp\ESGCAP.png"
 ```
@@ -163,13 +167,20 @@ kørslen slutter RF-off med analyzeren stadig sweepende. Per-trin PASS/FAIL, val
 ikke-nul exit ved fejl. Et separat konsolprojekt, holdt uden for unit-test-kørslen, så CI forbliver
 hardware-fri.
 
-**Skærmoptagelse** (`--capture-screen <file>`) er kun analyzer: den forbinder til VSA'en, læser dens
-display tilbage over VISA som en IEEE-488.2-blok og skriver billedfilen (PNG på X-Series, GIF på
-E4406A). Drive og indsving signalet først (f.eks. en `--signal`/`--install-verify`-kørsel i et andet
-vindue, eller fra appen), og optag derefter resultatet. Standard-optage-SCPI'en er manuelt afledt og
-**kræver bænkbekræftelse** — `--capture-*`-tilsidesættelserne lader dig tune den pr. firmware uden en
-genbygning. Brug den til at fange de per-trin VSA-skærmbilleder, der refereres i tutorials og
-[Manuel verifikation](ManualVerification.md)-dokumentet (læg dem under `docs/images/vsa/`).
+**Skærmoptagelse** producerer de per-trin VSA-skærmbilleder til tutorials og
+[Manuel verifikation](ManualVerification.md)-dokumentet (billeder skrevet som PNG på X-Series, GIF på
+E4406A). To modes:
+
+- **Automatiseret** — `--install-verify --capture-dir <dir>` driver ESG'en gennem CW/AM/FM/I-Q-batteriet,
+  måler hvert på analyzeren og optager analyzerens display efter hvert signal, alt sammen i **én
+  kommando uden manuel opsætning**. Den skriver `cw`-, `am`-, `fm`-, `iq-multitone`-billeder plus en
+  `index.md`, der indlejrer dem (klar til at indsætte i dokumentationen).
+- **Ad-hoc** — `--capture-screen <file>` er kun analyzer (ingen ESG/RF): den optager, hvad end VSA'en
+  aktuelt viser, til et engangsbillede, efter du selv har sat et signal op.
+
+Begge læser displayet tilbage over VISA som en IEEE-488.2-blok. Standard-optage-SCPI'en er manuelt afledt
+og **kræver bænkbekræftelse** — `--capture-*`-tilsidesættelserne lader dig tune den pr. firmware uden en
+genbygning.
 
 > Bænkvalideret (2026-06, E4406A FW A.08.10) over 50 MHz–3 GHz: alle signaltyper PASS —
 > f.eks. multitone PAPR ≈3,8 dB (forv. 2,9), AWGN crest ≈10,2 dB, 16-QAM ACPR ≈−48 dBc, en 3 dB

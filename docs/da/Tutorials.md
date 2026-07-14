@@ -570,9 +570,10 @@ log.
 > lærer dig arbejdsgangen; det dokument er kopiér-tallene-referencen.
 
 > 📸 **Skærmbilleder:** du kan optage analysatorens resultatskærm over VISA med
-> `ESG-SignalCreator.HilHarness.exe --capture-screen <file>` (se README → Hardware-in-the-loop
-> testing, og Manuel verifikations-dokumentet). Optagne billeder ligger under `docs/images/vsa/` og kan
-> indlejres i disse trin.
+> `ESG-SignalCreator.HilHarness.exe --capture-screen <file>`, eller lade den automatiserede
+> `--install-verify --capture-dir`-mode optage alle fire signaler (CW/AM/FM/I-Q) i én kommando (se
+> README → Hardware-in-the-loop testing, og Manuel verifikations-dokumentet). Optagne billeder ligger
+> under `docs/images/vsa/` og kan indlejres i disse trin.
 
 ## Tutorial 13 — Forbind VSA'en sikkert
 

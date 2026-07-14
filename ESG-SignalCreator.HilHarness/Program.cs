@@ -57,7 +57,7 @@ namespace EsgSignalCreator.HilHarness
             var flags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var valueFlags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 { "--esg", "--vsa", "--vsa-model", "--verify-power-dbm", "--carrier-hz", "--offset-hz", "--max-input-dbm", "--path-loss-db", "--dwell-seconds", "--points", "--start-hz", "--stop-hz", "--signal", "--json",
-                  "--capture-screen", "--capture-save-cmd", "--capture-data-query", "--capture-cleanup-cmd", "--capture-temp-path" };
+                  "--capture-screen", "--capture-dir", "--capture-save-cmd", "--capture-data-query", "--capture-cleanup-cmd", "--capture-temp-path" };
             for (int i = 0; i < args.Length; i++)
             {
                 string a = args[i];
@@ -180,7 +180,15 @@ namespace EsgSignalCreator.HilHarness
 
                 if (installVerify)
                 {
-                    RunInstallVerify(esg, vsaResource, vsaModel, carrierOverride, verifyPowerDbm, maxInputDbm, pathLossDb);
+                    var capture = new CaptureOptions
+                    {
+                        Dir = Opt(opts, "--capture-dir"),
+                        SaveCmd = Opt(opts, "--capture-save-cmd"),
+                        DataQuery = Opt(opts, "--capture-data-query"),
+                        CleanupCmd = Opt(opts, "--capture-cleanup-cmd"),
+                        TempPath = Opt(opts, "--capture-temp-path")
+                    };
+                    RunInstallVerify(esg, vsaResource, vsaModel, carrierOverride, verifyPowerDbm, maxInputDbm, pathLossDb, capture);
                 }
                 else if (closedLoop)
                 {
@@ -311,14 +319,69 @@ namespace EsgSignalCreator.HilHarness
             }
         }
 
+        /// <summary>Image file extension for a model's screen capture (X-Series writes PNG, E4406A GIF).</summary>
+        private static string CaptureExtension(VsaModel model) => model == VsaModel.N9010A ? ".png" : ".gif";
+
+        /// <summary>Filesystem-safe lowercase slug for a signal name, e.g. "IQ (multitone)" -> "iq-multitone".</summary>
+        private static string Slug(string name)
+        {
+            var sb = new StringBuilder();
+            bool lastDash = false;
+            foreach (char c in (name ?? "").ToLowerInvariant())
+            {
+                if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9')) { sb.Append(c); lastDash = false; }
+                else if (!lastDash && sb.Length > 0) { sb.Append('-'); lastDash = true; }
+            }
+            return sb.ToString().Trim('-');
+        }
+
+        /// <summary>Write a markdown index (index.md) embedding the captured screenshots, ready to paste
+        /// into the tutorials / Manual Verification doc.</summary>
+        private static void WriteCaptureMarkdown(string dir, VsaModel model, InstallVerificationReport report,
+            List<KeyValuePair<string, string>> captured)
+        {
+            if (captured.Count == 0) return;
+            var byName = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in captured) byName[kv.Key] = kv.Value;
+
+            var md = new StringBuilder();
+            md.AppendLine("# VSA verification screenshots (" + model + ")");
+            md.AppendLine();
+            md.AppendLine("Captured automatically by `--install-verify --capture-dir`. Verdict: "
+                + (report.AllPass ? "PASS" : "FAIL") + ".");
+            md.AppendLine();
+            foreach (InstallVerificationStep step in report.Steps)
+            {
+                if (!byName.TryGetValue(step.Name, out string file)) continue;
+                md.AppendLine("## " + step.Name + (step.Pass ? "" : " — FAIL"));
+                md.AppendLine();
+                md.AppendLine("*" + step.Detail + "*");
+                md.AppendLine();
+                md.AppendLine("![" + step.Name + " on the analyzer (" + model + ")](" + file + ")");
+                md.AppendLine();
+            }
+            File.WriteAllText(Path.Combine(dir, "index.md"), md.ToString());
+            Console.WriteLine("            wrote " + Path.Combine(dir, "index.md"));
+        }
+
         /// <summary>Headless install/configuration self-test (#126): run the shared InstallVerification
         /// battery (CW/AM/FM/I/Q) on the one user-selected analyzer, recording each expected-vs-measured
         /// result into the harness pass/fail + JSON report.</summary>
+        /// <summary>Per-flag screen-capture options threaded into the install-verify run (#143).</summary>
+        private sealed class CaptureOptions
+        {
+            public string Dir;
+            public string SaveCmd, DataQuery, CleanupCmd, TempPath;
+            public bool Enabled => !string.IsNullOrWhiteSpace(Dir);
+        }
+
         private static void RunInstallVerify(EsgController esg, string vsaResource, VsaModel vsaModel,
-            double carrierOverride, double verifyPowerDbm, double maxInputDbm, double pathLossDb)
+            double carrierOverride, double verifyPowerDbm, double maxInputDbm, double pathLossDb,
+            CaptureOptions capture = null)
         {
             Console.WriteLine(new string('-', 64));
-            Console.WriteLine("Install verification (" + vsaModel + ") — CW / AM / FM / I/Q");
+            Console.WriteLine("Install verification (" + vsaModel + ") — CW / AM / FM / I/Q"
+                + (capture != null && capture.Enabled ? "  (capturing screenshots to " + capture.Dir + ")" : ""));
 
             var safety = new RfPathSafety { Armed = true, AnalyzerMaxSafeInputDbm = maxInputDbm, PathLossDb = pathLossDb };
             Step("Safety gate allows verify power", () => PowerSafetyGate.Guard(verifyPowerDbm, safety));
@@ -344,8 +407,31 @@ namespace EsgSignalCreator.HilHarness
                     PathLossDb = pathLossDb
                 };
 
+                // If capturing, build the recipe once (model default + any CLI overrides) and grab the
+                // analyzer's display after each signal is measured, into <dir>/<slug>.<ext>.
+                var captured = new List<KeyValuePair<string, string>>();
+                Action<InstallVerificationStep> onStep = null;
+                if (capture != null && capture.Enabled)
+                {
+                    Directory.CreateDirectory(capture.Dir);
+                    string ext = CaptureExtension(vsaModel);
+                    ScreenCaptureRecipe recipe = (vsa.Dialect.ScreenCapture ?? new ScreenCaptureRecipe(capture.DataQuery))
+                        .With(capture.DataQuery, capture.SaveCmd, capture.CleanupCmd, capture.TempPath);
+                    onStep = step =>
+                    {
+                        string file = Path.Combine(capture.Dir, Slug(step.Name) + ext);
+                        byte[] img = vsa.CaptureScreen(recipe);
+                        File.WriteAllBytes(file, img);
+                        captured.Add(new KeyValuePair<string, string>(step.Name, Path.GetFileName(file)));
+                        Console.WriteLine("            captured " + file + " (" + img.Length + " bytes)");
+                    };
+                }
+
                 InstallVerificationReport report = InstallVerification.Run(esg, vsa, safety, opts,
-                    msg => Console.WriteLine("            " + msg));
+                    msg => Console.WriteLine("            " + msg), onStepMeasured: onStep);
+
+                if (capture != null && capture.Enabled)
+                    WriteCaptureMarkdown(capture.Dir, vsaModel, report, captured);
 
                 foreach (InstallVerificationStep step in report.Steps)
                 {

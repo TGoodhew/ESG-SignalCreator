@@ -138,9 +138,13 @@ ESG-SignalCreator.HilHarness.exe --vsa --flatness
 #   options: --vsa-model e4406a|n9010a --points N --start-hz --stop-hz --carrier-hz --offset-hz
 #            --verify-power-dbm --max-input-dbm --path-loss-db --dwell-seconds --json
 
-# Capture the analyzer's current display to an image (analyzer-only, no ESG/RF) — for docs & reports:
+# AUTOMATED screenshots: drive CW/AM/FM/IQ, measure each, and capture the analyzer screen per step —
+# one command, no manual setup. Writes cw/am/fm/iq-multitone images + an index.md into the folder:
+ESG-SignalCreator.HilHarness.exe --install-verify --vsa GPIB0::17::INSTR --vsa-model e4406a --capture-dir docs/images/vsa
+
+# Or capture just the analyzer's CURRENT display (analyzer-only, no ESG/RF), for an ad-hoc shot:
 ESG-SignalCreator.HilHarness.exe --capture-screen docs/images/vsa/cw-result.png --vsa GPIB0::17::INSTR --vsa-model e4406a
-#   SCPI overrides (confirm/adjust per firmware):
+#   SCPI overrides for either mode (confirm/adjust per firmware):
 #     --capture-data-query ":MMEMory:DATA? \"{0}\"" --capture-save-cmd ":MMEMory:STORe:SCReen \"{0}\""
 #     --capture-cleanup-cmd ":MMEMory:DELete \"{0}\"" --capture-temp-path "C:\Temp\ESGCAP.png"
 ```
@@ -163,13 +167,20 @@ the run ends RF-off with the analyzer still sweeping. Per-step PASS/FAIL, option
 non-zero exit on failure. A separate console project, kept out of the unit-test run so CI stays
 hardware-free.
 
-**Screen capture** (`--capture-screen <file>`) is analyzer-only: it connects to the VSA, reads its
-display back over VISA as an IEEE-488.2 block, and writes the image file (PNG on the X-Series, GIF on
-the E4406A). Drive and settle the signal first (e.g. a `--signal`/`--install-verify` run in another
-window, or from the app), then capture the result. The default capture SCPI is manual-derived and
-**needs bench confirmation** — the `--capture-*` overrides let you tune it per firmware without a
-rebuild. Use it to grab the per-step VSA screenshots referenced in the tutorials and the
-[Manual Verification](docs/ManualVerification.md) doc (drop them under `docs/images/vsa/`).
+**Screen capture** produces the per-step VSA screenshots for the tutorials and the
+[Manual Verification](docs/ManualVerification.md) doc (images written as PNG on the X-Series, GIF on the
+E4406A). Two modes:
+
+- **Automated** — `--install-verify --capture-dir <dir>` drives the ESG through the CW/AM/FM/I-Q battery,
+  measures each on the analyzer, and captures the analyzer's display after each signal, all in **one
+  command with no manual setup**. It writes `cw`, `am`, `fm`, `iq-multitone` images plus an `index.md`
+  that embeds them (ready to paste into the docs).
+- **Ad-hoc** — `--capture-screen <file>` is analyzer-only (no ESG/RF): it captures whatever the VSA is
+  currently showing, for a one-off shot after you've set a signal up yourself.
+
+Both read the display back over VISA as an IEEE-488.2 block. The default capture SCPI is manual-derived
+and **needs bench confirmation** — the `--capture-*` overrides let you tune it per firmware without a
+rebuild.
 
 > Bench-validated (2026-06, E4406A FW A.08.10) across 50 MHz–3 GHz: all signal types PASS —
 > e.g. multitone PAPR ≈3.8 dB (exp 2.9), AWGN crest ≈10.2 dB, 16-QAM ACPR ≈−48 dBc, a 3 dB

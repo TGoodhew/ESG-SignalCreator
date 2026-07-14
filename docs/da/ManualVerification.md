@@ -167,18 +167,28 @@ sådan her:
 
 ## Optagelse af skærmbilleder til dokumentationen
 
-Hvert trin ovenfor har en "hvad du bør se på VSA'en"-beskrivelse. For at vedhæfte et rigtigt skærmbillede af
-analysatorens resultat kan du optage dens display over VISA med harnesset (kun analysator — ingen ESG, ingen RF):
+Hvert trin ovenfor har en "hvad du bør se på VSA'en"-beskrivelse. Du kan vedhæfte et rigtigt skærmbillede af
+hvert analysatorresultat, optaget over VISA.
+
+**Automatiseret (anbefalet) — én kommando, ingen manuel opsætning.** Dette driver hele CW/AM/FM/I-Q-batteriet,
+måler hvert signal og optager analysatorens display efter hvert af dem:
 
 ```powershell
-# Drive/settle the signal first (app or a --signal run), then, in another window:
+ESG-SignalCreator.HilHarness.exe --install-verify --vsa GPIB0::17::INSTR --vsa-model e4406a ^
+    --capture-dir docs/images/vsa
+```
+
+Den skriver `cw`-, `am`-, `fm`-, `iq-multitone`-billeder (PNG på N9010A, GIF på E4406A) i mappen,
+plus en `index.md`, der indlejrer dem — klar til at indsætte i disse trin.
+
+**Ad-hoc — optag kun den aktuelle skærm** (kun analysator, ingen ESG/RF; sæt selv signalet op først):
+
+```powershell
 ESG-SignalCreator.HilHarness.exe --capture-screen docs/images/vsa/cw-result.png ^
     --vsa GPIB0::17::INSTR --vsa-model e4406a
 ```
 
-Den læser skærmen tilbage som et billede (PNG på N9010A, GIF på E4406A) og skriver filen. Læg de
-optagne billeder under `docs/images/vsa/`, og referér til dem fra trinnet, f.eks.
-`![CW-resultat på analysatoren](images/vsa/cw-result.png)`.
+Referér til et optaget billede fra et trin med f.eks. `![CW-resultat på analysatoren](images/vsa/cw.png)`.
 
 > Standard-optage-SCPI'en (`:MMEMory:STORe:SCReen` + `:MMEMory:DATA?` + `:MMEMory:DELete`) er
 > manuelt afledt og **kræver bænkbekræftelse**. Hvis din firmware afviger, kan du tilsidesætte den uden en
