@@ -74,9 +74,19 @@ namespace EsgSignalCreator.Tests.Visa
             Assert.Equal(expected, VsaModels.DisplayName(model));
         }
 
+        // §120: only the two known analyzers are supported; an unidentified model is refused at connect.
+        [Theory]
+        [InlineData(VsaModel.E4406A, true)]
+        [InlineData(VsaModel.N9010A, true)]
+        [InlineData(VsaModel.Unknown, false)]
+        public void IsSupported_is_true_only_for_known_analyzers(VsaModel model, bool expected)
+        {
+            Assert.Equal(expected, VsaDialects.IsSupported(model));
+        }
+
         [Theory]
         [InlineData(VsaMeasurement.ChannelPower, "BASIC", "CHPower", "SA", "CHPower")]
-        [InlineData(VsaMeasurement.Acp, "BASIC", "ACP", "SA", "ACPower")]
+        [InlineData(VsaMeasurement.Acp, "BASIC", "ACP", "SA", "ACP")]
         [InlineData(VsaMeasurement.Ccdf, "BASIC", "PSTatistic", "SA", "PSTatistic")]
         [InlineData(VsaMeasurement.Spectrum, "BASIC", "SPECtrum", "BASIC", "SPECtrum")]
         [InlineData(VsaMeasurement.Waveform, "BASIC", "WAVeform", "BASIC", "WAVeform")]
@@ -121,10 +131,11 @@ namespace EsgSignalCreator.Tests.Visa
             Assert.Equal(0, e.UpperAdjacentDbcIndex);
             Assert.Equal(2, e.LowerAdjacentDbcIndex);
 
+            // N9010A A.07.05 (bench-confirmed): :READ:ACP? -> [carrier, lowerAdj, upperAdj], no offset table.
             AcpScalarLayout n = new N9010ADialect().AcpScalars;
-            Assert.Equal(6, n.OffsetCount);
-            Assert.Equal(6, n.UpperAdjacentDbcIndex);
-            Assert.Equal(4, n.LowerAdjacentDbcIndex);
+            Assert.Equal(0, n.OffsetCount);
+            Assert.Equal(2, n.UpperAdjacentDbcIndex);
+            Assert.Equal(1, n.LowerAdjacentDbcIndex);
         }
 
         // #107: ModeCatalog must parse both the E4406A per-item-quoted list and the X-Series/N9010A

@@ -169,7 +169,11 @@ namespace EsgSignalCreator.Ui
             {
                 if (_f._waveform == null) return new List<ValidationResult>();
                 WaveformModel wf = _f._waveform;
-                double carrier = _f._profile != null ? (_f._profile.MinFrequencyHz + _f._profile.MaxFrequencyHz) / 2 : 1e9;
+                // Validate against the intended carrier from the settings panel (§120) — same as the GUI
+                // path — rather than a range-midpoint placeholder, so an out-of-range carrier is caught.
+                double carrier = _f._settings.FrequencyHz > 0
+                    ? _f._settings.FrequencyHz
+                    : (_f._profile != null ? (_f._profile.MinFrequencyHz + _f._profile.MaxFrequencyHz) / 2 : 1e9);
                 var results = new List<ValidationResult>(WaveformValidator.Validate(wf, _f._profile, wf.SampleRateHz, carrier));
                 if (!SeamlessGuard.IsSeamless(wf))
                     results.Add(new ValidationResult(ValidationSeverity.Warning, "Loop seam discontinuity — may not loop seamlessly.", "Length"));

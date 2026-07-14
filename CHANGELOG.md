@@ -7,6 +7,13 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 ## [Unreleased]
 
 ### Fixed
+- **N9010A ACP now works (issue #120).** Bench + doc investigation (SA Mode Reference 9018-06099, p.1586)
+  showed the result format is offset-config-dependent, not a firmware quirk: the default (offset A only)
+  returns 3 scalars `[ref carrier, lower-adjacent dBc, upper-adjacent dBc]`, while enabling more offsets
+  switches to the 28-value Total-power-reference table. A.07.05 also rejects the long-form result verbs
+  (`:READ/FETCh/MEASure:ACPower?` → −113) but accepts the SCPI short form `:…:ACP?`. The N9010A dialect
+  now uses the `ACP` root and `Acp.Measure` forces offset-A-only, so the adjacent-channel dBc read
+  deterministically regardless of persistent instrument state (hardware-verified: −31.5 dBc adjacent).
 - **N9010A measurements now work over VXI-11 on older firmware (A.07.05)** — bench-confirmed with an
   E4438C + N9010A:
   - **SRQ fallback:** the #129 Service-Request completion path is accepted but never delivered on this

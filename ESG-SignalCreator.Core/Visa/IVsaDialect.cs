@@ -104,6 +104,14 @@ namespace EsgSignalCreator.Visa
         AcpScalarLayout AcpScalars { get; }
 
         /// <summary>
+        /// Optional SCPI to force a deterministic ACP offset configuration before the read, or null if the
+        /// model's default already yields the layout in <see cref="AcpScalars"/>. The N9010A ACP result
+        /// format is offset-count-dependent (offset A only → 3 scalars; more offsets → the 28-value
+        /// Total-power-reference table), so it forces offset A only; the E4406A needs no setup.
+        /// </summary>
+        string AcpSetupCommand { get; }
+
+        /// <summary>
         /// True if measurement reads should wait for completion via SRQ (Status-Byte MAV) rather than a
         /// fixed read timeout, so an auto-alignment of arbitrary length can't trip a spurious timeout
         /// (#129). The N9010A opts in; the E4406A uses the plain blocking read.
