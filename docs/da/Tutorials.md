@@ -25,9 +25,11 @@ afsnit i User Guide (f.eks. "se UserGuide §5.2"). For et overblik samt build- o
   noterne i [UserGuide §15](UserGuide.md#15-sikkerhedsnoter), før du driver effekt ind i analysatoren.
 - **Pipelinen er bevidst.** Du **Calculate** på pc'en, **Download** til generatoren og derefter
   **Play**. Intet når DAC'en eller RF, før du siger til (se UserGuide §7).
-- **Når et tal ikke er angivet, så aflæs det fra appen.** Standardværdier og eksakte værdier findes i appens
-  paneler og **resultataflæsningen**; tutorials fortæller dig *hvad du skal kigge på* i stedet for at fastlåse
-  værdier, der kan afvige på din build.
+- **Konkrete værdier er angivet — behandl dem som gennemarbejdede eksempler.** Hver tutorial angiver eksakte
+  værdier, du skal indtaste i hvert felt, så du kan følge med og få de viste resultater. De er fornuftige
+  standardvalg, ikke de eneste gyldige valg; når et trin virker, så ændr én værdi ad gangen for at se dens
+  effekt. Hvor din builds standarder eller din hardware afviger, er appens paneler og **resultataflæsningen**
+  altid den autoritative kilde.
 
 > Gennemgående er UI-elementer navngivet præcis, som de fremstår: værktøjslinje-**knapper**, venstretræ-**noder**
 > og højredok-**plotvisninger**.
@@ -102,10 +104,11 @@ kontinuerlige bølge-tone, så du kan aflæse resultataflæsningen og udforske p
 3. Vælg noden **Source** i venstretræet. I personlighedsvælgeren skal du vælge **CW / Single
    tone** (se UserGuide §5.1).
 4. I konfigurationspanelet skal du angive CW-parametrene:
-   - **Frequency offset** fra bærebølgen (Hz) — lad den stå på 0 for en tone på bærebølgen, eller indtast et
-     lille offset for at se den flytte sig på spektret.
-   - **Amplitude** (dBFS) — 0 er fuld skala; skru den ned med en negativ værdi, hvis du foretrækker det.
-   - **Starting phase** (grader) — enhver værdi er fin.
+   - **Frequency offset** fra bærebølgen (Hz) = **100 000** (100 kHz) — et lille offset, så tonen
+     sidder synligt uden for midten på spektret. (Brug **0** for en tone på bærebølgen.)
+   - **Amplitude** (dBFS) = **0** (fuld skala). Skru den ned med en negativ værdi — f.eks. **−3** — hvis du
+     foretrækker headroom.
+   - **Starting phase** (grader) = **0**.
 5. Klik på **Calculate** på værktøjslinjen. Se **fremdriftslinjen** køre; plottene, **Notifications**
    og **resultataflæsningen** opdateres alle, når den er færdig. Ingen hardware berøres, så dette er altid
    sikkert (se UserGuide §7).
@@ -154,8 +157,9 @@ runtime og instrumentets VISA-resourcestreng. Du har gennemført Tutorial 1.
    managerens discovery/Find. Forbind.
 2. Bekræft, at statuslinjen nu viser **Online** og den forbundne model; forbindelsen aflæser
    `*IDN?` / `*OPT?`.
-3. Vælg noden **Instrument settings** (se UserGuide §4.2). Indstil **carrier frequency** og
-   **amplitude**, bekræft at **RF/modulation** er konfigureret, som du ønsker, og gennemgå **ARB sample
+3. Vælg noden **Instrument settings** (se UserGuide §4.2). Indstil **carrier frequency = 1 GHz**
+   (`1000000000`) og **amplitude = −10 dBm** (et sikkert, lavt niveau — hæv det først senere, hvis du ved,
+   at stien er sikker). Bekræft at **RF/modulation** er konfigureret, som du ønsker, og gennemgå **ARB sample
    clock** og **runtime scaling** (standardskaleringen skruer DAC'en ned — omkring 70 % — for headroom).
    Panelet aflæser værdier tilbage fra instrumentet.
 4. Vælg noden **Source** igen, og behold CW-personligheden fra Tutorial 1 (eller konfigurer den på ny).
@@ -197,18 +201,18 @@ forholdet, ved at sammenligne **Newman** vs **Zero**-fasning i **resultataflæsn
 
 **Trin:**
 1. Vælg **Source**, vælg **Multitone** i vælgeren (se UserGuide §5.2).
-2. Indstil **antallet af toner** (start med en håndfuld, f.eks. 4–8), **toneafstanden** (Hz, eller lad den
-   stå på auto) og **fasestrategien** til **Newman** (som minimerer PAPR).
+2. Indstil **antallet af toner = 8**, **toneafstanden = 1 000 000 Hz** (1 MHz) og **fasestrategien =
+   Newman** (som minimerer PAPR).
 3. Klik på **Calculate**. Bemærk **PAPR**-værdien i aflæsningen. Indstil én plotrude til **CCDF**-
    visningen og observér kurven.
 4. Skift kun **fasestrategien** til **Zero** (alle toner fasejusteret), og **Calculate** igen.
 5. Sammenlign den nye **PAPR** i aflæsningen og den nye **CCDF**-kurve mod Newman-kørslen.
 
 **Hvad du bør se:**
-- **Zero**-fasning giver en mærkbart **højere PAPR** end **Newman** — alle toner lægges sammen i fase
-  og skaber store peaks. CCDF-kurven for Zero ligger længere til højre (højere crest-værdier er
-  mere sandsynlige).
-- **Newman** pakker de samme toner med mindre peaks — lavere PAPR, CCDF-kurve forskudt mod venstre.
+- **Zero**-fasning giver en mærkbart **højere PAPR** — alle 8 toner lægges sammen i fase, så peaken
+  nærmer sig **10·log₁₀(8) ≈ 9 dB** over gennemsnittet. CCDF-kurven for Zero ligger længere til højre (højere
+  crest-værdier er mere sandsynlige).
+- **Newman** pakker de samme 8 toner med mindre peaks — typisk **~5–6 dB PAPR**, CCDF-kurve forskudt mod venstre.
 - På **Spectrum**, det samme sæt af ligeligt fordelte toner i begge tilfælde (fasning ændrer peaks, ikke
   toneamplituderne/-positionerne).
 
@@ -235,11 +239,12 @@ crest-faktor på **CCDF**-visningen og i aflæsningen, og lær, hvad clipping g�
 
 **Trin:**
 1. Vælg **Source**, vælg **AWGN** i vælgeren (se UserGuide §5.5).
-2. Indstil **støjbåndbredden** (Hz), **carrier-to-noise-forholdet (C/N)** (dB), og lad **peak
-   clipping** være slået fra for nu.
+2. Indstil **støjbåndbredde = 5 000 000 Hz** (5 MHz), **carrier-to-noise-forhold (C/N) = 20 dB**, og lad
+   **peak clipping** være slået fra for nu.
 3. Klik på **Calculate**. Indstil én plotrude til **CCDF**, og bemærk **PAPR**-/crest-tallet i
    aflæsningen.
-4. Slå nu **peak clipping** til, og **Calculate** igen. Sammenlign CCDF-kurven og PAPR.
+4. Slå nu **peak clipping** til (prøv et **clip-niveau på ~6 dB** over gennemsnittet), og **Calculate** igen.
+   Sammenlign CCDF-kurven og PAPR.
 
 **Hvad du bør se:**
 - En **høj crest-faktor** for uclippet AWGN (i størrelsesordenen ~10 dB) — meget højere end CW eller
@@ -270,10 +275,9 @@ crest-faktor på **CCDF**-visningen og i aflæsningen, og lær, hvad clipping g�
 1. Vælg **Source**, vælg **Custom Digital Modulation** i vælgeren (se UserGuide §5.4).
 2. Indstil parametrene:
    - **Modulationsformat:** **QPSK**.
-   - **Symbolrate** (Hz).
-   - **Pulsformningsfilter:** **RRC**, med en **roll-off (alpha)**-værdi (en moderat alpha er en god
-     start).
-   - **Payload:** et PN-mønster såsom **PN9** (eller tilfældigt).
+   - **Symbolrate = 1 000 000 Hz** (1 Msym/s).
+   - **Pulsformningsfilter:** **RRC**, **roll-off (alpha) = 0.35** (en moderat, almindelig værdi).
+   - **Payload:** **PN9** (eller tilfældigt).
 3. Klik på **Calculate**.
 4. Indstil de tre plotruder til **Constellation**, **Eye** og **Spectrum**, så du kan se alle tre
    på én gang.
@@ -285,7 +289,8 @@ crest-faktor på **CCDF**-visningen og i aflæsningen, og lær, hvad clipping g�
   påvirker øjeformen.
 - **Spectrum:** en formet hovedlap, hvis roll-off-stejlhed følger **alpha** — mindre alpha →
   smallere optaget båndbredde, større alpha → bredere, men blødere skirts. Krydstjek den **99 % optagne
-  båndbredde** i aflæsningen.
+  båndbredde** i aflæsningen: for 1 Msym/s ved α = 0.35 lander den nær **~1,35 MHz** (≈ symbolrate ×
+  (1 + α)).
 
 **Tips / fejlfinding:**
 - Prøv andre formater (BPSK, 8PSK, 16/64/256-QAM, MSK), og se konstellationen vinde punkter.
@@ -307,8 +312,10 @@ multi-standard-scenarier.
 
 **Trin:**
 1. Vælg **Source**, vælg **Multi-Carrier** i vælgeren (se UserGuide §5.3).
-2. Placér flere bærebølger ved de offsets, du ønsker, hver med sin egen modulation/parametre, som
-   panelet tillader. (Bland for eksempel en CW-reference med en QPSK-bærebølge.)
+2. Placér tre bærebølger, hver med sin egen modulation, for eksempel:
+   - **−5 MHz** offset — **CW**-referencetone.
+   - **0 Hz** offset — **QPSK**, 1 Msym/s, RRC α = 0.35 (som i Tutorial 5).
+   - **+5 MHz** offset — **QPSK**, 1 Msym/s, RRC α = 0.35.
 3. Klik på **Calculate**.
 4. Inspicér **Spectrum**-visningen (for at se alle bærebølger ved deres offsets) og **CCDF**-visningen (det
    sammensatte signal har ofte højere PAPR end nogen enkelt bærebølge). Bemærk aflæsningens PAPR og optagne
@@ -340,10 +347,12 @@ fil, med valgfri resampling til mål-sample-clock.
 **Trin:**
 1. Vælg **Source**, vælg **Import I/Q** i vælgeren (se UserGuide §5.6).
 2. Indstil **filstien** til din I/Q-fil (du leverer den).
-3. Vælg det **format**, der matcher din fil: **CSV**, interleaved **Int16** eller **Float32**.
-4. Indtast kildens **samplingsrate (Hz)** for de opfangede data.
-5. Beslut, om du vil **resample** til mål-sample-clock — slå det til, hvis kilderaten afviger
-   fra den sample clock, du har til hensigt at afspille ved.
+3. Vælg det **format**, der matcher din fil — disse er filspecifikke, så brug *din* fils værdier. Som et
+   gennemarbejdet eksempel antages en **Float32** interleaved-I/Q-optagelse.
+4. Indtast kildens **samplingsrate (Hz)** for de opfangede data — f.eks. **30 720 000 Hz** (30,72 MHz, en
+   almindelig LTE-optagelsesrate). Brug den reelle rate for din fil.
+5. Beslut, om du vil **resample** til mål-sample-clock — slå det **til**, når kilderaten (f.eks. 30,72 MHz)
+   afviger fra den sample clock, du har til hensigt at afspille ved (f.eks. 10 MHz).
 6. Klik på **Calculate**.
 
 **Hvad du bør se:**
@@ -380,7 +389,7 @@ for effekten.
 1. Byg og **Calculate** en ren kilde (f.eks. Newman-multitonen fra Tutorial 3). Bemærk dens PAPR
    og spektrum som baseline.
 2. Vælg noden **Impairments**. Slå **I/Q impairments** til (dens afkrydsningsfelt), og angiv i dens egenskabsgitter
-   en **gain imbalance** (et par dB). Lad de øvrige være slået fra.
+   en **gain imbalance = 3 dB** (stor nok til at se billedet tydeligt). Lad de øvrige være slået fra.
 3. Klik på **Calculate** igen (impairments anvendes under Calculate, efter at kilden producerer sin
    baseband-I/Q — se UserGuide §6).
 4. Sammenlign **Spectrum** med baselinen: gain imbalance skaber en **billedtone** (en spejlet
@@ -584,10 +593,10 @@ En forbundet ESG (Tutorial 2) er nyttig.
    forbind (appen afviser et instrument, der ikke matcher den valgte model).
 4. I **RF-sti-sikkerheds**-indstillingerne:
    - Slå **Armed** til — dette aktiverer beskyttelsen, nu hvor analysatoren er på udgangen.
-   - Indstil **Analyzer max safe input (dBm)** — beskadigelsestærsklen, sået fra modellen (E4406A
-     type-N-indgang ≈ +35 dBm, standard-gate +30 dBm; N9010A en konservativ +25 dBm — bekræft mod
-     dens datablad).
-   - Indstil **Path loss (dB)** — enhver inline pad/dæmpning mellem ESG'en og analysatoren.
+   - Indstil **Analyzer max safe input (dBm)** — lad modellens standard stå (**+30 dBm** E4406A / **+25 dBm**
+     N9010A; E4406A type-N-indgangen er rated ≈ +35 dBm — bekræft N9010A mod dens datablad).
+   - Indstil **Path loss (dB)** — **0**, hvis analysatoren er kablet direkte til ESG'en, eller værdien af
+     enhver inline pad/dæmpning (f.eks. **10** for en 10 dB pad).
 
 **Hvad du bør se:**
 - Analysatoren forbinder og rapporterer som den valgte model; sikkerhedsindstillingerne viser **Armed** med din maksimale
