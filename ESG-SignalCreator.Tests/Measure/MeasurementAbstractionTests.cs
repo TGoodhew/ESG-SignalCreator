@@ -133,10 +133,12 @@ namespace EsgSignalCreator.Tests.Measure
             Assert.Equal(-70.0, r.PowerSpectralDensityDbmHz, 9);
         }
 
-        // #111/#134: CCDF read command is model-specific — E4406A n=1 (scalars), N9010A n=2 (trace).
+        // #111/#134/#143: both models read the 10-value CCDF scalar set at index 1 (no index emitted).
+        // The N9010A was briefly assumed to return a trace at index 2, but bench testing (A.07.05) showed
+        // the stable scalar summary is at index 1 exactly like the E4406A, with PAPR at [8].
         [Theory]
         [InlineData("Agilent Technologies, E4406A, US1, A.05.00", ":READ:PSTatistic?")]
-        [InlineData("Keysight Technologies,N9010A,MY1,A.20.14", ":READ:PSTatistic2?")]
+        [InlineData("Keysight Technologies,N9010A,MY1,A.20.14", ":READ:PSTatistic?")]
         public void Ccdf_reads_at_the_model_specific_index(string idn, string expectedRead)
         {
             var io = new FakeVsa { IdnResponse = idn, ScalarResponse = "1,2,3,4,5,6,7,8,9,10" };
@@ -144,20 +146,14 @@ namespace EsgSignalCreator.Tests.Measure
             Assert.Contains(expectedRead, io.Writes);
         }
 
-        // #134: on the N9010A the CCDF read returns the 5001-point probability trace, so PAPR is derived
-        // from it (highest dB-above-average still reached) rather than a scalar index.
+        // #143: on the N9010A the CCDF read returns the 10 scalars (bench-confirmed A.07.05); PAPR is the
+        // peak-above-average at index [8], same as the E4406A.
         [Fact]
-        public void N9010a_ccdf_papr_is_derived_from_the_trace()
+        public void N9010a_ccdf_papr_reads_scalar_index_8()
         {
-            // Probability 10% up to index 300 (3.00 dB), 0 beyond -> PAPR = 3.00 dB (step = 50/5000).
-            var trace = new int[5001];
-            for (int k = 0; k <= 300; k++) trace[k] = 10;
-            string traceStr = string.Join(",", trace);
-
-            var io = new FakeVsa { IdnResponse = "Keysight Technologies,N9010A,MY1,A.20.14", ScalarResponse = traceStr };
+            var io = new FakeVsa { IdnResponse = "Keysight Technologies,N9010A,MY1,A.20.14", ScalarResponse = "-10,52,2.6,3,3,3,3,3,3.01,1000000" };
             var r = Ccdf.Measure(new VsaInstrument(io), 1e9);
-
-            Assert.Equal(3.00, r.PaprDb, 2);
+            Assert.Equal(3.01, r.PaprDb, 6);
         }
 
         [Fact]
