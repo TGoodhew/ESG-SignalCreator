@@ -20,6 +20,11 @@ core library, the WinForms app, and an xUnit test project.
 > translation kept in parity. When you change an English document, update its Danish counterpart (and add
 > one if the English doc is new).
 
+> 🔄 **Tutorial images are generated, not hand-grabbed.** The signal-tutorial plots (`docs/images/tutorials/`)
+> are produced in one pass by `ESG-SignalCreator.exe --tutorial-images docs/images/tutorials` (the app's own
+> renderer, issue #150); analyzer screenshots (`docs/images/vsa/`) come from `HilHarness --capture-dir` (#143).
+> **When a tutorial changes, update the harness and regenerate the affected images in the same change.**
+
 ## Features
 
 - **Signal-flow shell** — a top action bar, a left project tree, a signal-flow

@@ -10,6 +10,18 @@ namespace EsgSignalCreator
         [STAThread]
         private static void Main(string[] args)
         {
+            args = args ?? new string[0];
+
+            // Headless tutorial-image generation (#150): render every offline tutorial plot to PNG and
+            // exit, without showing the GUI. Usage: ESG-SignalCreator.exe --tutorial-images <dir>
+            int tiIdx = Array.FindIndex(args, a => string.Equals(a, "--tutorial-images", StringComparison.OrdinalIgnoreCase));
+            if (tiIdx >= 0)
+            {
+                string dir = tiIdx + 1 < args.Length ? args[tiIdx + 1] : "docs/images/tutorials";
+                try { Ui.TutorialImages.TutorialImageHarness.Run(dir); Environment.Exit(0); }
+                catch (Exception ex) { Console.Error.WriteLine("Tutorial-image generation failed: " + ex); Environment.Exit(2); }
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 

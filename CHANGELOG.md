@@ -6,7 +6,18 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Added
+- **Tutorial-image harness** (#150): a single headless command regenerates the signal-tutorial plot
+  images so they stay in lockstep with the text. `ESG-SignalCreator.exe --tutorial-images <dir>` builds
+  each tutorial's signal (same personality + values as the tutorial) and renders its plot view(s) to PNG
+  via the app's own renderer (`PlotSeries`/`PlotImageRenderer`, shared with the interactive pane), writing
+  `docs/images/tutorials/` + an `index.md` manifest. Covers the offline set (CW, multitone Newman-vs-Equal
+  CCDF, AWGN, QPSK constellation/eye/spectrum, multi-carrier, I/Q-imbalance before/after); analyzer
+  screenshots continue to come from the #143 capture tool. Images embedded in the tutorials (EN + DA).
+
 ### Fixed
+- **Tutorial 3 phasing name** (#150): the tutorial said "Zero" phasing; the enum/UI value is **Equal** —
+  corrected in EN + DA (caught while building the harness).
 - **N9010A ACP now works (issue #120).** Bench + doc investigation (SA Mode Reference 9018-06099, p.1586)
   showed the result format is offset-config-dependent, not a firmware quirk: the default (offset A only)
   returns 3 scalars `[ref carrier, lower-adjacent dBc, upper-adjacent dBc]`, while enabling more offsets

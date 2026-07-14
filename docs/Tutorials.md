@@ -34,6 +34,12 @@ User Guide section (e.g. "see UserGuide §5.2"). For an overview, build and inst
 > Throughout, UI elements are named exactly as they appear: toolbar **Buttons**, left-tree **Nodes**,
 > and right-dock **plot views**.
 
+> 🔄 **Auto-generated images.** The plot images in Parts A/C/D come from the app's own renderer, produced
+> in one pass by `ESG-SignalCreator.exe --tutorial-images docs/images/tutorials` (issue #150). Don't edit
+> them by hand — when a signal-tutorial changes, update the harness (`TutorialImageHarness`) and re-run it
+> so the images stay in lockstep with the text. Analyzer screenshots (Part F) come from the capture tool
+> (`HilHarness --capture-dir`, #143).
+
 ## Table of contents
 
 **Part A — Offline basics**
@@ -121,6 +127,9 @@ continuous-wave tone so you can read the results readout and explore the plots.
    **Spectrum** view onto the tone). Use the plot's reset/unzoom gesture to return to full view.
 
 **What you should see:**
+
+![CW tone at +100 kHz — spectrum](images/tutorials/t01-cw-spectrum.png)
+
 - On **I/Q vs time**, smooth sinusoids for I and Q.
 - On **Spectrum**, a single sharp line at the frequency offset you set.
 - On **Constellation**, a single point (or a small ring if you set a phase rotation/offset).
@@ -190,7 +199,7 @@ runtime, and the instrument's VISA resource string. You completed Tutorial 1.
 ## Tutorial 3 — Multitone and PAPR
 
 **Goal:** Build a multitone signal and learn how the **phase strategy** changes peak-to-average power
-ratio, by comparing **Newman** vs **Zero** phasing in the **results readout** and the **CCDF** view.
+ratio, by comparing **Newman** vs **Equal** phasing in the **results readout** and the **CCDF** view.
 
 **You'll learn:**
 - How to configure the **Multitone** personality (tone count, spacing, phase strategy).
@@ -205,12 +214,17 @@ ratio, by comparing **Newman** vs **Zero** phasing in the **results readout** an
    Newman** (which minimizes PAPR).
 3. Click **Calculate**. Note the **PAPR** value in the readout. Set one plot pane to the **CCDF**
    view and observe the curve.
-4. Change only the **phase strategy** to **Zero** (all tones phase-aligned) and **Calculate** again.
+4. Change only the **phase strategy** to **Equal** (all tones phase-aligned) and **Calculate** again.
 5. Compare the new **PAPR** in the readout and the new **CCDF** curve against the Newman run.
 
 **What you should see:**
-- **Zero** phasing produces a noticeably **higher PAPR** — all 8 tones add up in phase, so the peak
-  approaches **10·log₁₀(8) ≈ 9 dB** above average. The CCDF curve for Zero sits further to the right
+
+| Newman phasing — low PAPR | Equal phasing — high PAPR |
+|---|---|
+| ![8-tone Newman CCDF](images/tutorials/t03-multitone-newman-ccdf.png) | ![8-tone Equal-phased CCDF](images/tutorials/t03-multitone-equal-ccdf.png) |
+
+- **Equal** phasing produces a noticeably **higher PAPR** — all 8 tones add up in phase, so the peak
+  approaches **10·log₁₀(8) ≈ 9 dB** above average. The CCDF curve for Equal sits further to the right
   (higher crest values are more probable).
 - **Newman** packs the same 8 tones with smaller peaks — typically **~5–6 dB PAPR**, CCDF curve shifted
   left.
@@ -218,8 +232,8 @@ ratio, by comparing **Newman** vs **Zero** phasing in the **results readout** an
   tone amplitudes/positions).
 
 **Tips / troubleshooting:**
-- Try **Random** phasing too — it usually lands between Newman and Zero.
-- Multitone is a classic test for amplifier linearity and PAPR handling; high-PAPR (Zero) signals
+- Try **Random** phasing too — it usually lands between Newman and Equal.
+- Multitone is a classic test for amplifier linearity and PAPR handling; high-PAPR (Equal) signals
   stress amplifiers and DAC headroom hardest.
 - If you Download/Play this, watch **Notifications** for any **DAC over-range** warning on the
   high-PAPR case (see Tutorial 9 and UserGuide §8).
@@ -248,6 +262,9 @@ crest factor on the **CCDF** view and the readout, and learn what clipping does.
    Compare the CCDF curve and PAPR.
 
 **What you should see:**
+
+![Band-limited AWGN — CCDF (~10 dB crest)](images/tutorials/t04-awgn-ccdf.png)
+
 - A **high crest factor** for unclipped AWGN (on the order of ~10 dB) — much higher than CW or
   Newman multitone. The **CCDF** curve extends well to the right.
 - With **peak clipping** on, the CCDF curve is pulled in at the high-crest tail and the PAPR drops —
@@ -284,6 +301,11 @@ crest factor on the **CCDF** view and the readout, and learn what clipping does.
    at once.
 
 **What you should see:**
+
+| Constellation | Eye diagram |
+|---|---|
+| ![QPSK constellation](images/tutorials/t05-qpsk-constellation.png) | ![QPSK eye diagram](images/tutorials/t05-qpsk-eye.png) |
+
 - **Constellation:** four QPSK clusters; with RRC shaping you'll see the trajectory between symbol
   points and tight decision points at the symbol instants.
 - **Eye:** an open eye diagram — a wider opening means cleaner sampling instants; the alpha you chose
@@ -324,6 +346,9 @@ multi-standard scenarios.
    bandwidth.
 
 **What you should see:**
+
+![3-carrier composite — spectrum](images/tutorials/t06-multicarrier-spectrum.png)
+
 - A composite **Spectrum** with each carrier sitting at its assigned offset, each shaped by its own
   modulation.
 - A **CCDF**/PAPR that reflects the summed signal — adding carriers generally raises the crest factor.
@@ -400,6 +425,11 @@ for the effect.
 6. Compare the **PAPR** in the readout and the **CCDF** view before vs after CFR.
 
 **What you should see:**
+
+| Clean tone (baseline) | 3 dB I/Q gain imbalance → image tone |
+|---|---|
+| ![Clean tone spectrum](images/tutorials/t08-iq-clean-spectrum.png) | ![Gain-imbalance image tone](images/tutorials/t08-iq-imbalance-spectrum.png) |
+
 - After the gain imbalance: an **image tone** appears on the **Spectrum** (mirror of the wanted
   component about the carrier).
 - After CFR: the **PAPR drops** and the **CCDF** high-crest tail is pulled in.
@@ -432,7 +462,7 @@ it — so you understand the safety gate that protects every hardware action.
    - **Memory cap:** make the waveform very long (long duration, high sample clock, or a long
      imported file). Expect a **memory cap** finding if it won't fit the baseband option's sample
      memory.
-   - **DAC over-range:** use a high-PAPR signal (Zero-phased multitone or unclipped AWGN) and/or
+   - **DAC over-range:** use a high-PAPR signal (Equal-phased multitone or unclipped AWGN) and/or
      raise runtime scaling so samples would clip. Expect a **DAC over-range** finding.
    - **Loop seam:** choose a non-integer-cycle length so the waveform end doesn't line up with its
      start. Expect a **loop-seam** warning.
