@@ -617,9 +617,32 @@ namespace EsgSignalCreator.Ui
             {
                 _status.Text = "Install verification running…";
                 var ui = System.Threading.SynchronizationContext.Current;
-                InstallVerificationReport report = await Task.Run(() =>
-                    InstallVerification.Run(_esg, _vsa, _safety, opts,
-                        msg => ui?.Post(_ => _status.Text = msg, null)));
+
+                // #134 diagnostic: capture the raw analyzer measurement traffic. The value count exposes
+                // whether e.g. :READ:PSTatistic? returns the 10 scalars or a long trace (the suspected
+                // cause of the N9010A 40 dB PAPR). Collected off-thread, surfaced after the run.
+                var trace = new System.Collections.Generic.List<string>();
+                _vsa.MeasurementTrace = (cmd, resp) =>
+                {
+                    int count = string.IsNullOrEmpty(resp) ? 0 : resp.Split(',').Length;
+                    string head = resp == null ? "" : (resp.Length > 90 ? resp.Substring(0, 90) + "…" : resp);
+                    lock (trace) trace.Add(cmd + "  → " + count + " value(s): " + head);
+                };
+
+                InstallVerificationReport report;
+                try
+                {
+                    report = await Task.Run(() =>
+                        InstallVerification.Run(_esg, _vsa, _safety, opts,
+                            msg => ui?.Post(_ => _status.Text = msg, null)));
+                }
+                finally
+                {
+                    _vsa.MeasurementTrace = null;
+                    lock (trace)
+                        foreach (string line in trace)
+                            _notifications.Append(new ValidationResult(ValidationSeverity.Info, "MEAS " + line));
+                }
 
                 _verification.Show(report.Flatten());
                 ShowCard("verification");

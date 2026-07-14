@@ -6,6 +6,12 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Added
+- **Measurement-trace diagnostic** (toward #134): a **Verify install…** run now logs each raw analyzer
+  measurement command and its response (with a value count) to the notifications panel, so an
+  N9010A CCDF that returns a long trace instead of the 10 scalars is immediately visible. Backed by an
+  optional `VsaInstrument.MeasurementTrace` hook (null/no-overhead by default).
+
 ### Fixed
 - **Verification channel power now accounts for the ARB crest factor.** The ARB encoder peak-normalizes
   every waveform, so a signal's measured RMS (channel) power sits its crest factor below the commanded
