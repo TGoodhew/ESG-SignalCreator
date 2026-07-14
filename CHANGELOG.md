@@ -6,6 +6,12 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-14
+
+Milestone release: full N9010A (EXA) analyzer support bench-validated end-to-end, capability-binding
+hardening (#120), the VSA screen-capture tool (#143), and the tutorial-image system across signal
+captures, app plots, and app-UI screenshots (#150) — with English/Danish documentation parity.
+
 ### Added
 - **Tutorial-image harness** (#150): regenerate every signal-tutorial image in one pass so they stay in
   lockstep with the text. Two complementary generators writing `docs/images/tutorials/`:
