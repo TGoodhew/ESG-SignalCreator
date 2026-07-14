@@ -209,6 +209,10 @@ før enhver RF, og RF returneres slukket, når det er færdigt. AM/FM verificere
 Ved **FAIL** viser en **fejlfindingsdialog** hvert fejlet tjeks sandsynlige årsag og trin i rækkefølge
 (f.eks. for kraftig AM → overdrevet ESG eller forkert VSA-aflæsning → sænk niveauet / tjek ARB-skalering / kør Path cal… igen).
 
+For at køre det *samme* batteri **manuelt** — hvor du selv aflæser analysatoren, med hver UI-kontrol,
+værdi og forventet aflæsning specificeret og en selvstændig **tjekliste for VSA-indstillinger** — følg
+[**Manuel verifikations-procedure**](ManualVerification.md).
+
 ### 9.8 Kapabilitetsbinding — Core vs. option-gatet
 Appen binder til det, den **forbundne enhed faktisk rapporterer**, ikke til en fast modelkonfiguration, så
 den aldrig tilbyder en personlighed, hardwaren ikke kan køre, eller accepterer en indstilling, instrumentet

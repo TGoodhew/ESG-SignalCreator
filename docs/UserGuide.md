@@ -287,6 +287,10 @@ before any RF, and RF is returned off when done. AM/FM are verified via power/PA
 On a **FAIL**, a **troubleshooting dialog** lists each failed check's likely cause and ordered fixes
 (e.g. excessive AM → over-driven ESG or analyzer mis-read → lower level / check ARB scaling / re-run Path cal…).
 
+To run the *same* battery **by hand** — reading the analyzer yourself, with every UI control, value and
+expected reading spelled out and a standalone **VSA settings checklist** — follow the
+[**Manual Verification Procedure**](ManualVerification.md).
+
 ### 9.8 Capability binding — Core vs Option-gated
 The app binds to what the **connected unit actually reports**, not to a fixed model configuration, so it
 never offers a personality the hardware can't run or accepts a setting the instrument would silently

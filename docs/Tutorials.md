@@ -557,6 +557,11 @@ log.
 > model** toggle — an Agilent **E4406A** or a Keysight **N9010A (EXA)**. The steps are the same for
 > both; only the addressing and the default input-damage limit differ (called out where relevant).
 
+> 📋 **For a fully explicit bench walkthrough** — every UI control, every value, and the exact reading
+> to expect on the analyzer for each signal, plus a standalone **VSA settings checklist** — see the
+> [**Manual Verification Procedure**](ManualVerification.md). The tutorials below teach the workflow;
+> that document is the copy-the-numbers reference.
+
 ## Tutorial 13 — Connect the VSA safely
 
 **Goal:** Choose the analyzer model, connect it, and arm the RF-path safety so the app blocks any
@@ -645,22 +650,30 @@ table — for a CW tone and a multitone.
 **Prerequisites:** Connected ESG (Tutorial 2), connected + armed VSA with path loss captured
 (Tutorials 13–14).
 
+**Concrete values used here** (matching the automated **Verify install…** and the
+[Manual Verification Procedure](ManualVerification.md)): carrier **1 GHz**, commanded power **−10 dBm**,
+CW tone offset **+1 MHz** (so the tone lands at **1.001 GHz**), analyzer **span 5 MHz**, path loss
+**0 dB**. Tolerances: channel power **±3 dB**, PAPR **±2.5 dB**, tone frequency **±50 kHz**.
+
 **Steps:**
-1. Build and play a **CW tone** (Tutorials 1–2): Calculate, Download, Play.
+1. Build and play a **CW tone** (Tutorials 1–2): **Source → CW / Single tone**, **Frequency offset =
+   1 000 000 Hz**, **Amplitude = 0 dBFS**; **Instrument settings → Frequency = 1 GHz, Amplitude =
+   −10 dBm**; then **Calculate → Download → Play**.
 2. Click **Verify**. The app measures the played signal and populates the **Verification** view.
 3. Read the Expected-vs-Measured table: each row shows the **metric**, **expected**, **measured**, the
    **Δ**, the **tolerance**, and **pass/fail**, plus a summary. For CW you'll see **channel power**
    (vs commanded level minus path loss), **PAPR** (vs the value computed from the generated I/Q), and
    **tone frequency** (vs carrier + offset).
-4. Now switch the source to a **Multitone** (Tutorial 3), Calculate → Download → Play, and **Verify**
-   again. Read the table — note PAPR is the interesting metric here (and there's no single-tone
-   frequency row for multitone).
+4. Now switch the source to a **Multitone** (Tutorial 3) — **4 tones, 1 MHz spacing, Newman** — Calculate
+   → Download → Play, and **Verify** again. Read the table — note PAPR is the interesting metric here
+   (and there's no single-tone frequency row for multitone).
 
-**What you should see:**
-- For CW: tone frequency matching carrier + offset, channel power matching commanded − path loss, and
-  PAPR ≈ 0 dB — all within tolerance (PASS).
-- For multitone: channel power and a PAPR consistent with the phasing you chose (e.g. Newman lower,
-  Zero higher), within tolerance.
+**What you should see (and on the analyzer front panel):**
+- For CW: **tone frequency = 1.001 GHz** (± 50 kHz), **channel power ≈ −10 dBm** (± 3 dB, minus path
+  loss), **PAPR ≈ 0 dB** (± 2.5 dB) — all PASS. On the analyzer **Spectrum**: one sharp line at
+  1.001 GHz.
+- For multitone (Newman, 4 tones): **channel power ≈ −13 to −14 dBm** (± 3 dB — below CW by the crest),
+  **PAPR ≈ 3.5–4 dB** (± 2.5 dB). On the analyzer **Spectrum**: four equally-spaced tones 1 MHz apart.
 
 **Tips / troubleshooting:**
 - **Verify fails on power:** run **Path cal…** (Tutorial 14) so path loss is captured, and check the

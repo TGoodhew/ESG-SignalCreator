@@ -555,6 +555,11 @@ log.
 > model**-knappen — en Agilent **E4406A** eller en Keysight **N9010A (EXA)**. Trinnene er de samme for
 > begge; kun adresseringen og standard-input-skade-grænsen er forskellig (nævnt hvor det er relevant).
 
+> 📋 **For en fuldt eksplicit bench-gennemgang** — hver UI-kontrol, hver værdi og den nøjagtige
+> aflæsning, du skal forvente på analysatoren for hvert signal, plus en selvstændig **tjekliste for
+> VSA-indstillinger** — se [**Manuel verifikations-procedure**](ManualVerification.md). Tutorials herunder
+> lærer dig arbejdsgangen; det dokument er kopiér-tallene-referencen.
+
 ## Tutorial 13 — Forbind VSA'en sikkert
 
 **Mål:** Vælg analysatormodellen, forbind den, og arm RF-sti-sikkerheden, så appen blokerer enhver
@@ -643,22 +648,29 @@ tabellen — for en CW-tone og en multitone.
 **Forudsætninger:** Forbundet ESG (Tutorial 2), forbundet + armed VSA med path loss fanget
 (Tutorial 13–14).
 
+**Konkrete værdier her** (matcher den automatiske **Verify install…** og
+[Manuel verifikations-procedure](ManualVerification.md)): bærebølge **1 GHz**, kommanderet effekt
+**−10 dBm**, CW-toneoffset **+1 MHz** (så tonen lander på **1,001 GHz**), analysator-**span 5 MHz**,
+path loss **0 dB**. Tolerancer: kanaleffekt **±3 dB**, PAPR **±2,5 dB**, tonefrekvens **±50 kHz**.
+
 **Trin:**
-1. Byg og afspil en **CW-tone** (Tutorial 1–2): Calculate, Download, Play.
+1. Byg og afspil en **CW-tone** (Tutorial 1–2): **Source → CW / Single tone**, **Frequency offset =
+   1 000 000 Hz**, **Amplitude = 0 dBFS**; **Instrument settings → Frequency = 1 GHz, Amplitude =
+   −10 dBm**; derefter **Calculate → Download → Play**.
 2. Klik på **Verify**. Appen måler det afspillede signal og udfylder **Verification**-visningen.
 3. Læs Expected-vs-Measured-tabellen: hver række viser **metrikken**, **expected**, **measured**,
    **Δ**'en, **tolerancen** og **pass/fail** plus et sammendrag. For CW ser du **kanaleffekt**
    (vs kommanderet niveau minus path loss), **PAPR** (vs den værdi, der er beregnet ud fra den genererede I/Q) og
    **tonefrekvens** (vs bærebølge + offset).
-4. Skift nu kilden til en **Multitone** (Tutorial 3), Calculate → Download → Play, og **Verify**
-   igen. Læs tabellen — bemærk, at PAPR er den interessante metrik her (og der er ingen enkelt-tone-
-   frekvensrække for multitone).
+4. Skift nu kilden til en **Multitone** (Tutorial 3) — **4 toner, 1 MHz afstand, Newman** — Calculate →
+   Download → Play, og **Verify** igen. Læs tabellen — bemærk, at PAPR er den interessante metrik her (og
+   der er ingen enkelt-tone-frekvensrække for multitone).
 
-**Hvad du bør se:**
-- For CW: tonefrekvens, der matcher bærebølge + offset, kanaleffekt, der matcher kommanderet − path loss, og
-  PAPR ≈ 0 dB — alt inden for tolerance (PASS).
-- For multitone: kanaleffekt og en PAPR, der er konsistent med den fasning, du valgte (f.eks. Newman lavere,
-  Zero højere), inden for tolerance.
+**Hvad du bør se (og på analysatorens frontpanel):**
+- For CW: **tonefrekvens = 1,001 GHz** (± 50 kHz), **kanaleffekt ≈ −10 dBm** (± 3 dB, minus path loss),
+  **PAPR ≈ 0 dB** (± 2,5 dB) — alt PASS. På analysatorens **Spectrum**: én skarp linje ved 1,001 GHz.
+- For multitone (Newman, 4 toner): **kanaleffekt ≈ −13 til −14 dBm** (± 3 dB — under CW med crest-faktoren),
+  **PAPR ≈ 3,5–4 dB** (± 2,5 dB). På analysatorens **Spectrum**: fire ligeligt fordelte toner 1 MHz fra hinanden.
 
 **Tips / fejlfinding:**
 - **Verify fejler på effekt:** kør **Path cal…** (Tutorial 14), så path loss fanges, og tjek
