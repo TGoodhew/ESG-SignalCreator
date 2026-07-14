@@ -13,6 +13,8 @@ namespace EsgSignalCreator.Tests.Visa
             public string IdnResponse = "Agilent Technologies, E4406A, US44210123, A.05.00";
             public string OptResponse = "B7C,200,202";
             public string CatalogResponse = "";
+            // Queued error-queue responses; each :SYSTem:ERRor? dequeues one, then "+0,No error".
+            public readonly Queue<string> ErrorQueue = new Queue<string>();
 
             public string ResourceName => "GPIB0::17::INSTR";
             public bool IsConnected => true;
@@ -24,7 +26,8 @@ namespace EsgSignalCreator.Tests.Visa
                 if (command == "*IDN?") return IdnResponse;
                 if (command == "*OPT?") return OptResponse;
                 if (command == ":INSTrument:CATalog?") return CatalogResponse;
-                if (command == ":SYSTem:ERRor?") return "+0,\"No error\"";
+                if (command == ":SYSTem:ERRor?")
+                    return ErrorQueue.Count > 0 ? ErrorQueue.Dequeue() : "+0,\"No error\"";
                 return "";
             }
             public void WriteBinaryBlock(byte[] message) { }
@@ -157,6 +160,61 @@ namespace EsgSignalCreator.Tests.Visa
             Assert.Contains(":INSTrument:SELect BASIC", io.Writes);
             Assert.Contains(":INITiate:CONTinuous OFF", io.Writes);
             Assert.Contains(io.Writes, w => w.StartsWith(":SENSe:FREQuency:CENTer") && w.Contains("1000000000"));
+        }
+
+        // #120: the user/assistant path (verifyInstalled: true) refuses a mode absent from the catalog.
+        [Fact]
+        public void SelectMode_refuses_a_mode_not_in_the_catalog_when_verifying()
+        {
+            var io = new FakeVsa { CatalogResponse = "\"BASIC\",\"GSM\"" };
+            var vsa = new VsaInstrument(io);
+
+            var ex = Assert.Throws<System.InvalidOperationException>(() => vsa.SelectMode("WCDMA", verifyInstalled: true));
+            Assert.Contains("WCDMA", ex.Message);
+            Assert.Contains("BASIC", ex.Message); // message lists what IS installed
+            Assert.DoesNotContain(io.Writes, w => w.StartsWith(":INSTrument:SELect WCDMA"));
+        }
+
+        [Fact]
+        public void SelectMode_allows_an_installed_mode_when_verifying()
+        {
+            var io = new FakeVsa { CatalogResponse = "\"BASIC\",\"gsm\"" }; // case-insensitive match
+            var vsa = new VsaInstrument(io);
+            vsa.SelectMode("GSM", verifyInstalled: true);
+            Assert.Contains(":INSTrument:SELect GSM", io.Writes);
+        }
+
+        [Fact]
+        public void SelectMode_default_path_skips_the_catalog_query()
+        {
+            var io = new FakeVsa();
+            var vsa = new VsaInstrument(io);
+            vsa.SelectMode("BASIC"); // internal path — verifyInstalled defaults to false
+            Assert.Contains(":INSTrument:SELect BASIC", io.Writes);
+            // No catalog query issued when not verifying.
+            Assert.DoesNotContain(io.Writes, w => w == ":INSTrument:CATalog?");
+        }
+
+        // #120: ReadErrorQueue drains every non-zero entry, then stops at code 0.
+        [Fact]
+        public void ReadErrorQueue_drains_all_nonzero_entries_then_stops()
+        {
+            var io = new FakeVsa();
+            io.ErrorQueue.Enqueue("-221,\"Settings conflict\"");
+            io.ErrorQueue.Enqueue("+700,\"Input overload\"");
+            io.ErrorQueue.Enqueue("+0,\"No error\"");
+            var vsa = new VsaInstrument(io);
+
+            var errors = vsa.ReadErrorQueue();
+            Assert.Equal(2, errors.Count);
+            Assert.Contains(errors, e => e.Contains("Input overload"));
+        }
+
+        [Fact]
+        public void ReadErrorQueue_is_empty_when_the_queue_is_clean()
+        {
+            var vsa = new VsaInstrument(new FakeVsa());
+            Assert.Empty(vsa.ReadErrorQueue());
         }
 
         [Fact]

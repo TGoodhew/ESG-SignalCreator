@@ -510,11 +510,12 @@ namespace EsgSignalCreator.Ui
                 // options (memory cap), and queried frequency range. Failures fall back to the base profile.
                 string[] opts;
                 try { opts = inst.Options(); } catch { opts = null; }
-                double maxF = 0, minF = 0;
+                double maxF = 0, minF = 0, maxScl = 0;
                 try { maxF = _esg.GetMaxFrequencyHz(); } catch { /* range query optional */ }
                 try { minF = _esg.GetMinFrequencyHz(); } catch { /* range query optional */ }
+                try { maxScl = _esg.GetMaxSampleClockHz(); } catch { /* optional */ }
                 _installedOptions = opts;
-                _profile = EffectiveProfile.Reconcile(_baseProfile, id.Model, opts, maxF, minF) ?? _baseProfile;
+                _profile = EffectiveProfile.Reconcile(_baseProfile, id.Model, opts, maxF, minF, maxScl) ?? _baseProfile;
                 _statusModel.Text = id.Model + "  " + id.FirmwareRevision +
                     (opts != null && opts.Length > 0 ? "  [" + string.Join(",", opts) + "]" : "");
             }
@@ -646,6 +647,12 @@ namespace EsgSignalCreator.Ui
 
                 _verification.Show(report.Flatten());
                 ShowCard("verification");
+
+                // #120: surface any analyzer over/under-range or error-queue conditions seen per step.
+                foreach (InstallVerificationStep step in report.Steps)
+                    foreach (string w in step.Warnings)
+                        _notifications.Append(new ValidationResult(ValidationSeverity.Warning, step.Name + " — analyzer: " + w));
+
                 if (report.AllPass)
                 {
                     _status.Text = "Verify install: PASS (see Verification)";
@@ -713,7 +720,7 @@ namespace EsgSignalCreator.Ui
             if (_vsa == null) { _status.Text = "Connect the VSA first (Connect VSA…)."; return; }
             try
             {
-                _vsa.SelectMode(mnemonic);
+                _vsa.SelectMode(mnemonic, verifyInstalled: true);
                 _status.Text = "VSA mode: " + mnemonic;
             }
             catch (Exception ex)

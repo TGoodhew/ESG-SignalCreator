@@ -187,7 +187,7 @@ Når armeret, blokerer **power-sikkerhedsgaten** enhver kommanderet ESG-effekt, 
 **Reference**-menuen sætter ESG og analysatoren til **uafhængige** interne tidsbaser eller til en **fælles 10 MHz ekstern** reference (en husreference eller ESG'ens 10 MHz OUT kablet til analysatoren) for rene frekvenssammenligninger. Den rapporterer den resulterende kilde for hvert instrument.
 
 ### 9.5 VSA-måletilstand
-**VSA Mode**-menuen viser de måletilstande, der faktisk er installeret på enheden (læst live fra analysatorens `:INSTrument:CATalog?`): altid **Basic**, plus alle option-gatede kommunikationsstandard-personligheder (GSM, EDGE, cdmaOne, cdma2000, 1xEV-DO, W-CDMA, NADC, PDC, iDEN). Når du vælger en, skifter analysatorens tilstand.
+**VSA Mode**-menuen viser de måletilstande, der faktisk er installeret på enheden (læst live fra analysatorens `:INSTrument:CATalog?`): altid **Basic**, plus alle option-gatede kommunikationsstandard-personligheder (GSM, EDGE, cdmaOne, cdma2000, 1xEV-DO, W-CDMA, NADC, PDC, iDEN). Når du vælger en, skifter analysatorens tilstand; en ikke-installeret tilstand afvises med en besked, der viser hvad der *er* installeret (se §9.8).
 
 ### 9.6 Målinger
 Under motorhjelmen leverer appen typede VSA-målinger (også eksponeret for assistenten, §10): **Channel Power**, **ACP/ACPR**, **CCDF / PAPR** (Power Statistics), **Spectrum**-markør (tonefrekvens/-effekt, optaget BW), **Waveform** (tidsdomæne-peak/-mean/-peak-to-mean) og **Power-vs-Time** med en konfigurerbar **power mask** (pass/fail over tidsvinduer) for burst-signaler.
@@ -208,6 +208,29 @@ Det kræver en baseband-kapabel ESG og en forbundet analysator; **input-skade-si
 før enhver RF, og RF returneres slukket, når det er færdigt. AM/FM verificeres via effekt/PAPR (ikke analog demodulation).
 Ved **FAIL** viser en **fejlfindingsdialog** hvert fejlet tjeks sandsynlige årsag og trin i rækkefølge
 (f.eks. for kraftig AM → overdrevet ESG eller forkert VSA-aflæsning → sænk niveauet / tjek ARB-skalering / kør Path cal… igen).
+
+### 9.8 Kapabilitetsbinding — Core vs. option-gatet
+Appen binder til det, den **forbundne enhed faktisk rapporterer**, ikke til en fast modelkonfiguration, så
+den aldrig tilbyder en personlighed, hardwaren ikke kan køre, eller accepterer en indstilling, instrumentet
+lydløst ville afvise. Ved tilslutning læser den `*IDN?`, `*OPT?` og de live `? MAX/MIN`-grænser og forliger
+dem med den statiske profil (den *effektive profil*). To niveauer:
+
+- **Core (altid til stede).** Funktioner tilgængelige på enhver understøttet enhed uanset options:
+  - *ESG (E4438C):* ARB-bølgeform-download & -afspilning, frekvens/amplitude/RF-output-styring,
+    referencelåsning. (Selve baseband-ARB kræver en installeret baseband-generator-option — se nedenfor.)
+  - *Analysator (E4406A):* **Basic**-måletilstand. *(N9010A):* **SA**- og **IQ Analyzer**-tilstande.
+    Channel Power, CCDF/PAPR, Spectrum-markør og Waveform-målinger kører i disse core-tilstande.
+- **Option-gatet (kun til stede hvis enheden rapporterer optionen).**
+  - *ESG:* baseband-generator / ARB-hukommelsesdybde — de forligede lofter for **sample-antal** og
+    **sample-clock** afspejler kun de baseband-options, `*OPT?` faktisk rapporterer, og download-stien
+    læser `*OPC?` + `:SYSTem:ERRor?` tilbage, så en afvist bølgeform bliver synlig, ikke antaget indlæst.
+  - *Analysator:* kommunikationsstandard-personligheder (GSM, EDGE, cdmaOne, cdma2000, 1xEV-DO, W-CDMA,
+    NADC, PDC, iDEN). Disse vises kun i **VSA Mode**-menuen, når de er installeret.
+
+Hvis du vælger en tilstand, der ikke er installeret, afviser appen den med en klar besked (der navngiver de
+installerede tilstande) frem for at forlade sig på en lydløs afvisning fra instrumentets side. Tilslutning
+af en model, appen ikke understøtter (andet end den valgte E4406A/N9010A-analysator eller E4438C-ESG'en),
+afvises ved tilslutning.
 
 ---
 

@@ -7,6 +7,15 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 ## [Unreleased]
 
 ### Added
+- **Capability-binding hardening** (#120): the app now binds strictly to what the connected unit reports.
+  - Selecting a VSA measurement mode that isn't in the analyzer's `:INSTrument:CATalog?` is refused with a
+    message listing the installed modes, instead of relying on a silent instrument-side rejection.
+  - ESG waveform downloads read back `*OPC?` + `:SYSTem:ERRor?`; a rejected download now throws with the
+    instrument's error text rather than being assumed loaded.
+  - The effective profile now also reconciles the live **sample-clock** ceiling (`:RADio:ARB:SCLock:RATE? MAX`)
+    alongside frequency limits, and the ESG exposes queried `? MAX/MIN` power limits.
+  - Install-verification surfaces the analyzer's error queue per step (e.g. input overload) as warnings.
+  - Documented the per-device **Core vs Option-gated** capability tiers in the User Guide (§9.8, EN + DA).
 - **Measurement-trace diagnostic** (toward #134): a **Verify install…** run now logs each raw analyzer
   measurement command and its response (with a value count) to the notifications panel, so an
   N9010A CCDF that returns a long trace instead of the 10 scalars is immediately visible. Backed by an

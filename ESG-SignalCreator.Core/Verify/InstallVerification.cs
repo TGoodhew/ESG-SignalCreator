@@ -39,16 +39,22 @@ namespace EsgSignalCreator.Verify
     /// <summary>One signal's expected-vs-measured results within an install-verification run.</summary>
     public sealed class InstallVerificationStep
     {
-        public InstallVerificationStep(string name, string detail, IReadOnlyList<VerificationResult> results)
+        public InstallVerificationStep(string name, string detail, IReadOnlyList<VerificationResult> results,
+            IReadOnlyList<string> warnings = null)
         {
             Name = name;
             Detail = detail;
             Results = results ?? new List<VerificationResult>();
+            Warnings = warnings ?? new List<string>();
         }
 
         public string Name { get; }
         public string Detail { get; }
         public IReadOnlyList<VerificationResult> Results { get; }
+
+        /// <summary>Analyzer error-queue entries seen during this step (e.g. input overload) — #120.</summary>
+        public IReadOnlyList<string> Warnings { get; }
+
         public bool Pass => VerificationHarness.AllPass(Results);
     }
 
@@ -152,7 +158,8 @@ namespace EsgSignalCreator.Verify
 
                     IReadOnlyList<VerificationResult> results =
                         VerificationHarness.Verify(vsa, sig.Model, opts.CarrierHz, opts.PowerDbm, profile, sig.ToneOffsetHz);
-                    steps.Add(new InstallVerificationStep(sig.Name, sig.Detail, results));
+                    IReadOnlyList<string> warnings = vsa.ReadErrorQueue(); // surface input overload etc. (#120)
+                    steps.Add(new InstallVerificationStep(sig.Name, sig.Detail, results, warnings));
                 }
             }
             finally
