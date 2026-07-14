@@ -163,6 +163,19 @@ this:
 
 *(All channel-power figures assume 0 dB path loss and a −10 dBm commanded level; subtract your path loss.)*
 
+### Example captures (N9010A, FW A.07.05)
+
+Real analyzer screens from an automated `--install-verify --capture-dir` run (Power Stat CCDF, showing
+Average Power and the Peak/PAPR reading):
+
+| CW | AM |
+|---|---|
+| ![CW result on the N9010A](images/vsa/cw.png) | ![AM result on the N9010A](images/vsa/am.png) |
+
+| FM | I/Q multitone |
+|---|---|
+| ![FM result on the N9010A](images/vsa/fm.png) | ![I/Q multitone result on the N9010A](images/vsa/iq-multitone.png) |
+
 ---
 
 ## Capturing screenshots for the docs
@@ -202,7 +215,8 @@ Reference a captured image from a step with, e.g., `![CW result on the analyzer]
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | **All levels ~path-loss low** | Uncaptured cable/pad loss | Run **Path cal…** (Step 3) or set path loss. |
-| **Everything ~40–48 dB low, PAPR huge** | On an N9010A, CCDF returns a 5001-point trace, not scalars | Fixed in the app (PAPR from trace); update to the latest release. |
+| **N9010A PAPR wildly wrong (AM/IQ pinned near 50 dB)** | The CCDF result at `:READ:PSTatistic2?` is a display-resolution curve on this firmware, not the 10 scalars | Fixed in the app — PAPR is read from the 10-scalar set at `:READ:PSTatistic?` (index [8]); update to the latest release. |
+| **N9010A reads time out during measurement** | Older firmware over VXI-11 doesn't deliver the SRQ the app waits on | Fixed in the app — it now falls back to a blocking read; update to the latest release. |
 | **AM carrier ~60 dB low** | Raw real-only AM baseband with DC | Use the **+1 MHz subcarrier** AM (what **Verify install…** builds). |
 | **Multitone channel power intermittently low** | Read before the ALC re-leveled | Increase settle to ~3 s and re-read. |
 | **Tone frequency off by > 50 kHz** | Independent timebases | Lock a **common 10 MHz** reference (**Reference** button). |

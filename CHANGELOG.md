@@ -6,6 +6,19 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Fixed
+- **N9010A measurements now work over VXI-11 on older firmware (A.07.05)** — bench-confirmed with an
+  E4438C + N9010A:
+  - **SRQ fallback:** the #129 Service-Request completion path is accepted but never delivered on this
+    firmware/transport, which made every analyzer read fail. Measurement reads now fall back to a
+    blocking read (with the alignment-tolerant timeout) and cache that for the session.
+  - **CCDF PAPR:** `:READ:PSTatistic?` returns the 10-value scalar set (PAPR at index [8]) on this unit,
+    while `:READ:PSTatistic2?` is a display-resolution curve #134 misread as a 5001-point trace (AM/IQ
+    PAPR pinned near 50 dB). The N9010A now reads PAPR from the scalar set, same as the E4406A.
+  - Result: the full install-verify battery passes 4/4 on the N9010A (CW/AM/FM/I-Q, channel power + PAPR),
+    and the automated screen capture works (`:MMEMory:STORe:SCReen` + `:MMEMory:DATA?`) — real captures
+    are embedded in the Manual Verification doc.
+
 ### Added
 - **VSA screen-capture tool** (#143): capture the analyzer's display over VISA to an image file, for
   attaching real result screenshots to the tutorials and reports. Backed by `VsaInstrument.CaptureScreen`,
