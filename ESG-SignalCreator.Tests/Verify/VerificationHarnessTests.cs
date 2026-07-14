@@ -63,6 +63,32 @@ namespace EsgSignalCreator.Tests.Verify
             Assert.True(VerificationHarness.AllPass(results));
         }
 
+        // A 50%-AM envelope (I = 1 + 0.5·sin, Q = 0) over a whole number of modulation cycles: crest
+        // factor = 10·log10(2.25 / 1.125) = 3.01 dB.
+        private static WaveformModel Am(int cycles)
+        {
+            int n = 32 * cycles;
+            var i = new float[n];
+            var q = new float[n];
+            for (int k = 0; k < n; k++) i[k] = (float)(1.0 + 0.5 * Math.Sin(2 * Math.PI * k / 32));
+            return new WaveformModel(i, q, 10e6, "AM");
+        }
+
+        [Fact]
+        public void Verify_subtracts_the_crest_factor_from_expected_channel_power()
+        {
+            // The ARB is peak-normalized, so a 3 dB-crest signal's RMS reads ~3 dB below the commanded
+            // level; the expected channel power must subtract the crest (#125/#130 AM & IQ failures).
+            var vsa = new VsaInstrument(new FakeVsa());
+            var results = VerificationHarness.Verify(vsa, Am(10), 1e9, -10.0, new VerificationProfile());
+
+            VerificationResult power = results.First(r => r.Metric == "Channel power");
+            Assert.Equal(-13.01, power.Expected, 2);   // -10 commanded - 0 path loss - 3.01 crest
+
+            VerificationResult papr = results.First(r => r.Metric == "PAPR");
+            Assert.Equal(3.01, papr.Expected, 2);       // expected PAPR == the crest factor
+        }
+
         [Fact]
         public void Verify_applies_path_loss_to_the_expected_power()
         {

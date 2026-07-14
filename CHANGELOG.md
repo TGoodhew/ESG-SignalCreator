@@ -6,6 +6,14 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Fixed
+- **Verification channel power now accounts for the ARB crest factor.** The ARB encoder peak-normalizes
+  every waveform, so a signal's measured RMS (channel) power sits its crest factor below the commanded
+  level. The expected channel power in `VerificationHarness.Verify` now subtracts the crest factor
+  (computed from the generated I/Q), so non-constant-envelope signals (AM, multitone) no longer read
+  low and fail; constant-envelope signals (CW/FM, crest 0) are unchanged. (Part of the AM/IQ
+  install-verification failures; the separate CCDF/PAPR reading issue is tracked in a follow-up.)
+
 ### Added
 - **Install-verification troubleshooting dialog** (#130): when the self-test fails, a dialog lists each
   failed check's likely cause and ordered fixes (e.g. AM PAPR too high → over-driven ESG or analyzer

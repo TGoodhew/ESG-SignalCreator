@@ -37,15 +37,21 @@ namespace EsgSignalCreator.Verify
             double span = profile.MeasurementSpanHz > 0 ? profile.MeasurementSpanHz : 5e6;
             var results = new List<VerificationResult>();
 
-            // Channel power vs commanded level (less declared path loss).
+            // Crest factor (dB) of the generated I/Q — equals its PAPR. The ARB encoder peak-normalizes
+            // every waveform (peak -> full scale), so the ESG plays it referenced to that peak: a signal's
+            // RMS (channel) power therefore sits its crest factor below the commanded level. Constant-
+            // envelope signals (CW/FM) have crest 0 and are unaffected; AM/multitone are not, so the
+            // expected channel power MUST subtract the crest factor or those signals read low and fail.
+            double crestDb = Dsp.Ccdf.PaprDb(ToDouble(waveform.I), ToDouble(waveform.Q));
+
+            // Channel power vs commanded level, less path loss AND the peak-normalization crest factor.
             ChannelPowerResult cp = ChannelPower.Measure(vsa, carrierHz, span, span);
             results.Add(new VerificationResult("Channel power",
-                commandedPowerDbm - profile.PathLossDb, cp.TotalPowerDbm, profile.PowerToleranceDb, "dBm"));
+                commandedPowerDbm - profile.PathLossDb - crestDb, cp.TotalPowerDbm, profile.PowerToleranceDb, "dBm"));
 
             // PAPR: measured crest factor vs the value computed from the generated I/Q.
-            double expectedPapr = Dsp.Ccdf.PaprDb(ToDouble(waveform.I), ToDouble(waveform.Q));
             CcdfResult ccdf = Ccdf.Measure(vsa, carrierHz);
-            results.Add(new VerificationResult("PAPR", expectedPapr, ccdf.PaprDb, profile.PaprToleranceDb, "dB"));
+            results.Add(new VerificationResult("PAPR", crestDb, ccdf.PaprDb, profile.PaprToleranceDb, "dB"));
 
             // Optional tone-placement check (CW / single-tone).
             if (Math.Abs(toneOffsetHz) > 0)
