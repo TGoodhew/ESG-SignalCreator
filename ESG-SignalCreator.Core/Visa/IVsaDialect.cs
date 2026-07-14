@@ -87,11 +87,18 @@ namespace EsgSignalCreator.Visa
         WaveformScalarLayout WaveformScalars { get; }
 
         /// <summary>
-        /// The result index <c>n</c> that returns the CCDF scalar set from <c>:READ:PSTatistic[n]?</c>.
-        /// The E4406A returns the scalars at n=1 (omitted); the N9010A returns them at n=2 (n=0/1 are
-        /// I/Q trace data). The within-set ordering is the same (PAPR / peak power at index 8).
+        /// The result index <c>n</c> for the CCDF data from <c>:READ:PSTatistic[n]?</c>. The E4406A
+        /// returns the 10-value scalar set at n=1 (omitted). The N9010A at n=2 returns the 5001-point
+        /// CCDF <b>trace</b> (probability % vs dB-above-average) — see <see cref="CcdfResultIsTrace"/>.
         /// </summary>
         int CcdfScalarResultIndex { get; }
+
+        /// <summary>
+        /// True when the CCDF read returns the 5001-point probability <b>trace</b> rather than the 10
+        /// scalars, so PAPR must be derived from the trace (the highest dB-above-average level still
+        /// reached) instead of a scalar index. The N9010A (X-Series) does this; the E4406A returns scalars.
+        /// </summary>
+        bool CcdfResultIsTrace { get; }
 
         /// <summary>Offset count and adjacent-channel positions of the <c>:READ:ACP?</c> scalar set.</summary>
         AcpScalarLayout AcpScalars { get; }

@@ -133,17 +133,40 @@ namespace EsgSignalCreator.Tests.Measure
             Assert.Equal(-70.0, r.PowerSpectralDensityDbmHz, 9);
         }
 
-        // #111: CCDF scalars live at n=1 on the E4406A but n=2 on the N9010A; PAPR stays at [8].
+        // #111/#134: CCDF read command is model-specific — E4406A n=1 (scalars), N9010A n=2 (trace).
         [Theory]
         [InlineData("Agilent Technologies, E4406A, US1, A.05.00", ":READ:PSTatistic?")]
         [InlineData("Keysight Technologies,N9010A,MY1,A.20.14", ":READ:PSTatistic2?")]
-        public void Ccdf_reads_scalars_at_the_model_specific_index(string idn, string expectedRead)
+        public void Ccdf_reads_at_the_model_specific_index(string idn, string expectedRead)
         {
             var io = new FakeVsa { IdnResponse = idn, ScalarResponse = "1,2,3,4,5,6,7,8,9,10" };
-            var r = Ccdf.Measure(new VsaInstrument(io), 1e9);
+            Ccdf.Measure(new VsaInstrument(io), 1e9);
             Assert.Contains(expectedRead, io.Writes);
-            Assert.Equal(1.0, r.AveragePowerDbm, 9);
-            Assert.Equal(9.0, r.PaprDb, 9);   // peak power at [8]
+        }
+
+        // #134: on the N9010A the CCDF read returns the 5001-point probability trace, so PAPR is derived
+        // from it (highest dB-above-average still reached) rather than a scalar index.
+        [Fact]
+        public void N9010a_ccdf_papr_is_derived_from_the_trace()
+        {
+            // Probability 10% up to index 300 (3.00 dB), 0 beyond -> PAPR = 3.00 dB (step = 50/5000).
+            var trace = new int[5001];
+            for (int k = 0; k <= 300; k++) trace[k] = 10;
+            string traceStr = string.Join(",", trace);
+
+            var io = new FakeVsa { IdnResponse = "Keysight Technologies,N9010A,MY1,A.20.14", ScalarResponse = traceStr };
+            var r = Ccdf.Measure(new VsaInstrument(io), 1e9);
+
+            Assert.Equal(3.00, r.PaprDb, 2);
+        }
+
+        [Fact]
+        public void E4406a_ccdf_papr_still_reads_the_scalar_index()
+        {
+            // E4406A returns the 10 scalars; PAPR is at [8].
+            var io = new FakeVsa { IdnResponse = "Agilent Technologies, E4406A, US1, A.05.00", ScalarResponse = "1,2,3,4,5,6,7,8,3.3,10" };
+            var r = Ccdf.Measure(new VsaInstrument(io), 1e9);
+            Assert.Equal(3.3, r.PaprDb, 6);
         }
 
         // #111: ACP root, offset count and adjacent-channel positions are per model.

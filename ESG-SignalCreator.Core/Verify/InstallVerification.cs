@@ -177,15 +177,16 @@ namespace EsgSignalCreator.Verify
                 ToneOffsetHz = toneOffset
             };
 
-            // 2) AM — 50% depth at 100 kHz (elevated PAPR fingerprints the amplitude path).
+            // 2) AM — 50% depth at 100 kHz, placed on a +1 MHz complex subcarrier. The raw AM baseband
+            //    (I = 1 + m·sin, Q = 0) is real-only with a large DC term, which the E4438C ARB does not
+            //    reproduce at level (the carrier came out ~60 dB low). Rotating it onto an offset carrier
+            //    (like CW) gives a proper complex signal with no DC and non-zero Q; the envelope — and so
+            //    the 3 dB PAPR — is unchanged.
             yield return new Signal
             {
                 Name = "AM",
-                Detail = "50% AM at 100 kHz",
-                Model = ToModel(WaveformGenerator.Generate(new WaveformSpec
-                {
-                    Type = SignalType.Am, SampleRateHz = sr, TargetLength = 8192, RateHz = 100e3, AmDepthPercent = 50
-                }).Waveform, "instverify-am")
+                Detail = "50% AM at 100 kHz on a +1 MHz subcarrier",
+                Model = AmOnSubcarrier(sr, toneOffset)
             };
 
             // 3) FM — 500 kHz deviation at 100 kHz (constant envelope, PAPR ≈ 0 dB — the frequency path).
@@ -214,6 +215,33 @@ namespace EsgSignalCreator.Verify
                 Detail = "4-tone Newman multitone, 1 MHz spacing",
                 Model = mt.Calculate(new Progress<int>())
             };
+        }
+
+        /// <summary>
+        /// Generate 50%/100 kHz AM and rotate it onto a complex subcarrier at <paramref name="offsetHz"/>
+        /// (seamless: the nearest whole number of cycles over the waveform length), removing the DC term
+        /// and the all-zero Q of the raw AM baseband. The envelope (and 3 dB PAPR) is preserved.
+        /// </summary>
+        private static WaveformModel AmOnSubcarrier(double sr, double offsetHz)
+        {
+            IqWaveform am = WaveformGenerator.Generate(new WaveformSpec
+            {
+                Type = SignalType.Am, SampleRateHz = sr, TargetLength = 8192, RateHz = 100e3, AmDepthPercent = 50
+            }).Waveform;
+
+            int n = am.Length;
+            int cycles = (int)Math.Round(offsetHz * n / sr); // integer cycles -> seamless loop
+            double w = 2.0 * Math.PI * cycles / n;
+
+            var i = new float[n];
+            var q = new float[n];
+            for (int k = 0; k < n; k++)
+            {
+                double c = Math.Cos(w * k), s = Math.Sin(w * k);
+                i[k] = (float)(am.I[k] * c - am.Q[k] * s);
+                q[k] = (float)(am.I[k] * s + am.Q[k] * c);
+            }
+            return new WaveformModel(i, q, sr, "instverify-am");
         }
 
         private static WaveformModel ToModel(IqWaveform wf, string name)
