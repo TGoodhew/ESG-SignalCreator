@@ -7,6 +7,14 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 ## [Unreleased]
 
 ### Added
+- **Manual Verification Procedure doc** (#138): a new standalone `docs/ManualVerification.md` — a
+  step-by-step bench check that mirrors the automated **Verify install…** battery, with every UI control,
+  concrete value (1 GHz / −10 dBm / 5 MHz span / +1 MHz tone), the expected analyzer reading per signal
+  (CW/AM/FM/I-Q, with ±3 dB / ±2.5 dB / ±50 kHz tolerances), and a standalone **VSA settings checklist**.
+  Linked from the User Guide (§9.7), the tutorials (Part F), and the README.
+- **English/Danish docs parity** (#139): Danish counterparts for the README (`docs/da/README.md`) and the
+  new Manual Verification doc (`docs/da/ManualVerification.md`), plus the verification-tutorial and
+  User-Guide updates mirrored into `docs/da/`. A parity note in the README states the expectation.
 - **Capability-binding hardening** (#120): the app now binds strictly to what the connected unit reports.
   - Selecting a VSA measurement mode that isn't in the analyzer's `:INSTrument:CATalog?` is refused with a
     message listing the installed modes, instead of relying on a silent instrument-side rejection.
