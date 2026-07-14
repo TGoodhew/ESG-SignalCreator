@@ -186,7 +186,12 @@ runtime, and the instrument's VISA resource string. You completed Tutorial 1.
 8. **Shortcut:** instead of three clicks, you can press **Calc → DL → Play** to run all three stages
    in sequence.
 
-**What you should see:**
+**What you should see on the analyzer** (real N9010A capture of the played CW):
+
+![CW tone on the N9010A — spectrum](images/tutorials/t01-cw-n9010a.png)
+
+> 🏷️ **E4406A images coming soon** — analyzer captures here are from a Keysight N9010A.
+
 - The play-state indicator reaches **Playing** after **Play**, and returns to Idle after **Stop**.
 - A CW tone on any analyzer/spectrum monitor on the RF output, at carrier + your offset.
 
@@ -402,7 +407,12 @@ file, with optional resampling to the target sample clock.
    (e.g. 30.72 MHz) differs from the sample clock you intend to play at (e.g. 10 MHz).
 6. Click **Calculate**.
 
-**What you should see:**
+**What you should see on the analyzer** (the imported CW round-trip, played and captured on the N9010A):
+
+![Imported CW on the N9010A — spectrum](images/tutorials/t01-cw-n9010a.png)
+
+> 🏷️ **E4406A images coming soon** — analyzer captures here are from a Keysight N9010A.
+
 - The imported waveform on **I/Q vs time** and **Spectrum**, matching what your file contains.
 - A readout sample count/duration consistent with your file (and the resampled rate if you enabled
   resampling).
@@ -678,7 +688,12 @@ A connected ESG (Tutorial 2) is helpful.
    - Set **Path loss (dB)** — **0** if the analyzer is cabled directly to the ESG, or the value of any
      inline pad/attenuator (e.g. **10** for a 10 dB pad).
 
-**What you should see:**
+**What you should see on the analyzer** (once connected, the N9010A shows the signal it's receiving):
+
+![The N9010A receiving a signal — spectrum](images/tutorials/t01-cw-n9010a.png)
+
+> 🏷️ **E4406A images coming soon** — analyzer captures here are from a Keysight N9010A.
+
 - The analyzer connects and reports as the selected model; the safety settings show **Armed** with
   your max safe input and path loss.
 - From now on, any commanded ESG power that would exceed the safe level at the analyzer input
@@ -710,7 +725,12 @@ analyzer, and applies it everywhere.
    records *commanded − measured* as the inline **path loss**.
 3. Finish the wizard. RF is returned **off** when done.
 
-**What you should see:**
+**What you should see on the analyzer** (the cal tone measured as channel power on the N9010A):
+
+![CW cal tone — channel power on the N9010A](images/tutorials/t14-pathcal-chpower-n9010a.png)
+
+> 🏷️ **E4406A images coming soon** — analyzer captures here are from a Keysight N9010A.
+
 - A captured **path loss (dB)** value, now applied to both the **safety gate** and **Verify** so
   subsequent runs are self-consistent.
 - RF is off at the end of calibration.
@@ -755,7 +775,14 @@ CW tone offset **+1 MHz** (so the tone lands at **1.001 GHz**), analyzer **span 
    → Download → Play, and **Verify** again. Read the table — note PAPR is the interesting metric here
    (and there's no single-tone frequency row for multitone).
 
-**What you should see (and on the analyzer front panel):**
+**What you should see (and on the analyzer front panel)** — real N9010A captures of the two verified signals:
+
+| CW — spectrum | Multitone — CCDF (PAPR) |
+|---|---|
+| ![CW on the N9010A](images/tutorials/t01-cw-n9010a.png) | ![Multitone CCDF on the N9010A](images/tutorials/t03-multitone-newman-ccdf-n9010a.png) |
+
+> 🏷️ **E4406A images coming soon** — analyzer captures here are from a Keysight N9010A.
+
 - For CW: **tone frequency = 1.001 GHz** (± 50 kHz), **channel power ≈ −10 dBm** (± 3 dB, minus path
   loss), **PAPR ≈ 0 dB** (± 2.5 dB) — all PASS. On the analyzer **Spectrum**: one sharp line at
   1.001 GHz.
@@ -794,7 +821,19 @@ comparisons, and understand the Basic-mode measurements the app uses.
 3. With Basic mode and (ideally) a common reference, repeat a **Verify** (Tutorial 15) and note the
    tighter frequency agreement.
 
-**What you should see:**
+**What you should see on the analyzer** — the app's typed measurements, each a real N9010A capture of the
+same QPSK carrier:
+
+| Spectrum marker | Channel power |
+|---|---|
+| ![QPSK spectrum on the N9010A](images/tutorials/t16-spectrum-n9010a.png) | ![QPSK channel power on the N9010A](images/tutorials/t16-chpower-n9010a.png) |
+
+| ACP / ACPR | CCDF / PAPR |
+|---|---|
+| ![QPSK ACP on the N9010A](images/tutorials/t16-acp-n9010a.png) | ![QPSK CCDF on the N9010A](images/tutorials/t16-ccdf-n9010a.png) |
+
+> 🏷️ **E4406A images coming soon** — analyzer captures here are from a Keysight N9010A.
+
 - The **VSA Mode** menu reflects exactly what's installed on your unit.
 - The **Reference** menu reports each instrument's timebase source after you choose; with a common
   10 MHz, frequency metrics in Verify agree more tightly.
@@ -909,7 +948,12 @@ step, Tutorials 2, 13–15).
    - **Allow raw SCPI** enables the gated `send_raw_scpi` escape hatch (off by default, always
      confirmed per call). Only turn it on if you need ad-hoc commands.
 
-**What you should see:**
+**What you should see on the analyzer** (the assistant plays a multitone — captured on the N9010A):
+
+![Assistant-played multitone on the N9010A — spectrum](images/tutorials/t03-multitone-n9010a.png)
+
+> 🏷️ **E4406A images coming soon** — analyzer captures here are from a Keysight N9010A.
+
 - Approve/Decline cards for the hardware steps; after approval, the download happens, RF turns on, and
   the play-state indicator shows **Playing**.
 - `verify_signal` returns a pass/fail comparison matching the Verification view.
@@ -968,7 +1012,13 @@ tool, separate from the GUI.
    ```
 4. Open `report.json` and review the per-step PASS/FAIL results.
 
-**What you should see:**
+**What you should see on the analyzer** (the closed-loop run measures each signal — e.g. channel power on
+the N9010A):
+
+![Closed-loop channel-power measurement on the N9010A](images/tutorials/t16-chpower-n9010a.png)
+
+> 🏷️ **E4406A images coming soon** — analyzer captures here are from a Keysight N9010A.
+
 - ESG-only: identity/options, a CW downloaded to **WFM1**, the ARB armed, and frequency/amplitude read
   back — RF off and safe.
 - Closed-loop: each signal type driven at a safe level across the sweep and verified on the analyzer,

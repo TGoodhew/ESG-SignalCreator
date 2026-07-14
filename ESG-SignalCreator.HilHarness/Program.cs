@@ -463,9 +463,10 @@ namespace EsgSignalCreator.HilHarness
             public string File;          // base name (extension added per model)
             public string Tutorial;      // "Tutorial 3"
             public string Caption;
+            public string View;          // "spectrum" | "ccdf" | "chpower" | "acp"
             public WaveformModel Waveform;
-            public bool Ccdf;            // true = Power Stat CCDF view; false = spectrum
-            public double SpanHz;        // spectrum span
+            public double SpanHz;        // spectrum / channel-power span
+            public double BwHz;          // channel-power integration BW, or ACP carrier BW
         }
 
         /// <summary>
@@ -515,8 +516,13 @@ namespace EsgSignalCreator.HilHarness
                     Thread.Sleep(3000); // ALC re-level + analyzer auto-range
 
                     // Drive the analyzer into the view we want to capture (leaves it on the display).
-                    if (shot.Ccdf) Ccdf.Measure(vsa, carrierHz);
-                    else SpectrumMarker.MeasurePeak(vsa, carrierHz, shot.SpanHz);
+                    switch (shot.View)
+                    {
+                        case "ccdf": Ccdf.Measure(vsa, carrierHz); break;
+                        case "chpower": ChannelPower.Measure(vsa, carrierHz, shot.SpanHz, shot.BwHz); break;
+                        case "acp": Acp.Measure(vsa, carrierHz, shot.BwHz); break;
+                        default: SpectrumMarker.MeasurePeak(vsa, carrierHz, shot.SpanHz); break;
+                    }
 
                     byte[] img = vsa.CaptureScreen(recipe);
                     string file = shot.File + ext;
@@ -539,11 +545,17 @@ namespace EsgSignalCreator.HilHarness
         private static IEnumerable<TutShot> BuildTutorialShots()
         {
             TutShot Spec(string f, string t, string c, WaveformModel wf, double span) =>
-                new TutShot { File = f, Tutorial = t, Caption = c, Waveform = wf, Ccdf = false, SpanHz = span };
+                new TutShot { File = f, Tutorial = t, Caption = c, View = "spectrum", Waveform = wf, SpanHz = span };
             TutShot Cdf(string f, string t, string c, WaveformModel wf) =>
-                new TutShot { File = f, Tutorial = t, Caption = c, Waveform = wf, Ccdf = true };
+                new TutShot { File = f, Tutorial = t, Caption = c, View = "ccdf", Waveform = wf };
+            TutShot ChP(string f, string t, string c, WaveformModel wf, double span, double bw) =>
+                new TutShot { File = f, Tutorial = t, Caption = c, View = "chpower", Waveform = wf, SpanHz = span, BwHz = bw };
+            TutShot Acpr(string f, string t, string c, WaveformModel wf, double carrierBw) =>
+                new TutShot { File = f, Tutorial = t, Caption = c, View = "acp", Waveform = wf, BwHz = carrierBw };
 
             var shots = new List<TutShot>();
+
+            // T1/T2/T7/T13 all involve a CW tone (spectrum) — capture once, reuse in the docs.
             shots.Add(Spec("t01-cw-n9010a", "Tutorial 1", "CW tone at +100 kHz — spectrum", TutCw(100e3), 2e6));
 
             WaveformModel mtN = TutMultitone(PhaseStrategy.Newman), mtE = TutMultitone(PhaseStrategy.Equal);
@@ -560,6 +572,16 @@ namespace EsgSignalCreator.HilHarness
 
             shots.Add(Spec("t08-iq-clean-n9010a", "Tutorial 8", "Clean tone at +1 MHz — spectrum", TutCw(1e6), 5e6));
             shots.Add(Spec("t08-iq-imbalance-n9010a", "Tutorial 8", "3 dB I/Q gain imbalance — image tone", IqImpairments.Apply(TutCw(1e6), new IqImpairmentConfig { GainImbalanceDb = 3.0 }), 5e6));
+
+            // T14 path calibration — the CW cal tone measured as channel power (commanded vs measured).
+            shots.Add(ChP("t14-pathcal-chpower-n9010a", "Tutorial 14", "CW cal tone — channel power", TutCw(0), 5e6, 1e6));
+
+            // T16 analyzer-measurements showcase — one QPSK carrier through each measurement type.
+            WaveformModel qpsk16 = TutQpsk();
+            shots.Add(Spec("t16-spectrum-n9010a", "Tutorial 16", "QPSK — spectrum marker", qpsk16, 10e6));
+            shots.Add(ChP("t16-chpower-n9010a", "Tutorial 16", "QPSK — channel power", qpsk16, 10e6, 2e6));
+            shots.Add(Acpr("t16-acp-n9010a", "Tutorial 16", "QPSK — adjacent channel power (ACP)", qpsk16, 2e6));
+            shots.Add(Cdf("t16-ccdf-n9010a", "Tutorial 16", "QPSK — CCDF / PAPR", qpsk16));
             return shots;
         }
 
