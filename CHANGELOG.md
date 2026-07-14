@@ -12,6 +12,9 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
   N9010A CCDF that returns a long trace instead of the 10 scalars is immediately visible. Backed by an
   optional `VsaInstrument.MeasurementTrace` hook (null/no-overhead by default).
 
+### Changed
+- **Longer install-verification settle time** (1.2 s → 3 s) so the ESG ALC re-levels for each new ARB waveform and the analyzer auto-ranges before the read — the highest-PAPR signal (the multitone) intermittently read low channel power with the shorter wait. (#134)
+
 ### Fixed
 - **N9010A CCDF PAPR is now derived from the probability trace.** The N9010A `:READ:PSTatistic2?` returns
   the 5001-point CCDF trace (probability % vs dB-above-average), not the 10 scalars — so reading scalar

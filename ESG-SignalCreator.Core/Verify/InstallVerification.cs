@@ -23,8 +23,12 @@ namespace EsgSignalCreator.Verify
         /// <summary>ARB sample rate for the synthesized signals, in hertz.</summary>
         public double SampleRateHz { get; set; } = 10e6;
 
-        /// <summary>Settle delay after arming RF before measuring, in ms (0 to skip — used by tests).</summary>
-        public int SettleMs { get; set; } = 1200;
+        /// <summary>
+        /// Settle delay after arming RF before measuring, in ms (0 to skip — used by tests). Generous by
+        /// default so the ESG ALC re-levels for each new ARB waveform and the analyzer auto-ranges before
+        /// the read — a short wait made the highest-PAPR signal (the multitone) read low intermittently.
+        /// </summary>
+        public int SettleMs { get; set; } = 3000;
 
         public double PowerToleranceDb { get; set; } = 3.0;
         public double PaprToleranceDb { get; set; } = 2.5;
