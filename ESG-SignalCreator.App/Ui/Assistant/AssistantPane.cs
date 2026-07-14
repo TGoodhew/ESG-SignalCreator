@@ -372,6 +372,41 @@ namespace EsgSignalCreator.Ui.Assistant
             ScrollToBottom();
         }
 
+        // ---- demo hooks (#150): inject a canned transcript into the real pane for tutorial screenshots ----
+
+        /// <summary>Add a mock "You" message bubble (tutorial-image generation only).</summary>
+        public void AddDemoUserMessage(string text) => AddBubble("You", text, Color.FromArgb(230, 240, 255), Color.Black);
+
+        /// <summary>Add a mock "Claude" message bubble (tutorial-image generation only).</summary>
+        public void AddDemoAssistantMessage(string text) => AddBubble("Claude", text, Color.FromArgb(245, 245, 245), Color.Black);
+
+        /// <summary>Add a mock italic note line (tutorial-image generation only).</summary>
+        public void AddDemoNote(string text) => AddNote(text);
+
+        /// <summary>Add a mock inline Approve/Decline confirmation card (tutorial-image generation only).</summary>
+        public void AddDemoCard(string toolName, string argsText)
+        {
+            var card = new Panel
+            {
+                BorderStyle = BorderStyle.FixedSingle,
+                BackColor = Color.FromArgb(255, 250, 225),
+                Margin = new Padding(2, 4, 2, 4),
+                Padding = new Padding(8),
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink
+            };
+            var stack = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSizeMode = AutoSizeMode.GrowAndShrink };
+            stack.Controls.Add(new Label { AutoSize = true, Text = "Approve hardware action:  " + toolName, Font = new Font(Font, FontStyle.Bold), MaximumSize = new Size(CardWidth(), 0) });
+            stack.Controls.Add(new Label { AutoSize = true, Text = "Arguments: " + argsText, MaximumSize = new Size(CardWidth(), 0), Margin = new Padding(0, 4, 0, 6) });
+            var buttons = new FlowLayoutPanel { AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
+            buttons.Controls.Add(new Button { Text = "Approve", AutoSize = true });
+            buttons.Controls.Add(new Button { Text = "Decline", AutoSize = true });
+            stack.Controls.Add(buttons);
+            card.Controls.Add(stack);
+            _transcript.Controls.Add(card);
+            ReflowWidths();
+        }
+
         private int CardWidth() => Math.Max(120, _transcript.ClientSize.Width - 36);
 
         private void ReflowWidths()

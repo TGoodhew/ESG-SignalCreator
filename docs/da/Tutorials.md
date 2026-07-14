@@ -39,7 +39,9 @@ afsnit i User Guide (f.eks. "se UserGuide §5.2"). For et overblik samt build- o
 > (#150); de to app-visninger, analysatoren ikke kan tegne — QPSK **constellation** og **øjediagram** —
 > kommer fra `ESG-SignalCreator.exe --tutorial-images docs/images/tutorials`. Når en signal-tutorial ændres,
 > opdatér det relevante harness og kør det igen, så billederne følger teksten. Verifikations-skærmbilleder
-> (Del F) kommer fra `HilHarness --install-verify --capture-dir` (#143). *E4406A-optagelser kommer snart.*
+> (Del F) kommer fra `HilHarness --install-verify --capture-dir` (#143), og app-UI-skærmbillederne til
+> workflow-tutorials (Notifications, Sequence, SCPI-konsol, assistent) kommer fra
+> `ESG-SignalCreator.exe --tutorial-ui-images docs/images/tutorials`. *E4406A-optagelser kommer snart.*
 
 ## Indholdsfortegnelse
 
@@ -501,7 +503,10 @@ det — så du forstår sikkerheds-gaten, der beskytter hver hardwarehandling.
    - **Loop-søm:** vælg en heltals-cyklus-længde, så den loop'er rent.
 4. **Calculate** igen, og bekræft, at fundet ryddes (eller falder til Info).
 
-**Hvad du bør se:**
+**Hvad du bør se** (**Notifications**-dokken i appen):
+
+![Notifications-dok med valideringsfund](../images/tutorials/t09-notifications.png)
+
 - Det krænkende fund i **Notifications** med den rette sværhedsgrad, der navngiver grænsen.
 - Efter din rettelse og en gen-Calculate ryddes **Error**. Når ingen hårde fejl står tilbage, bliver **Download**
   / **Play** tilgængelige igen.
@@ -573,7 +578,10 @@ brug som segmenter.
 4. Forbind (Tutorial 2), hvis du vil køre den på hardware, derefter **Download** og **Play** af
    sekvensen. Brug **Stop** for at afslutte den.
 
-**Hvad du bør se:**
+**Hvad du bør se** (**Sequence**-tabellen i appen):
+
+![Sequence-tabel med segmenter](../images/tutorials/t11-sequence.png)
+
 - En sekvensdefinition, der lister dine segmenter i tabel-/script-visningerne.
 - Ved afspilning kører segmenterne i rækkefølge; **afspilningstilstands-indikatoren** følger kørslen.
 
@@ -604,7 +612,10 @@ log.
    stemplet med et tidspunkt.
 5. Prøv et par mere (f.eks. `*OPT?` for at liste installerede options).
 
-**Hvad du bør se:**
+**Hvad du bør se** (**SCPI-konsollens** log i appen):
+
+![SCPI-konsol med en request/response-session](../images/tutorials/t12-scpi-console.png)
+
 - `*IDN?`-svaret (producent, model, serienummer, firmware) fremkommer i loggen mod din
   request, med tidsstempler.
 
@@ -862,7 +873,10 @@ sammenligninger, og forstå de Basic-mode-målinger, appen bruger.
    og skrives aldrig til projekter, logs eller request-bodyen — UserGuide §10.3.)
 4. I inputboksen skal du stille et read-only-spørgsmål, f.eks. *"What's the app state?"*, og **Send**.
 
-**Hvad du bør se:**
+**Hvad du bør se** (**Assistant**-ruden i appen):
+
+![Assistant-rude — læse-spørgsmål og svar](../images/tutorials/t17-assistant.png)
+
 - Et streamet svar, der beskriver den aktuelle apptilstand (ved hjælp af read-værktøjer såsom `get_app_state` /
   `get_current_config` / `get_results_readout`). **Intet bekræftelseskort fremkommer** — read-værktøjer kører
   uden prompt.
@@ -896,7 +910,10 @@ configure-værktøjer, uden hardware involveret.
    det, du ville forvente.
 4. Bed den eventuelt om at *"show the CCDF plot"* — den kan kalde `select_plot_view`.
 
-**Hvad du bør se:**
+**Hvad du bør se** (**Assistant**-ruden bygger signalet):
+
+![Assistant-rude — bygger en multitone via chat](../images/tutorials/t18-assistant.png)
+
 - **Source**-visningen opdateres til multitone med dine indstillinger, plottene og **aflæsningen** opdateres efter
   dens `calculate_waveform`, og assistenten rapporterer aflæsningen tilbage — alt sammen med **ingen Approve/Decline-
   kort**, fordi intet berørte instrumentet.
@@ -944,6 +961,10 @@ trinnet, Tutorial 2, 13–15).
 ![Assistent-afspillet multitone på N9010A — spektrum](../images/tutorials/t03-multitone-n9010a.png)
 
 > 🏷️ **E4406A-billeder kommer snart** — analysator-optagelserne her er fra en Keysight N9010A.
+
+Og i appen — assistentens indlejrede **Approve/Decline**-bekræftelseskort, der gater hvert hardware-trin:
+
+![Assistentens bekræftelseskort i appen](../images/tutorials/t19-assistant.png)
 
 - Approve/Decline-kort for hardwaretrinnene; efter godkendelse sker downloadet, RF tændes, og
   afspilningstilstands-indikatoren viser **Playing**.
