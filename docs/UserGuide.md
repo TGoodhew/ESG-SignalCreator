@@ -262,7 +262,8 @@ for clean frequency comparisons. It reports the resulting source of each instrum
 The **VSA Mode** menu lists the measurement modes actually installed on the unit (read live from the
 analyzer's `:INSTrument:CATalog?`): always **Basic**, plus any option-gated communications-standard
 personalities (GSM, EDGE, cdmaOne, cdma2000, 1xEV-DO, W-CDMA, NADC, PDC, iDEN). Selecting one switches
-the analyzer's mode.
+the analyzer's mode; an uninstalled mode is refused with a message that lists what *is* installed
+(see §9.8).
 
 ### 9.6 Measurements
 Under the hood the app provides typed VSA measurements (also exposed to the
@@ -285,6 +286,28 @@ It needs a baseband-capable ESG and a connected analyzer; the **input-damage saf
 before any RF, and RF is returned off when done. AM/FM are verified via power/PAPR (not analog demod).
 On a **FAIL**, a **troubleshooting dialog** lists each failed check's likely cause and ordered fixes
 (e.g. excessive AM → over-driven ESG or analyzer mis-read → lower level / check ARB scaling / re-run Path cal…).
+
+### 9.8 Capability binding — Core vs Option-gated
+The app binds to what the **connected unit actually reports**, not to a fixed model configuration, so it
+never offers a personality the hardware can't run or accepts a setting the instrument would silently
+reject. On connect it reads `*IDN?`, `*OPT?`, and the live `? MAX/MIN` limits and reconciles them against
+the static profile (the *effective profile*). Two tiers:
+
+- **Core (always present).** Functions available on any supported unit regardless of options:
+  - *ESG (E4438C):* ARB waveform download & playback, frequency/amplitude/RF-output control, reference
+    locking. (Baseband ARB itself requires an installed baseband generator option — see below.)
+  - *Analyzer (E4406A):* **Basic** measurement mode. *(N9010A):* **SA** and **IQ Analyzer** modes.
+    Channel Power, CCDF/PAPR, Spectrum marker, and Waveform measurements run in these core modes.
+- **Option-gated (present only if the unit reports the option).**
+  - *ESG:* baseband generator / ARB memory depth — the reconciled **sample count** and **sample-clock**
+    ceilings reflect only the baseband options `*OPT?` actually reports, and the download path reads back
+    `*OPC?` + `:SYSTem:ERRor?` so a rejected waveform is surfaced, not assumed loaded.
+  - *Analyzer:* communications-standard personalities (GSM, EDGE, cdmaOne, cdma2000, 1xEV-DO, W-CDMA,
+    NADC, PDC, iDEN). These appear in the **VSA Mode** menu only when installed.
+
+If you select a mode that isn't installed, the app refuses it with a clear message (naming the installed
+modes) rather than relying on a silent instrument-side rejection. Connecting a model the app doesn't
+support (anything other than the selected E4406A/N9010A analyzer or the E4438C ESG) is refused at connect.
 
 ---
 

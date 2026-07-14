@@ -10,7 +10,8 @@ namespace EsgSignalCreator.Visa
         /// <summary>Use NI-VISA (<see cref="VisaInstrument"/>) with a VISA resource string.</summary>
         Visa,
 
-        /// <summary>Use NI-488.2 (<see cref="Gpib488Instrument"/>) addressed by board and primary address.</summary>
+        /// <summary>Address a GPIB instrument by board and primary address — routed through VISA
+        /// (<see cref="VisaInstrument"/>) via a <c>GPIBn::addr::INSTR</c> resource string.</summary>
         Gpib
     }
 

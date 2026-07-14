@@ -27,7 +27,8 @@ namespace EsgSignalCreator.Capability
             string model,
             string[] installedOptions,
             double liveMaxFrequencyHz,
-            double liveMinFrequencyHz)
+            double liveMinFrequencyHz,
+            double liveMaxSampleClockHz = 0)
         {
             if (baseProfile == null) return null;
 
@@ -58,12 +59,18 @@ namespace EsgSignalCreator.Capability
             if (liveMinFrequencyHz > 0)
                 minF = minF > 0 ? Math.Max(minF, liveMinFrequencyHz) : liveMinFrequencyHz;
 
+            // Reduce the sample-clock ceiling to the unit's queried max when available (e.g. an option
+            // that limits the ARB rate below the model default).
+            double maxScl = baseProfile.MaxSampleClockHz;
+            if (liveMaxSampleClockHz > 0)
+                maxScl = maxScl > 0 ? Math.Min(maxScl, liveMaxSampleClockHz) : liveMaxSampleClockHz;
+
             return new InstrumentProfile
             {
                 Model = string.IsNullOrWhiteSpace(model) ? baseProfile.Model : model,
                 MinFrequencyHz = minF,
                 MaxFrequencyHz = maxF,
-                MaxSampleClockHz = baseProfile.MaxSampleClockHz,
+                MaxSampleClockHz = maxScl,
                 MinSamples = baseProfile.MinSamples,
                 BasebandOptions = baseband
             };

@@ -19,9 +19,16 @@ namespace EsgSignalCreator.Tests.Control
             public bool IsConnected => true;
             public int TimeoutMilliseconds { get; set; }
 
+            /// <summary>Reply for :SYSTem:ERRor? — overridable to simulate a rejected download (#120).</summary>
+            public string ErrorReply = "0,\"No error\"";
+
             public void Write(string command) => Writes.Add(command);
             public string ReadString() => "0,\"No error\"";
-            public string Query(string command) { Writes.Add(command); return "0,\"No error\""; }
+            public string Query(string command)
+            {
+                Writes.Add(command);
+                return command == ":SYSTem:ERRor?" ? ErrorReply : "0,\"No error\"";
+            }
             public void WriteBinaryBlock(byte[] message) => LastBinaryBlock = message;
             public void Dispose() { }
         }
@@ -58,6 +65,35 @@ namespace EsgSignalCreator.Tests.Control
             string head = Encoding.ASCII.GetString(io.LastBinaryBlock, 0, 32);
             // 64 samples -> 256 payload bytes -> header "#3256".
             Assert.StartsWith(":MEMory:DATA \"WFM1:seg\",#3256", head);
+        }
+
+        // #120: after WriteBinaryBlock the controller reads *OPC? then :SYSTem:ERRor? and throws on error.
+        [Fact]
+        public void DownloadWaveform_reads_back_opc_and_error_after_the_block()
+        {
+            var io = new FakeInstrument();
+            var esg = new EsgController(io);
+
+            esg.DownloadWaveform("seg", DcWaveform(64), backoff: 1.0);
+
+            int iBlock = io.Writes.FindIndex(w => w.StartsWith(":MEMory:DATA"));
+            int iOpc = io.Writes.FindIndex(w => w == "*OPC?");
+            int iErr = io.Writes.FindIndex(w => w == ":SYSTem:ERRor?");
+            // Both read-backs happen; error read follows *OPC? which follows... the block write is
+            // recorded via WriteBinaryBlock (not Writes), so just assert *OPC? precedes the error read.
+            Assert.True(iOpc >= 0 && iErr > iOpc, "Expected *OPC? then :SYSTem:ERRor? after download.");
+        }
+
+        [Fact]
+        public void DownloadWaveform_throws_when_the_generator_rejects_the_block()
+        {
+            var io = new FakeInstrument { ErrorReply = "-222,\"Data out of range\"" };
+            var esg = new EsgController(io);
+
+            var ex = Assert.Throws<System.InvalidOperationException>(
+                () => esg.DownloadWaveform("seg", DcWaveform(64), backoff: 1.0));
+            Assert.Contains("Data out of range", ex.Message);
+            Assert.Contains("seg", ex.Message);
         }
 
         [Fact]

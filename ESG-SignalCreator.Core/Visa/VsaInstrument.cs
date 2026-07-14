@@ -6,10 +6,12 @@ using EsgSignalCreator.Instruments;
 namespace EsgSignalCreator.Visa
 {
     /// <summary>
-    /// High-level facade for an Agilent E4406A VSA Series Transmitter Tester — the measurement peer
-    /// to <see cref="EsgInstrument"/>. Wraps any <see cref="IInstrument"/> transport (so it is
-    /// testable with a fake) and provides identity, options, Basic-mode selection, frequency setup,
-    /// and error polling. The analyzer only ever <b>receives</b> RF.
+    /// High-level facade for a vector signal analyzer — an Agilent E4406A (Basic mode) or a
+    /// Keysight N9010A/EXA X-Series (SA / IQ Analyzer) — the measurement peer to
+    /// <see cref="EsgInstrument"/>. Per-model SCPI differences are resolved through <see cref="Dialect"/>.
+    /// Wraps any <see cref="IInstrument"/> transport (so it is testable with a fake) and provides
+    /// identity, options, mode selection, frequency setup, and error polling. The analyzer only ever
+    /// <b>receives</b> RF.
     /// </summary>
     public sealed class VsaInstrument : IDisposable
     {
@@ -77,6 +79,26 @@ namespace EsgSignalCreator.Visa
         /// <summary>Read the head of the analyzer's error queue (<c>:SYSTem:ERRor?</c>).</summary>
         public string GetError() => _io.Query(":SYSTem:ERRor?");
 
+        /// <summary>
+        /// Drain the analyzer's error queue, returning every non-zero entry (empty if clean). Reads
+        /// <c>:SYSTem:ERRor?</c> until code 0, so a measurement can surface over/under-range conditions
+        /// (e.g. input overload) that the analyzer reports here rather than failing silently (#120).
+        /// Bounded so a stuck queue can't loop forever.
+        /// </summary>
+        public IReadOnlyList<string> ReadErrorQueue(int maxEntries = 20)
+        {
+            var errors = new List<string>();
+            for (int i = 0; i < maxEntries; i++)
+            {
+                string e = _io.Query(":SYSTem:ERRor?");
+                if (string.IsNullOrWhiteSpace(e)) break;
+                string code = e.Split(',')[0].Trim();
+                if (code == "0" || code == "+0" || code == "-0") break;
+                errors.Add(e.Trim());
+            }
+            return errors;
+        }
+
         /// <summary>Clear status (<c>*CLS</c>).</summary>
         public void Clear() => _io.Write("*CLS");
 
@@ -88,12 +110,30 @@ namespace EsgSignalCreator.Visa
 
         /// <summary>
         /// Select a measurement mode by its SCPI mnemonic (<c>:INSTrument:SELect</c>), e.g. GSM, WCDMA,
-        /// CDMA2K — only legal for modes the unit actually has installed (see <see cref="ModeCatalog"/>) (#76).
+        /// CDMA2K. When <paramref name="verifyInstalled"/> is true (the user/assistant path), the mnemonic
+        /// is first checked against <see cref="ModeCatalog"/> and an uninstalled personality is refused
+        /// with a clear message rather than relying on a silent instrument-side rejection (#76/#120). The
+        /// internal measurement path leaves it false — the core modes (BASIC/SA) are always present, so it
+        /// skips the extra catalog query.
         /// </summary>
-        public void SelectMode(string mnemonic)
+        public void SelectMode(string mnemonic, bool verifyInstalled = false)
         {
             if (string.IsNullOrWhiteSpace(mnemonic)) throw new ArgumentException("Mode mnemonic required.", nameof(mnemonic));
-            _io.Write(":INSTrument:SELect " + mnemonic.Trim());
+            mnemonic = mnemonic.Trim();
+
+            if (verifyInstalled)
+            {
+                string[] installed = ModeCatalog();
+                bool present = false;
+                foreach (string m in installed)
+                    if (string.Equals(m, mnemonic, StringComparison.OrdinalIgnoreCase)) { present = true; break; }
+                if (!present)
+                    throw new InvalidOperationException(
+                        "Mode '" + mnemonic + "' is not installed on this analyzer. Installed: " +
+                        (installed.Length > 0 ? string.Join(", ", installed) : "(none reported)") + ".");
+            }
+
+            _io.Write(":INSTrument:SELect " + mnemonic);
         }
 
         /// <summary>Read the current measurement mode mnemonic (<c>:INSTrument:SELect?</c>).</summary>

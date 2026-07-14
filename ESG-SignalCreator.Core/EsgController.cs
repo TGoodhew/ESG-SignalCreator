@@ -75,6 +75,27 @@ namespace EsgSignalCreator
             return double.Parse(r, NumberStyles.Float, CultureInfo.InvariantCulture);
         }
 
+        /// <summary>Query the maximum settable output power, in dBm (for the installed hardware/options).</summary>
+        public double GetMaxPowerDbm()
+        {
+            string r = _io.Query(":POWer:LEVel? MAX");
+            return double.Parse(r, NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>Query the minimum settable output power, in dBm.</summary>
+        public double GetMinPowerDbm()
+        {
+            string r = _io.Query(":POWer:LEVel? MIN");
+            return double.Parse(r, NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
+        /// <summary>Query the maximum ARB sample (playback) clock rate, in hertz (option-dependent).</summary>
+        public double GetMaxSampleClockHz()
+        {
+            string r = _io.Query(":RADio:ARB:SCLock:RATE? MAX");
+            return double.Parse(r, NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
         /// <summary>Read back the current amplitude, in dBm.</summary>
         public double GetAmplitudeDbm()
         {
@@ -134,6 +155,23 @@ namespace EsgSignalCreator
                 string.Format(CultureInfo.InvariantCulture, ":MEMory:DATA \"WFM1:{0}\",", segmentName),
                 payload);
             _io.WriteBinaryBlock(message);
+
+            // Completion + error read-back (#120): block until the transfer is processed (*OPC?), then
+            // read the error queue so an instrument-side rejection (memory full, bad block, DAC/format
+            // error) fails fast with the analyzer's own message instead of a silent, later failure.
+            _io.Query("*OPC?");
+            string err = _io.Query(":SYSTem:ERRor?");
+            if (!IsNoError(err))
+                throw new InvalidOperationException(
+                    "The generator rejected the waveform download for '" + segmentName + "': " + (err ?? string.Empty).Trim());
+        }
+
+        /// <summary>True if a SCPI <c>:SYSTem:ERRor?</c> reply reports no error (code 0), or is empty.</summary>
+        private static bool IsNoError(string errorReply)
+        {
+            if (string.IsNullOrWhiteSpace(errorReply)) return true;
+            string code = errorReply.Split(',')[0].Trim();
+            return code == "0" || code == "+0" || code == "-0";
         }
 
         /// <summary>

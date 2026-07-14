@@ -155,8 +155,10 @@ namespace EsgSignalCreator.Ui.Instrument
                 _esg.SetSampleClockHz(SampleClockHz);
                 _esg.SetRuntimeScaling((double)_runtimeScaling.Value);
 
+                // Surface any instrument-side rejection (e.g. an out-of-range frequency or power) clearly
+                // rather than reporting "Applied" over a silent error (#120).
                 string err = SafeGetError();
-                _status.Text = "Applied. " + err;
+                _status.Text = IsNoError(err) ? "Applied." : "Instrument rejected a setting: " + err;
             }
             catch (Exception ex)
             {
@@ -180,7 +182,7 @@ namespace EsgSignalCreator.Ui.Instrument
                 _amplitude.Value = Clamp((decimal)dbm, _amplitude.Minimum, _amplitude.Maximum);
 
                 string err = SafeGetError();
-                _status.Text = "Read back. " + err;
+                _status.Text = "Read back." + (IsNoError(err) ? "" : "  Instrument error: " + err);
             }
             catch (Exception ex)
             {
@@ -193,12 +195,20 @@ namespace EsgSignalCreator.Ui.Instrument
             try
             {
                 string err = _esg.GetError();
-                return string.IsNullOrWhiteSpace(err) ? string.Empty : ("Error: " + err.Trim());
+                return string.IsNullOrWhiteSpace(err) ? string.Empty : err.Trim();
             }
             catch (Exception ex)
             {
-                return "Error query failed: " + ex.Message;
+                return "error query failed: " + ex.Message;
             }
+        }
+
+        /// <summary>True if a <c>:SYSTem:ERRor?</c> reply reports no error (code 0) or is empty.</summary>
+        private static bool IsNoError(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return true;
+            string code = raw.Split(',')[0].Trim();
+            return code == "0" || code == "+0" || code == "-0";
         }
 
         /// <summary>Carrier frequency in hertz, from the numeric value and its unit.</summary>
