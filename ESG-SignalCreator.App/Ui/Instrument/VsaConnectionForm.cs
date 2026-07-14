@@ -427,9 +427,16 @@ namespace EsgSignalCreator.Ui.Instrument
                 if (!vsa.IsModel(_targetModel))
                 {
                     string target = VsaModels.DisplayName(_targetModel);
-                    SetStatus("Refused: connected instrument is not a " + target + ".", Color.DarkRed);
+                    // §120: reject an unidentified/unsupported analyzer explicitly, distinct from a
+                    // recognised-but-wrong model, rather than driving it with a guessed dialect.
+                    bool supported = VsaDialects.IsSupported(vsa.Model);
+                    SetStatus(supported
+                        ? "Refused: connected instrument is not a " + target + "."
+                        : "Refused: unsupported analyzer — only the E4406A and N9010A are supported.", Color.DarkRed);
                     _detailsBox.Text =
-                        "This dialog is set to connect a " + target + " (" + _targetModel + ")." + Environment.NewLine +
+                        (supported
+                            ? "This dialog is set to connect a " + target + " (" + _targetModel + ")."
+                            : "This analyzer's *IDN? matched no supported model (E4406A or N9010A); it will not be driven with a guessed SCPI dialect.") + Environment.NewLine +
                         "Switch the VSA model toggle if you meant a different analyzer." + Environment.NewLine +
                         "Resource: " + vsa.ResourceName + Environment.NewLine +
                         "*IDN?: " + idn + Environment.NewLine +

@@ -23,8 +23,9 @@ namespace EsgSignalCreator.Visa
         // X-Series exposes a single global :SENSe:FREQuency:SPAN rather than per-measurement spans.
         public bool HasGlobalSpan => true;
 
-        // N9010A :READ:WAVeform? -> [sample-time, mean, mean-avg, num-samples, peak-to-mean, max(peak)]
-        // (IQ Analyzer Mode Reference 9018-02190): peak is the Maximum at index 5, not index 0.
+        // N9010A :READ:WAVeform? scalar set, bench-confirmed on A.07.05 (7 values):
+        // [0] sample-time, [1] mean (dBm), [2] mean-over-avg, [3] num-samples, [4] peak-to-mean (dB),
+        // [5] peak/max (dBm), [6] min (dBm). Peak is the Maximum at index 5, not index 0.
         public WaveformScalarLayout WaveformScalars => new WaveformScalarLayout(peakIndex: 5, meanIndex: 1, peakToMeanIndex: 4);
 
         // N9010A CCDF: :READ:PSTatistic1? returns the 10-value scalar set in the SAME order as the
@@ -36,12 +37,22 @@ namespace EsgSignalCreator.Visa
         public int CcdfScalarResultIndex => 1;
         public bool CcdfResultIsTrace => false;
 
-        // N9010A :READ:ACPower? (Total-power-reference) -> 32 values: header [0.0, total-carrier,
-        // 0.0, ref-carrier], then 6 offsets A..F x (lowerRel, lowerAbs, upperRel, upperAbs) from index 4.
-        // Adjacent dBc comes from offset A (upper rel = index 6, lower rel = index 4). (SA Reference
-        // 9018-06099 — manual-derived, confirm against hardware.)
+        // N9010A ACP result layout per the SA Mode Reference (9018-06099, p.1586, "Remote Command Results
+        // for ACP Measurement"), bench-confirmed on A.07.05. The result format is CONFIG-dependent, not a
+        // firmware limitation: in the default SA config (Radio Std = None, 1 carrier, only offset A on),
+        // :READ:ACP? returns 3 scalars — [0] reference carrier power (dBm), [1] lower-adjacent (dBc),
+        // [2] upper-adjacent (dBc) — so OffsetCount is 0 and the adjacent dBc come straight from [1]/[2].
+        // (Enabling more offsets switches to the Total-power-reference format: header [0, total, 0, ref]
+        // then 6 offsets x (Lrel, Labs, Urel, Uabs) from index 4 — the app reads the default single-offset
+        // result and does not enable the extra offsets.)
         public AcpScalarLayout AcpScalars =>
-            new AcpScalarLayout(offsetCount: 6, offsetBaseIndex: 4, upperAdjacentDbcIndex: 6, lowerAdjacentDbcIndex: 4);
+            new AcpScalarLayout(offsetCount: 0, offsetBaseIndex: 3, upperAdjacentDbcIndex: 2, lowerAdjacentDbcIndex: 1);
+
+        // Force offset A only so :READ:ACP? deterministically returns the 3-scalar result above, regardless
+        // of any persistent multi-offset state left on the instrument (which would switch it to the
+        // 28-value Total-power-reference table and misalign the indices). The :SENSe:ACPower:… config nodes
+        // accept the long form on A.07.05 (only the result verbs require "ACP").
+        public string AcpSetupCommand => ":SENSe:ACPower:OFFSet:LIST:STATe ON,OFF,OFF,OFF,OFF,OFF";
 
         // Wait for measurement completion via SRQ so an X-Series auto-alignment of any length can't trip
         // a fixed read timeout (#129).
@@ -78,7 +89,10 @@ namespace EsgSignalCreator.Visa
             switch (measurement)
             {
                 case VsaMeasurement.ChannelPower: return "CHPower";
-                case VsaMeasurement.Acp: return "ACPower"; // NB: E4406A "ACP" -> X-Series "ACPower"
+                // Use the SCPI short form "ACP": A.07.05 rejects the long form :READ/FETCh/MEASure:ACPower?
+                // with -113 (the :SENSe:ACPower:… config nodes accept the long form; only the result verbs
+                // require the short form). "ACP" is documented (short form of ACPower) and portable.
+                case VsaMeasurement.Acp: return "ACP";
                 case VsaMeasurement.Ccdf: return "PSTatistic";
                 case VsaMeasurement.Spectrum: return "SPECtrum";
                 case VsaMeasurement.Waveform: return "WAVeform";

@@ -19,12 +19,14 @@ namespace EsgSignalCreator.Measure
     /// [2] lower-adjacent rel, [3] lower-adjacent abs, then offsets 1..5 as (neg rel, neg abs, pos rel,
     /// pos abs) at [4..23]. Inactive channels report ~ -999. A short response yields fewer entries.
     /// <para>
-    /// The N9010A (SA-mode <c>ACPower</c>, Total-power reference) differs — its header is
-    /// [0.0, total-carrier, 0.0, ref-carrier] and it carries 6 offsets (A..F) with the same per-offset
-    /// block from index 4, so the adjacent dBc comes from offset A. The offset count and adjacent-channel
-    /// positions therefore come from the dialect (<see cref="IVsaDialect.AcpScalars"/>); the per-offset
-    /// block layout (lowerRel, lowerAbs, upperRel, upperAbs) is shared. The N9010A ACPower root is
-    /// supplied by the dialect too. N9010A layout is manual-derived (9018-06099) — confirm on hardware.
+    /// The N9010A uses the SCPI short-form root <c>ACP</c> and, in its default SA config (Radio Std = None,
+    /// one carrier, offset A on), <c>:READ:ACP?</c> returns 3 scalars — [0] reference carrier power (dBm),
+    /// [1] lower-adjacent (dBc), [2] upper-adjacent (dBc) — per the SA Mode Reference (9018-06099, p.1586);
+    /// bench-confirmed on firmware A.07.05. The root, offset count and adjacent-channel positions come from
+    /// the dialect (<see cref="IVsaDialect.AcpScalars"/>), so the same code drives both models. (Enabling
+    /// more offsets switches the instrument to the 28-value Total-power-reference table — header
+    /// [0, total, 0, ref] then 6 offsets x (Lrel, Labs, Urel, Uabs) from index 4.) Note A.07.05 rejects the
+    /// long-form result verbs <c>:READ/FETCh/MEASure:ACPower?</c> with -113; the short form is portable.
     /// </para>
     /// </remarks>
     public static class Acp
@@ -47,6 +49,11 @@ namespace EsgSignalCreator.Measure
 
             var basic = new BasicMeasurement(vsa);
             basic.Setup(VsaMeasurement.Acp, centerHz);
+
+            // Force a deterministic offset configuration where the model needs it (the N9010A result
+            // format is offset-count-dependent), so the scalar layout in the dialect always applies.
+            string setup = vsa.Dialect.AcpSetupCommand;
+            if (!string.IsNullOrEmpty(setup)) vsa.Write(setup);
 
             if (carrierBandwidthHz > 0)
                 vsa.Write(IntegrationBwCommand + " " + carrierBandwidthHz.ToString("G17", CultureInfo.InvariantCulture) + " Hz");

@@ -178,12 +178,15 @@ namespace EsgSignalCreator.Tests.Measure
             Assert.Equal(2.0, er.LowerAdjacentDbc, 9);
             Assert.Equal(5, er.LowerOffsetsDbc.Length);
 
-            var n = new FakeVsa { IdnResponse = "Keysight Technologies,N9010A,MY1,A.20.14", ScalarResponse = vec };
+            // N9010A (bench-confirmed): root "ACP"; the read is forced to offset-A-only so :READ:ACP?
+            // returns the deterministic 3-scalar result [carrier, lowerAdj dBc, upperAdj dBc].
+            var n = new FakeVsa { IdnResponse = "Keysight Technologies,N9010A,MY1,A.20.14", ScalarResponse = "-13.0,-31.5,-31.6" };
             var nr = Acp.Measure(new VsaInstrument(n), 1e9);
-            Assert.Contains(":READ:ACPower?", n.Writes);
-            Assert.Equal(6.0, nr.UpperAdjacentDbc, 9);   // upper offset A rel
-            Assert.Equal(4.0, nr.LowerAdjacentDbc, 9);   // lower offset A rel
-            Assert.Equal(6, nr.LowerOffsetsDbc.Length);
+            Assert.Contains(":READ:ACP?", n.Writes);
+            Assert.Contains(n.Writes, w => w.StartsWith(":SENSe:ACPower:OFFSet:LIST:STATe ON,OFF")); // forced offset-A-only
+            Assert.Equal(-31.6, nr.UpperAdjacentDbc, 9); // [2] upper-adjacent dBc
+            Assert.Equal(-31.5, nr.LowerAdjacentDbc, 9); // [1] lower-adjacent dBc
+            Assert.Empty(nr.LowerOffsetsDbc);            // offset-A-only: no multi-offset table
         }
     }
 }

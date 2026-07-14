@@ -26,6 +26,9 @@ namespace EsgSignalCreator.Visa
         public AcpScalarLayout AcpScalars =>
             new AcpScalarLayout(offsetCount: 5, offsetBaseIndex: 4, upperAdjacentDbcIndex: 0, lowerAdjacentDbcIndex: 2);
 
+        // The E4406A returns its full ACP scalar set by default; no offset-state setup needed.
+        public string AcpSetupCommand => null;
+
         // The E4406A path uses the plain blocking read (its fixed timeout is adequate).
         public bool UsesServiceRequestCompletion => false;
 
