@@ -117,7 +117,8 @@ namespace EsgSignalCreator.Verify
             RfPathSafety safety,
             InstallVerificationOptions opts,
             Action<string> progress = null,
-            Func<bool> cancelled = null)
+            Func<bool> cancelled = null,
+            Action<InstallVerificationStep> onStepMeasured = null)
         {
             if (esg == null) throw new ArgumentNullException(nameof(esg));
             if (vsa == null) throw new ArgumentNullException(nameof(vsa));
@@ -159,7 +160,17 @@ namespace EsgSignalCreator.Verify
                     IReadOnlyList<VerificationResult> results =
                         VerificationHarness.Verify(vsa, sig.Model, opts.CarrierHz, opts.PowerDbm, profile, sig.ToneOffsetHz);
                     IReadOnlyList<string> warnings = vsa.ReadErrorQueue(); // surface input overload etc. (#120)
-                    steps.Add(new InstallVerificationStep(sig.Name, sig.Detail, results, warnings));
+                    var step = new InstallVerificationStep(sig.Name, sig.Detail, results, warnings);
+                    steps.Add(step);
+
+                    // The signal is still armed and on the analyzer here, so a caller can capture the
+                    // analyzer's display (e.g. a screenshot) for this exact signal before the next one
+                    // is loaded (#143).
+                    if (onStepMeasured != null)
+                    {
+                        try { onStepMeasured(step); }
+                        catch { /* a capture failure must not fail the verification run */ }
+                    }
                 }
             }
             finally

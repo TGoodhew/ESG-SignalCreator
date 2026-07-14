@@ -80,6 +80,36 @@ namespace EsgSignalCreator.Tests.Verify
             Assert.Contains(flat, r => r.Metric == "IQ (multitone) · Channel power");
         }
 
+        // #143: the capture hook fires once per measured signal, after the step is recorded, while that
+        // signal is still armed on the analyzer.
+        [Fact]
+        public void Run_invokes_the_capture_hook_once_per_signal()
+        {
+            var seen = new List<string>();
+            InstallVerification.Run(
+                new EsgController(new FakeEsgIo()),
+                new VsaInstrument(new FakeVsaIo()),
+                null,
+                new InstallVerificationOptions { SettleMs = 0, CarrierHz = 1e9, PowerDbm = -10.0 },
+                onStepMeasured: step => seen.Add(step.Name));
+
+            Assert.Equal(new[] { "CW", "AM", "FM", "IQ (multitone)" }, seen.ToArray());
+        }
+
+        [Fact]
+        public void Capture_hook_exception_does_not_fail_the_run()
+        {
+            // A capture failure must be swallowed so the verification verdict still stands.
+            InstallVerificationReport report = InstallVerification.Run(
+                new EsgController(new FakeEsgIo()),
+                new VsaInstrument(new FakeVsaIo()),
+                null,
+                new InstallVerificationOptions { SettleMs = 0, CarrierHz = 1e9, PowerDbm = -10.0 },
+                onStepMeasured: step => throw new System.IO.IOException("capture boom"));
+
+            Assert.Equal(4, report.Steps.Count);
+        }
+
         [Fact]
         public void Armed_gate_over_limit_blocks_the_run_before_emitting()
         {

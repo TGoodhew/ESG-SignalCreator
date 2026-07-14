@@ -572,10 +572,11 @@ log.
 > [**Manual Verification Procedure**](ManualVerification.md). The tutorials below teach the workflow;
 > that document is the copy-the-numbers reference.
 
-> 📸 **Screenshots:** you can capture the analyzer's result screen over VISA with
-> `ESG-SignalCreator.HilHarness.exe --capture-screen <file>` (see the README → Hardware-in-the-loop
-> testing, and the Manual Verification doc). Captured images live under `docs/images/vsa/` and can be
-> embedded in these steps.
+> 📸 **Screenshots:** you can capture the analyzer's result screens over VISA automatically —
+> `ESG-SignalCreator.HilHarness.exe --install-verify --capture-dir docs/images/vsa` drives CW/AM/FM/I-Q,
+> measures each, and captures a screenshot per signal in one command (plus an `index.md`). For a one-off
+> shot use `--capture-screen <file>`. See the README → Hardware-in-the-loop testing and the Manual
+> Verification doc; captured images live under `docs/images/vsa/`.
 
 ## Tutorial 13 — Connect the VSA safely
 

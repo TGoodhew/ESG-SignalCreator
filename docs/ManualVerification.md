@@ -167,18 +167,28 @@ this:
 
 ## Capturing screenshots for the docs
 
-Each step above has a "what you should see on the VSA" description. To attach a real screenshot of the
-analyzer result, capture its display over VISA with the harness (analyzer-only — no ESG, no RF):
+Each step above has a "what you should see on the VSA" description. You can attach a real screenshot of
+each analyzer result, captured over VISA.
+
+**Automated (recommended) — one command, no manual setup.** This drives the whole CW/AM/FM/I-Q battery,
+measures each signal, and captures the analyzer's display after each one:
 
 ```powershell
-# Drive/settle the signal first (app or a --signal run), then, in another window:
+ESG-SignalCreator.HilHarness.exe --install-verify --vsa GPIB0::17::INSTR --vsa-model e4406a ^
+    --capture-dir docs/images/vsa
+```
+
+It writes `cw`, `am`, `fm`, `iq-multitone` images (PNG on the N9010A, GIF on the E4406A) into the folder,
+plus an `index.md` that embeds them — ready to paste into these steps.
+
+**Ad-hoc — capture the current screen only** (analyzer-only, no ESG/RF; set the signal up yourself first):
+
+```powershell
 ESG-SignalCreator.HilHarness.exe --capture-screen docs/images/vsa/cw-result.png ^
     --vsa GPIB0::17::INSTR --vsa-model e4406a
 ```
 
-It reads the screen back as an image (PNG on the N9010A, GIF on the E4406A) and writes the file. Drop the
-captured images under `docs/images/vsa/` and reference them from the step, e.g.
-`![CW result on the analyzer](images/vsa/cw-result.png)`.
+Reference a captured image from a step with, e.g., `![CW result on the analyzer](images/vsa/cw.png)`.
 
 > The default capture SCPI (`:MMEMory:STORe:SCReen` + `:MMEMory:DATA?` + `:MMEMory:DELete`) is
 > manual-derived and **needs bench confirmation**. If your firmware differs, override it without a
