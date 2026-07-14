@@ -599,8 +599,8 @@ En forbundet ESG (Tutorial 2) er nyttig.
    forbind (appen afviser et instrument, der ikke matcher den valgte model).
 4. I **RF-sti-sikkerheds**-indstillingerne:
    - Slå **Armed** til — dette aktiverer beskyttelsen, nu hvor analysatoren er på udgangen.
-   - Indstil **Analyzer max safe input (dBm)** — lad modellens standard stå (**+30 dBm** E4406A / **+25 dBm**
-     N9010A; E4406A type-N-indgangen er rated ≈ +35 dBm — bekræft N9010A mod dens datablad).
+   - Indstil **Analyzer max safe input (dBm)** — lad modellens standard stå (**+30 dBm** for begge; N9010A'ens
+     +30 dBm / 1 W maks. sikre input er iht. dens datablad, og E4406A type-N-indgangen er rated ≈ +35 dBm).
    - Indstil **Path loss (dB)** — **0**, hvis analysatoren er kablet direkte til ESG'en, eller værdien af
      enhver inline pad/dæmpning (f.eks. **10** for en 10 dB pad).
 
@@ -901,7 +901,7 @@ konsolværktøj, adskilt fra GUI'en.
   med per-trin PASS/FAIL, en exit-kode forskellig fra nul ved fejl, og en maskinlæsbar `report.json`.
 
 **Tips / fejlfinding:**
-- Harnesset **håndhæver input-damage-sikkerheds-gaten** (modelspecifik standard — E4406A +30 dBm, N9010A +25 dBm)
+- Harnesset **håndhæver input-damage-sikkerheds-gaten** (modelspecifik standard — +30 dBm for begge modeller)
   og holder analysatoren sweepende under dwell, så frontpanelet følger live; den ender RF-off.
 - Den afslutter med **non-zero ved fejl** — ideel som en CI-gate.
 - Brug sweep-optionerne (`--points`, `--start-hz`, `--stop-hz`, `--carrier-hz`, `--offset-hz`,

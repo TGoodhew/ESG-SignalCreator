@@ -602,8 +602,8 @@ A connected ESG (Tutorial 2) is helpful.
    connect (the app refuses an instrument that doesn't match the selected model).
 4. In the **RF-path safety** settings:
    - Turn **Armed** on — this enables the protection now that the analyzer is on the output.
-   - Set **Analyzer max safe input (dBm)** — leave the model default (**+30 dBm** E4406A / **+25 dBm**
-     N9010A; the E4406A type-N input is rated ≈ +35 dBm — confirm the N9010A against its data sheet).
+   - Set **Analyzer max safe input (dBm)** — leave the model default (**+30 dBm** for both; the N9010A's
+     +30 dBm / 1 W max safe input is per its data sheet, and the E4406A type-N input is rated ≈ +35 dBm).
    - Set **Path loss (dB)** — **0** if the analyzer is cabled directly to the ESG, or the value of any
      inline pad/attenuator (e.g. **10** for a 10 dB pad).
 
@@ -904,7 +904,7 @@ tool, separate from the GUI.
   with per-step PASS/FAIL, a non-zero exit code on failure, and a machine-readable `report.json`.
 
 **Tips / troubleshooting:**
-- The harness **enforces the input-damage safety gate** (per-model default — E4406A +30 dBm, N9010A +25 dBm)
+- The harness **enforces the input-damage safety gate** (per-model default — +30 dBm for both models)
   and keeps the analyzer sweeping during dwell so the front panel tracks live; it ends RF-off.
 - It exits **non-zero on failure** — ideal as a CI gate.
 - Use the sweep options (`--points`, `--start-hz`, `--stop-hz`, `--carrier-hz`, `--offset-hz`,
