@@ -25,9 +25,11 @@ User Guide section (e.g. "see UserGuide §5.2"). For an overview, build and inst
   notes in [UserGuide §15](UserGuide.md#15-safety-notes) before driving power into the analyzer.
 - **The pipeline is deliberate.** You **Calculate** on the PC, **Download** to the generator, then
   **Play**. Nothing reaches the DAC or RF until you say so (see UserGuide §7).
-- **When a number isn't given, read it from the app.** Defaults and exact values live in the app's
-  panels and the **results readout**; the tutorials tell you *what to look at* rather than hard-coding
-  values that may differ on your build.
+- **Concrete values are given — treat them as worked examples.** Each tutorial states exact values to
+  enter in each field so you can follow along and get the results shown. They are sensible defaults, not
+  the only valid choices; once a step works, change one value at a time to see its effect. Where your
+  build's defaults or your hardware differ, the app's panels and the **results readout** are always the
+  source of truth.
 
 > Throughout, UI elements are named exactly as they appear: toolbar **Buttons**, left-tree **Nodes**,
 > and right-dock **plot views**.
@@ -102,10 +104,11 @@ continuous-wave tone so you can read the results readout and explore the plots.
 3. Select the **Source** node in the left tree. In the personality picker choose **CW / Single
    tone** (see UserGuide §5.1).
 4. In the configuration panel set the CW parameters:
-   - **Frequency offset** from the carrier (Hz) — leave at 0 for an on-carrier tone, or enter a
-     small offset to see it move on the spectrum.
-   - **Amplitude** (dBFS) — 0 is full scale; back it off with a negative value if you prefer.
-   - **Starting phase** (degrees) — any value is fine.
+   - **Frequency offset** from the carrier (Hz) = **100 000** (100 kHz) — a small offset so the tone
+     sits visibly off-centre on the spectrum. (Use **0** for an on-carrier tone.)
+   - **Amplitude** (dBFS) = **0** (full scale). Back it off with a negative value — e.g. **−3** — if you
+     prefer headroom.
+   - **Starting phase** (degrees) = **0**.
 5. Click **Calculate** on the toolbar. Watch the **progress bar** run; the plots, **Notifications**
    and **results readout** all refresh when it finishes. No hardware is touched, so this is always
    safe (see UserGuide §7).
@@ -154,8 +157,9 @@ runtime, and the instrument's VISA resource string. You completed Tutorial 1.
    manager's discovery/Find. Connect.
 2. Confirm the status strip now shows **Online** and the connected model; the connection reads back
    `*IDN?` / `*OPT?`.
-3. Select the **Instrument settings** node (see UserGuide §4.2). Set the **carrier frequency** and
-   **amplitude**, confirm **RF/modulation** are configured as you want, and review the **ARB sample
+3. Select the **Instrument settings** node (see UserGuide §4.2). Set **carrier frequency = 1 GHz**
+   (`1000000000`) and **amplitude = −10 dBm** (a safe, low level — raise it later only if you know the
+   path is safe). Confirm **RF/modulation** are configured as you want, and review the **ARB sample
    clock** and **runtime scaling** (default scaling backs the DAC off — about 70% — for headroom).
    The panel reads values back from the instrument.
 4. Reselect the **Source** node and keep the CW personality from Tutorial 1 (or reconfigure it).
@@ -197,18 +201,19 @@ ratio, by comparing **Newman** vs **Zero** phasing in the **results readout** an
 
 **Steps:**
 1. Select **Source**, choose **Multitone** in the picker (see UserGuide §5.2).
-2. Set the **number of tones** (start with a handful, e.g. 4–8), the **tone spacing** (Hz, or leave
-   on auto), and the **phase strategy** to **Newman** (which minimizes PAPR).
+2. Set **number of tones = 8**, **tone spacing = 1 000 000 Hz** (1 MHz), and **phase strategy =
+   Newman** (which minimizes PAPR).
 3. Click **Calculate**. Note the **PAPR** value in the readout. Set one plot pane to the **CCDF**
    view and observe the curve.
 4. Change only the **phase strategy** to **Zero** (all tones phase-aligned) and **Calculate** again.
 5. Compare the new **PAPR** in the readout and the new **CCDF** curve against the Newman run.
 
 **What you should see:**
-- **Zero** phasing produces a noticeably **higher PAPR** than **Newman** — all tones add up in phase,
-  creating large peaks. The CCDF curve for Zero sits further to the right (higher crest values are
-  more probable).
-- **Newman** packs the same tones with smaller peaks — lower PAPR, CCDF curve shifted left.
+- **Zero** phasing produces a noticeably **higher PAPR** — all 8 tones add up in phase, so the peak
+  approaches **10·log₁₀(8) ≈ 9 dB** above average. The CCDF curve for Zero sits further to the right
+  (higher crest values are more probable).
+- **Newman** packs the same 8 tones with smaller peaks — typically **~5–6 dB PAPR**, CCDF curve shifted
+  left.
 - On **Spectrum**, the same set of equally-spaced tones in both cases (phasing changes peaks, not the
   tone amplitudes/positions).
 
@@ -235,11 +240,12 @@ crest factor on the **CCDF** view and the readout, and learn what clipping does.
 
 **Steps:**
 1. Select **Source**, choose **AWGN** in the picker (see UserGuide §5.5).
-2. Set the **noise bandwidth** (Hz), the **carrier-to-noise ratio (C/N)** (dB), and leave **peak
-   clipping** off for now.
+2. Set **noise bandwidth = 5 000 000 Hz** (5 MHz), **carrier-to-noise ratio (C/N) = 20 dB**, and leave
+   **peak clipping** off for now.
 3. Click **Calculate**. Set one plot pane to **CCDF** and note the **PAPR** / crest figure in the
    readout.
-4. Now enable **peak clipping** and **Calculate** again. Compare the CCDF curve and PAPR.
+4. Now enable **peak clipping** (try a **clip level of ~6 dB** above average) and **Calculate** again.
+   Compare the CCDF curve and PAPR.
 
 **What you should see:**
 - A **high crest factor** for unclipped AWGN (on the order of ~10 dB) — much higher than CW or
@@ -270,10 +276,9 @@ crest factor on the **CCDF** view and the readout, and learn what clipping does.
 1. Select **Source**, choose **Custom Digital Modulation** in the picker (see UserGuide §5.4).
 2. Set the parameters:
    - **Modulation format:** **QPSK**.
-   - **Symbol rate** (Hz).
-   - **Pulse-shaping filter:** **RRC**, with a **roll-off (alpha)** value (a moderate alpha is a good
-     start).
-   - **Payload:** a PN pattern such as **PN9** (or random).
+   - **Symbol rate = 1 000 000 Hz** (1 Msym/s).
+   - **Pulse-shaping filter:** **RRC**, **roll-off (alpha) = 0.35** (a moderate, common value).
+   - **Payload:** **PN9** (or random).
 3. Click **Calculate**.
 4. Set the three plot panes to **Constellation**, **Eye**, and **Spectrum** so you can see all three
    at once.
@@ -285,7 +290,8 @@ crest factor on the **CCDF** view and the readout, and learn what clipping does.
   affects the eye shape.
 - **Spectrum:** a shaped main lobe whose roll-off steepness follows the **alpha** — smaller alpha →
   narrower occupied bandwidth, larger alpha → wider but gentler skirts. Cross-check the **99% occupied
-  bandwidth** in the readout.
+  bandwidth** in the readout: for 1 Msym/s at α = 0.35 it lands near **~1.35 MHz** (≈ symbol rate ×
+  (1 + α)).
 
 **Tips / troubleshooting:**
 - Try other formats (BPSK, 8PSK, 16/64/256-QAM, MSK) and watch the constellation gain points.
@@ -308,8 +314,10 @@ multi-standard scenarios.
 
 **Steps:**
 1. Select **Source**, choose **Multi-Carrier** in the picker (see UserGuide §5.3).
-2. Place several carriers at the offsets you want, each with its own modulation/parameters as the
-   panel allows. (Mix, for example, a CW reference with a QPSK carrier.)
+2. Place three carriers, each with its own modulation, for example:
+   - **−5 MHz** offset — **CW** reference tone.
+   - **0 Hz** offset — **QPSK**, 1 Msym/s, RRC α = 0.35 (as in Tutorial 5).
+   - **+5 MHz** offset — **QPSK**, 1 Msym/s, RRC α = 0.35.
 3. Click **Calculate**.
 4. Inspect the **Spectrum** view (to see all carriers at their offsets) and the **CCDF** view (the
    composite often has higher PAPR than any single carrier). Note the readout PAPR and occupied
@@ -341,10 +349,12 @@ file, with optional resampling to the target sample clock.
 **Steps:**
 1. Select **Source**, choose **Import I/Q** in the picker (see UserGuide §5.6).
 2. Set the **file path** to your I/Q file (you supply it).
-3. Choose the **format** that matches your file: **CSV**, interleaved **Int16**, or **Float32**.
-4. Enter the source **sample rate (Hz)** of the captured data.
-5. Decide whether to **resample** to the target sample clock — turn it on if the source rate differs
-   from the sample clock you intend to play at.
+3. Choose the **format** that matches your file — these are file-specific, so use *your* file's values.
+   For a worked example, assume a **Float32** interleaved-I/Q capture.
+4. Enter the source **sample rate (Hz)** of the captured data — e.g. **30 720 000 Hz** (30.72 MHz, a
+   common LTE capture rate). Use the real rate of your file.
+5. Decide whether to **resample** to the target sample clock — turn it **on** when the source rate
+   (e.g. 30.72 MHz) differs from the sample clock you intend to play at (e.g. 10 MHz).
 6. Click **Calculate**.
 
 **What you should see:**
@@ -381,7 +391,7 @@ for the effect.
 1. Build and **Calculate** a clean source (e.g. the Newman multitone from Tutorial 3). Note its PAPR
    and spectrum as a baseline.
 2. Select the **Impairments** node. Enable **I/Q impairments** (its checkbox) and in its property grid
-   set a **gain imbalance** (a few dB). Leave the others off.
+   set **gain imbalance = 3 dB** (large enough to see the image clearly). Leave the others off.
 3. Click **Calculate** again (impairments are applied during Calculate, after the source produces its
    baseband I/Q — see UserGuide §6).
 4. Compare the **Spectrum** to the baseline: the gain imbalance creates an **image tone** (a mirrored
@@ -586,10 +596,10 @@ A connected ESG (Tutorial 2) is helpful.
    connect (the app refuses an instrument that doesn't match the selected model).
 4. In the **RF-path safety** settings:
    - Turn **Armed** on — this enables the protection now that the analyzer is on the output.
-   - Set **Analyzer max safe input (dBm)** — the damage threshold, seeded from the model (E4406A
-     type-N input ≈ +35 dBm, default gate +30 dBm; N9010A a conservative +25 dBm — confirm against
-     its data sheet).
-   - Set **Path loss (dB)** — any inline pad/attenuator between the ESG and the analyzer.
+   - Set **Analyzer max safe input (dBm)** — leave the model default (**+30 dBm** E4406A / **+25 dBm**
+     N9010A; the E4406A type-N input is rated ≈ +35 dBm — confirm the N9010A against its data sheet).
+   - Set **Path loss (dB)** — **0** if the analyzer is cabled directly to the ESG, or the value of any
+     inline pad/attenuator (e.g. **10** for a 10 dB pad).
 
 **What you should see:**
 - The analyzer connects and reports as the selected model; the safety settings show **Armed** with
