@@ -69,6 +69,20 @@ namespace EsgSignalCreator.Tests.Visa
         }
 
         [Fact]
+        public void MeasurementTrace_receives_command_and_raw_response()
+        {
+            var io = new FakeSrqVsa { WaitsBeforeReady = 1, ScalarResponse = "1,2,3,4,5,6,7,8,9,10" };
+            var vsa = new VsaInstrument(io);
+            string cmd = null, resp = null;
+            vsa.MeasurementTrace = (c, r) => { cmd = c; resp = r; };
+
+            vsa.QueryMeasurement(":READ:PSTatistic2?");
+
+            Assert.Equal(":READ:PSTatistic2?", cmd);
+            Assert.Equal("1,2,3,4,5,6,7,8,9,10", resp); // 10 values -> scalars (vs a 5001-point trace)
+        }
+
+        [Fact]
         public void E4406a_read_uses_a_plain_blocking_query_no_srq()
         {
             var io = new FakeSrqVsa { IdnResponse = "Agilent Technologies, E4406A, US1, A.05.00" };

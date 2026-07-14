@@ -162,8 +162,22 @@ namespace EsgSignalCreator.Visa
         private const int SrqPerWaitMs = 2000;
         private const int CompletionOverallMs = 120000;
 
+        /// <summary>
+        /// Optional diagnostic hook (issue #134): invoked with (command, rawResponse) for every
+        /// measurement read, so a caller can surface the exact analyzer traffic — e.g. to see whether
+        /// <c>:READ:PSTatistic?</c> returns 10 scalars or a long trace. Null by default (no overhead).
+        /// </summary>
+        public Action<string, string> MeasurementTrace { get; set; }
+
         /// <summary>Read a measurement query result, tolerating an arbitrary-length auto-alignment.</summary>
         public string QueryMeasurement(string command)
+        {
+            string response = QueryMeasurementCore(command);
+            MeasurementTrace?.Invoke(command, response);
+            return response;
+        }
+
+        private string QueryMeasurementCore(string command)
         {
             if (Dialect.UsesServiceRequestCompletion && _io is ISupportsServiceRequest srq)
                 return QueryViaServiceRequest(srq, command);
