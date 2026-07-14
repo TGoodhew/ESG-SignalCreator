@@ -6,10 +6,10 @@ namespace EsgSignalCreator.Tests.Verify
 {
     public class PowerSafetyGateTests
     {
-        // #109: the input-damage default is per model (the N9010A default is a lower, conservative backstop).
+        // #109/#143: the input-damage default is per model; both are data-sheet confirmed at +30 dBm.
         [Theory]
         [InlineData(VsaModel.E4406A, 30.0, false)]
-        [InlineData(VsaModel.N9010A, 25.0, true)]
+        [InlineData(VsaModel.N9010A, 30.0, false)] // +30 dBm (1 W) per N9010A EXA data sheet 5989-6529EN
         public void Input_limit_default_is_per_model(VsaModel model, double expected, bool conservative)
         {
             Assert.Equal(expected, AnalyzerInputLimits.DefaultMaxSafeInputDbm(model), 9);
@@ -19,7 +19,7 @@ namespace EsgSignalCreator.Tests.Verify
         [Fact]
         public void Gate_enforces_the_n9010a_limit()
         {
-            // N9010A conservative limit 25 dBm, direct cable: an armed ESG at +30 dBm overdrives it.
+            // N9010A limit +30 dBm, direct cable: an armed ESG at +35 dBm overdrives it.
             var cfg = new RfPathSafety
             {
                 Armed = true,
@@ -27,11 +27,11 @@ namespace EsgSignalCreator.Tests.Verify
                 PathLossDb = 0.0
             };
 
-            Assert.False(PowerSafetyGate.IsSafe(30.0, cfg, out _));
-            Assert.Throws<RfSafetyException>(() => PowerSafetyGate.Guard(30.0, cfg));
-            // 10 dB pad brings +30 dBm to +20 dBm at the input -> under the 25 dBm limit -> safe.
+            Assert.False(PowerSafetyGate.IsSafe(35.0, cfg, out _));
+            Assert.Throws<RfSafetyException>(() => PowerSafetyGate.Guard(35.0, cfg));
+            // 10 dB pad brings +35 dBm to +25 dBm at the input -> under the 30 dBm limit -> safe.
             cfg.PathLossDb = 10.0;
-            Assert.True(PowerSafetyGate.IsSafe(30.0, cfg, out _));
+            Assert.True(PowerSafetyGate.IsSafe(35.0, cfg, out _));
         }
 
         [Fact]

@@ -18,6 +18,9 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
   - Result: the full install-verify battery passes 4/4 on the N9010A (CW/AM/FM/I-Q, channel power + PAPR),
     and the automated screen capture works (`:MMEMory:STORe:SCReen` + `:MMEMory:DATA?`) — real captures
     are embedded in the Manual Verification doc.
+- **N9010A max safe input confirmed at +30 dBm** (1 W average total power, N9010A EXA data sheet
+  5989-6529EN). The safety-gate default was a conservative +25 dBm guess; it now matches the data-sheet
+  rating (same +30 dBm as the E4406A) and the UI no longer flags it as unconfirmed.
 
 ### Added
 - **VSA screen-capture tool** (#143): capture the analyzer's display over VISA to an image file, for
@@ -113,8 +116,8 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
     connect dialog's title, interface defaults (GPIB@17 vs LAN/USB), resource hint, and identity
     guard follow the selection. The choice is persisted between sessions (#108).
   - **Per-model input-damage safety limit**: the RF-path safety gate is seeded with a max-safe-input
-    default chosen from the selected model — E4406A +30 dBm; N9010A a conservative +25 dBm backstop
-    (unconfirmed by the supplied manuals, flagged in the UI to confirm against the data sheet) (#109).
+    default chosen from the selected model — E4406A +30 dBm; N9010A +30 dBm (1 W), per the N9010A EXA
+    data sheet (5989-6529EN), confirmed on hardware (#109).
   - **N9010A Spectrum & Waveform measurements**: the Spectrum marker workflow (span + peak-search
     markers) is identical SCPI across both analyzers and now works on the N9010A via the mode routing;
     the Waveform measurement reads peak/mean/peak-to-mean from model-specific scalar positions (the

@@ -77,7 +77,7 @@ namespace EsgSignalCreator.HilHarness
             VsaModel vsaModel = ParseVsaModel(Opt(opts, "--vsa-model"));
             double verifyPowerDbm = Num(opts, "--verify-power-dbm", -10.0);
             double offsetHz = Num(opts, "--offset-hz", 1e6);
-            // Default the input-damage limit from the target analyzer (E4406A +30 dBm, N9010A +25 dBm).
+            // Default the input-damage limit from the target analyzer (E4406A +30 dBm, N9010A +30 dBm).
             double maxInputDbm = Num(opts, "--max-input-dbm", AnalyzerInputLimits.DefaultMaxSafeInputDbm(vsaModel));
             double pathLossDb = Num(opts, "--path-loss-db", 0.0);
             double dwellSeconds = Num(opts, "--dwell-seconds", 0.0);

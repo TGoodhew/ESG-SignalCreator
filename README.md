@@ -152,8 +152,8 @@ ESG-SignalCreator.HilHarness.exe --capture-screen docs/images/vsa/cw-result.png 
 ESG-only mode checks `*IDN?`/`*OPT?`, downloads a CW to `WFM1`, arms the ARB, and reads
 back frequency/amplitude. The **closed-loop battery** (`--all`) connects the analyzer selected by
 `--vsa-model` (E4406A default, or N9010A; refusing a mismatched model), enforces the **input-damage
-safety gate** (per-model default — E4406A +30 dBm below its +35 dBm rating; N9010A a conservative
-+25 dBm), and for each signal type — **CW, multitone, AWGN, custom-mod (QAM), multi-carrier,
+safety gate** (per-model default — E4406A +30 dBm below its +35 dBm rating; N9010A +30 dBm / 1 W per
+its data sheet), and for each signal type — **CW, multitone, AWGN, custom-mod (QAM), multi-carrier,
 I/Q-impairment, import-I/Q** — drives the ESG at a safe level across a frequency sweep and
 verifies on the analyzer:
 

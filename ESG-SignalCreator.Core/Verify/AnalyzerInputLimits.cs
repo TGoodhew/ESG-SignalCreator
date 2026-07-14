@@ -17,13 +17,13 @@ namespace EsgSignalCreator.Verify
         public const double E4406AMaxSafeInputDbm = 30.0;
 
         /// <summary>
-        /// N9010A (EXA) default: a <b>conservative backstop</b>. The X-Series RF input maximum is
-        /// commonly cited around +30 dBm average, so this is a 5 dB backstop. This value is NOT
-        /// confirmed by the supplied X-Series manuals (IQ Analyzer / Programmers / Messages / SA
-        /// guides do not state a damage limit) — <b>confirm against the unit's data sheet</b> and
-        /// adjust. Erring low protects the front end until then.
+        /// N9010A (EXA) maximum safe input: <b>+30 dBm (1 W) average total power</b> (with or without
+        /// preamp), per the N9010A EXA X-Series data sheet (5989-6529EN, "Amplitude Accuracy and Range
+        /// Specifications → Maximum safe input level"). Data-sheet confirmed on hardware; the gate blocks
+        /// anything exceeding this, so it permits up to the rated max. (Peak pulse power tolerates more —
+        /// +50 dBm for &lt;10 µs / &lt;1 % duty with ≥30 dB attenuation — but the gate uses the average limit.)
         /// </summary>
-        public const double N9010AMaxSafeInputDbm = 25.0;
+        public const double N9010AMaxSafeInputDbm = 30.0;
 
         /// <summary>The default maximum safe input (dBm) to seed the safety gate for a given model.</summary>
         public static double DefaultMaxSafeInputDbm(VsaModel model)
@@ -37,7 +37,9 @@ namespace EsgSignalCreator.Verify
         }
 
         /// <summary>True when the default for <paramref name="model"/> is an unconfirmed, conservative
-        /// value the user should verify against the instrument's specifications.</summary>
-        public static bool IsConservativeDefault(VsaModel model) => model == VsaModel.N9010A;
+        /// value the user should verify against the instrument's specifications. Both supported models are
+        /// now data-sheet confirmed (E4406A and N9010A both +30 dBm), so this is false; kept as an
+        /// extension point for any future model whose damage limit isn't yet confirmed.</summary>
+        public static bool IsConservativeDefault(VsaModel model) => false;
     }
 }

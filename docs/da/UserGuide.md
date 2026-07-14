@@ -168,7 +168,7 @@ Med en **VSA** på generatorens RF-udgang bliver appen til et closed-loop *gener
 **Connect VSA…** åbner VSA-forbindelsesformularen, som inkluderer **RF-vejens sikkerhedsindstillinger**:
 
 - **Armed** — slå denne til, når analysatoren fysisk er på ESG-udgangen og skal beskyttes.
-- **Analyzer max safe input (dBm)** — skadetærsklen, sået fra den valgte model (E4406A type-N-indgang ≈ +35 dBm, standardgate +30 dBm; N9010A en konservativ +25 dBm-backstop, indtil databladet er bekræftet). Tilsidesæt den for din enhed.
+- **Analyzer max safe input (dBm)** — skadetærsklen, sået fra den valgte model (E4406A type-N-indgang ≈ +35 dBm, standardgate +30 dBm; N9010A +30 dBm / 1 W maks. sikre input iht. dens datablad, 5989-6529EN). Tilsidesæt den for din enhed.
 - **Path loss (dB)** — enhver inline-pad/-dæmper mellem ESG'en og analysatoren.
 
 Når armeret, blokerer **power-sikkerhedsgaten** enhver kommanderet ESG-effekt, der ville lægge mere end det sikre niveau på analysatorindgangen (med hensyntagen til path loss). Denne gate beskytter både det manuelle UI og assistenten.

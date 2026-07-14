@@ -62,8 +62,9 @@ this:
 | **RBW / VBW** | **Auto** | **Auto** | Auto-couple is fine for these checks. |
 
 > **Damage limits.** Seed the input-damage gate from the model: **E4406A** type-N input ≈ +35 dBm
-> (gate defaults to +30 dBm); **N9010A** a conservative **+25 dBm** (confirm against its data sheet).
-> At −10 dBm commanded you are far below either, but always arm the gate anyway (Step 2).
+> (gate defaults to +30 dBm); **N9010A** **+30 dBm (1 W)** max safe average input (per the N9010A EXA
+> data sheet 5989-6529EN). At −10 dBm commanded you are far below either, but always arm the gate
+> anyway (Step 2).
 
 ---
 

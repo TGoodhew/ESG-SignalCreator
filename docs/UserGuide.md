@@ -232,8 +232,8 @@ N9010A's max safe input against its data sheet before driving power (see below).
 
 - **Armed** — turn this on when the analyzer is physically on the ESG output and must be protected.
 - **Analyzer max safe input (dBm)** — the damage threshold, seeded from the selected model (E4406A
-  type-N input ≈ +35 dBm, default gate +30 dBm; N9010A a conservative +25 dBm backstop pending
-  data-sheet confirmation). Override it for your unit.
+  type-N input ≈ +35 dBm, default gate +30 dBm; N9010A +30 dBm / 1 W max safe input per its data sheet,
+  5989-6529EN). Override it for your unit.
 - **Path loss (dB)** — any inline pad/attenuator between the ESG and the analyzer.
 
 When armed, the **power safety gate** blocks any commanded ESG power that would put more than the safe

@@ -62,8 +62,9 @@ sådan her:
 | **RBW / VBW** | **Auto** | **Auto** | Auto-kobling er fint til disse tjek. |
 
 > **Skadesgrænser.** Sæt porten mod indgangsskade ud fra modellen: **E4406A** type-N-indgang ≈ +35 dBm 
-> (porten er som standard +30 dBm); **N9010A** et konservativt **+25 dBm** (bekræft mod dens datablad). 
-> Ved −10 dBm kommanderet er du langt under begge, men bevæbn altid porten alligevel (Trin 2).
+> (porten er som standard +30 dBm); **N9010A** **+30 dBm (1 W)** maks. sikkert gennemsnitligt input (iht.
+> N9010A EXA-databladet 5989-6529EN). Ved −10 dBm kommanderet er du langt under begge, men bevæbn altid
+> porten alligevel (Trin 2).
 
 ---
 
