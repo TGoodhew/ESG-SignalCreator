@@ -3,6 +3,12 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this item's role as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> ✅ **Implementation decision (no code):** Same decision as the 5-pack family — ESG-SignalCreator plays
+> **plain, unlicensed ARB waveforms** and does **not** model the instrument-side waveform-licensing
+> scheme (fixed per-instrument license slots). Generic ARB playback needs only the Option 601/602
+> baseband hardware, not a per-waveform license (`docs/SignalStudio-Rebuild-Requirements.md` §2). No
+> feature work is required; recorded as a deliberate decision. (Verification epic #157.)
+
 ## 1. Product identity
 - **Model / option number:** E4438C-250, -251, -252, -253, -254, -255, -256, -257, -258, -259 (ten distinct option numbers; the equivalent N5182A/N5162A MXG options carry the same 250–259 numbering).
 - **Product name:** Waveform License 50-Pack (Signal Studio waveform licensing, 50-pack family).
