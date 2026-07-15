@@ -119,6 +119,9 @@ Indlæs I/Q fra en fil — appens svar på Signal Studio Toolkit (N7622A) "medbr
 ### 5.8 Multitone Distortion
 Et tæt multitone-/noise-power-ratio-(NPR)-stimulus til linearitetstest af forstærkere og konvertere (en v1 af Signal Studio for Multitone Distortion, N7621B). Parametre: **antal toner** (2 op til 4097), **toneafstand** (Hz), **centeroffset** (Hz), en **fase-preset** — **Parabolic** (Newman, lav PAPR), **Random** eller **Constant** (justeret, høj PAPR) — og en valgfri **NPR-notch** (aktivér, **bredde** Hz, **offset** Hz fra båndcentrum), der rydder et bånd af toner, så du kan måle intermodulation/støj, der falder ned i notchen. Sammensat båndbredde ≈ antal toner × afstand; live-PAPR rapporteres. Spektrumanalysator-assisteret prædistortionskorrektion er endnu ikke implementeret.
 
+### 5.9 Jitter Injection
+Et jittret clock-/tonesignal til jitter-tolerancetest af modtagere (en v1 af Signal Studio for Jitter Injection, E4438C-SP1). Jitter påføres som timing-(fase)-modulation af en sinusformet clock, så envelopen forbliver konstant. Parametre: **clock-rate** (Hz, signalet der jittres); **periodisk jitter**-form (**Sinusoidal / Square / Triangle / SawTooth / Exponential** eller None), **rate** (Hz) og **amplitude** (UI peak-to-peak); og valgfri **random** gaussisk jitter (**RMS** i UI + **seed**). Periodisk + random kombineres til et **composite**-signal, og en given seed reproducerer en identisk sekvens (digital reproducerbarhed). Amplituder angives i unit intervals (1 UI = én clock-periode). Foruddefinerede standardmasker (fx ITU-T G.8251) og automatiske SJ-frekvenssweep er endnu ikke implementeret.
+
 ---
 
 ## 6. Impairments

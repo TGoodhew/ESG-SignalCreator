@@ -22,6 +22,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureMultitoneDistortionTool(),
             new ConfigureCustomModulationTool(),
             new ConfigurePulseTool(),
+            new ConfigureJitterTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -54,7 +55,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -148,6 +149,27 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("pulse", args), "Configured pulse."));
+        }
+
+        private sealed class ConfigureJitterTool : ConfigureTool
+        {
+            public override string Name => "configure_jitter";
+            public override string Description =>
+                "Configure the Jitter Injection source: underlying clock rate (Hz); periodic jitter shape " +
+                "(None/Sinusoidal/Square/Triangle/SawTooth/Exponential), rate (Hz) and amplitude (UI pk-pk); " +
+                "and optional random (Gaussian) jitter (enable, RMS in UI, seed). Composite = periodic + random.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("clock_rate_hz", Schema.Number("underlying clock/tone rate, Hz"), required: true),
+                Schema.P("periodic_shape", Schema.Str("periodic jitter shape",
+                    new[] { "None", "Sinusoidal", "Square", "Triangle", "SawTooth", "Exponential" })),
+                Schema.P("periodic_rate_hz", Schema.Number("periodic jitter rate, Hz")),
+                Schema.P("periodic_ui_pp", Schema.Number("periodic jitter amplitude, UI peak-to-peak")),
+                Schema.P("random_enabled", Schema.Bool("add Gaussian random jitter")),
+                Schema.P("random_ui_rms", Schema.Number("random jitter std dev (RMS), UI")),
+                Schema.P("random_seed", Schema.Integer("random jitter seed")));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
         }
 
         private sealed class ConfigureAwgnTool : ConfigureTool
