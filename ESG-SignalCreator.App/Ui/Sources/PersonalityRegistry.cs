@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using EsgSignalCreator.Personalities;
 using EsgSignalCreator.Personalities.Awgn;
+using EsgSignalCreator.Personalities.Bluetooth;
 using EsgSignalCreator.Personalities.CustomIq;
 using EsgSignalCreator.Personalities.CustomMod;
 using EsgSignalCreator.Personalities.Cw;
@@ -47,6 +48,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("pulse", "Pulse Building", () => new PulsePersonality()),
             new PersonalityDescriptor("jitter", "Jitter Injection", () => new JitterPersonality()),
             new PersonalityDescriptor("gsm-edge", "GSM/EDGE (GMSK)", () => new GsmEdgePersonality()),
+            new PersonalityDescriptor("bluetooth", "Bluetooth (GFSK)", () => new BluetoothPersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };

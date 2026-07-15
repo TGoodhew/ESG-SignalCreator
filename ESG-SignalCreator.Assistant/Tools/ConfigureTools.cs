@@ -24,6 +24,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigurePulseTool(),
             new ConfigureJitterTool(),
             new ConfigureGsmEdgeTool(),
+            new ConfigureBluetoothTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -56,7 +57,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -171,6 +172,24 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureBluetoothTool : ConfigureTool
+        {
+            public override string Name => "configure_bluetooth";
+            public override string Description =>
+                "Configure the Bluetooth (GFSK) source: symbol rate (Hz, BR/LE-1M = 1M, LE-2M = 2M), samples " +
+                "per symbol, symbol count, modulation index (BR ~0.32, LE ~0.5), Gaussian BT (0.5), and data source.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("symbol_rate_hz", Schema.Number("symbol rate, Hz")),
+                Schema.P("samples_per_symbol", Schema.Integer("oversampling factor")),
+                Schema.P("symbol_count", Schema.Integer("number of symbols")),
+                Schema.P("modulation_index", Schema.Number("GFSK modulation index")),
+                Schema.P("bt", Schema.Number("Gaussian bandwidth-time product")),
+                Schema.P("data", Schema.Str("payload data source", new[] { "PN9", "PN15", "PN23", "AllZeros", "AllOnes" })));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("bluetooth", args), "Configured Bluetooth."));
         }
 
         private sealed class ConfigureGsmEdgeTool : ConfigureTool
