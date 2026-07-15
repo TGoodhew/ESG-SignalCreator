@@ -89,6 +89,78 @@ namespace EsgSignalCreator.Tests.Io
             finally { File.Delete(path); }
         }
 
+        // --- Agilent big-endian int16 -------------------------------------------------
+
+        [Fact]
+        public void ReadsAgilentInt16BigEndianByExtension()
+        {
+            string path = TempPath(".agt");
+            try
+            {
+                short[] vals = { 32767, 0, -32768, 0 }; // I,Q,I,Q
+                var bytes = new byte[vals.Length * 2];
+                for (int k = 0; k < vals.Length; k++)
+                {
+                    ushort u = unchecked((ushort)vals[k]);
+                    bytes[2 * k] = (byte)(u >> 8);       // big-endian: high byte first
+                    bytes[2 * k + 1] = (byte)(u & 0xFF);
+                }
+                File.WriteAllBytes(path, bytes);
+
+                WaveformModel m = IqFileReader.Read(path, Rate);
+
+                Assert.Equal(2, m.Length);
+                Assert.Equal(0.99997f, m.I[0], 4); // 32767/32768
+                Assert.Equal(-1.0f, m.I[1], 6);    // -32768/32768
+            }
+            finally { File.Delete(path); }
+        }
+
+        [Fact]
+        public void ExplicitAgilentFormatForcesBigEndianRegardlessOfExtension()
+        {
+            // Same bytes read little-endian (.bin) vs forced big-endian must differ.
+            string path = TempPath(".bin");
+            try
+            {
+                // 0x0102 big-endian = 258; little-endian = 0x0201 = 513.
+                byte[] bytes = { 0x01, 0x02, 0x00, 0x00 };
+                File.WriteAllBytes(path, bytes);
+
+                WaveformModel le = IqFileReader.Read(path, Rate); // auto => RawInt16 (little-endian)
+                WaveformModel be = IqFileReader.Read(path, Rate, false, 1.0, IqFileReader.IqFormat.AgilentInt16Be);
+
+                Assert.Equal(513f / 32768f, le.I[0], 6);
+                Assert.Equal(258f / 32768f, be.I[0], 6);
+            }
+            finally { File.Delete(path); }
+        }
+
+        [Fact]
+        public void ImportIqPersonalityHonoursExplicitAgilentFormat()
+        {
+            string path = TempPath(".dat");
+            try
+            {
+                byte[] bytes = { 0x40, 0x00, 0xC0, 0x00 }; // BE: I=0x4000=16384, Q=0xC000=-16384
+                File.WriteAllBytes(path, bytes);
+
+                var p = new ImportIqPersonality();
+                p.LoadConfig(new ImportIqConfig
+                {
+                    Path = path,
+                    SampleRateHz = Rate,
+                    Format = IqFileReader.IqFormat.AgilentInt16Be
+                });
+                WaveformModel m = p.Calculate(null);
+
+                Assert.Equal(1, m.Length);
+                Assert.Equal(0.5f, m.I[0], 4);
+                Assert.Equal(-0.5f, m.Q[0], 4);
+            }
+            finally { File.Delete(path); }
+        }
+
         // --- WAV ----------------------------------------------------------------------
 
         [Fact]

@@ -3,6 +3,17 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟢 **Implementation status (v1):** The app's existing **Import I/Q** personality is the Toolkit role
+> (arbitrary user I/Q → translate → download → play). This iteration adds the **Agilent/Keysight
+> big-endian 16-bit** interleaved format (`.agt`, the ESG's native ARB byte order) and a user-selectable
+> **format override** on Import I/Q. Coverage: **R-1** (partial — ASCII/CSV yes; MATLAB `.mat` deferred),
+> **R-2** (16-bit yes via the new big-endian reader; 14-bit deferred), **R-3/R-4/R-8** (translate to
+> native ARB, download & play, playback sample rate — existing), **R-5** (RF/amplitude/ALC via the
+> instrument-settings panel), **R-6** (I/Q impairments via the Impairments view), and **R-9** (the
+> Calculate → Download → Play workflow). **Deferred:** MATLAB `.mat` (MAT File 5) and 14-bit imports,
+> per-segment marker/trigger authoring (**R-7**), and a dedicated automation API (**R-10**; the Assistant
+> `configure_import_iq` tool covers scripted config). Hardware verification is tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** N7622A
 - **Product name:** Signal Studio Toolkit (custom I/Q waveform download utility)
