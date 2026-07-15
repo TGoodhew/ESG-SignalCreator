@@ -241,6 +241,14 @@ representative **CDM** signal (QPSK spread by an OVSF code, scrambled, RRC-shape
 S-DMB waveform.** Chip rate, spreading, FEC, and framing are placeholders; treat the output as "a QPSK
 spread-spectrum signal." Parameters mirror the other CDMA-family personalities.
 
+### 5.17 3GPP LTE FDD
+A downlink OFDM signal with LTE numerology (a v1 of Signal Studio for 3GPP LTE, N7624B). Uses a **15 kHz**
+subcarrier spacing and the standard **FFT size / occupied-subcarrier count** for the selected
+**channel bandwidth** (1.4 / 3 / 5 / 10 / 15 / 20 MHz → 128…2048-point FFT, RB×12 subcarriers), with a
+normal cyclic prefix. Parameters: **bandwidth**, **symbol count**, and subcarrier **modulation**
+(QPSK / 16QAM / 64QAM / 256QAM). Built on the shared OFDM engine. Representative signal — no PSS/SSS,
+reference signals, PBCH/PDCCH/PDSCH mapping, resource-block scheduling, or 10 ms frame structure.
+
 ---
 
 ## 6. Impairments

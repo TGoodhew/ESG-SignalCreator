@@ -143,6 +143,9 @@ Et enkeltkode TD-SCDMA-signal (en v1 af Signal Studio for TD-SCDMA, N7612B) ved 
 ### 5.16 S-DMB (CDM, tilnærmet)
 Et **tilnærmet** Satellite-DMB-stimulus (en v1 af Signal Studio for S-DMB, E4438C-407). ⚠️ S-DMB-luftgrænsefladen (System E) kunne ikke bekræftes fra primær litteratur, så dette genererer et repræsentativt **CDM**-signal (QPSK spredt med en OVSF-kode, scramblet, RRC-formet) — **ikke en verificeret S-DMB-bølgeform.** Chip-rate, spredning, FEC og framing er pladsholdere; betragt outputtet som "et QPSK spread-spectrum-signal." Parametre svarer til de øvrige CDMA-familie-personligheder.
 
+### 5.17 3GPP LTE FDD
+Et downlink-OFDM-signal med LTE-numerologi (en v1 af Signal Studio for 3GPP LTE, N7624B). Bruger **15 kHz** subcarrier-afstand og den standardiserede **FFT-størrelse / antal brugte subcarriers** for den valgte **kanalbåndbredde** (1,4 / 3 / 5 / 10 / 15 / 20 MHz → 128…2048-punkts FFT, RB×12 subcarriers) med et normalt cyklisk præfiks. Parametre: **båndbredde**, **antal symboler** og subcarrier-**modulation** (QPSK / 16QAM / 64QAM / 256QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen PSS/SSS, referencesignaler, PBCH/PDCCH/PDSCH-mapping, resource-block-scheduling eller 10 ms-rammestruktur.
+
 ---
 
 ## 6. Impairments
