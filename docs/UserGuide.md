@@ -164,6 +164,15 @@ Load I/Q from a file. Parameters: **file path** (you supply it), **format** (CSV
 Float32), source **sample rate** (Hz), and whether to **resample** to the target sample clock. Lets you
 replay externally-captured or externally-generated signals.
 
+### 5.8 Multitone Distortion
+A dense multitone / noise-power-ratio (NPR) stimulus for amplifier and converter linearity testing (a
+v1 of Signal Studio for Multitone Distortion, N7621B). Parameters: **tone count** (2 up to 4097), **tone
+spacing** (Hz), **centre offset** (Hz), a **phase preset** — **Parabolic** (Newman, low PAPR), **Random**,
+or **Constant** (aligned, high PAPR) — and an optional **NPR notch** (enable, **width** Hz, **offset** Hz
+from band centre) that clears a band of tones so you can measure intermodulation/noise falling into the
+notch. Composite bandwidth ≈ tone count × spacing; live PAPR is reported. Spectrum-analyzer-assisted
+pre-distortion correction is not yet implemented.
+
 ---
 
 ## 6. Impairments

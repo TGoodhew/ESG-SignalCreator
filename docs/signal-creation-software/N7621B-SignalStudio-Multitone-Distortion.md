@@ -3,6 +3,16 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟢 **Implementation status (v1):** A **Multitone Distortion** personality now ships in the app
+> (`Core/Personalities/MultitoneDistortion/`). It generates 2–4097 equally-spaced tones with a
+> configurable spacing/centre, per-tone phase preset (random / parabolic / constant), and an optional
+> cleared **NPR notch** (width + offset) — covering **R-1**, **R-2**, **R-3**, **R-4/R-5** (phase-preset
+> PAPR control; full per-tone magnitude/phase tables deferred), **R-6** (notch geometry; the >60 dBc
+> depth / ±0.5 dB flatness are hardware-verification targets), **R-8** (CCDF/spectrum plots), and
+> **R-9** (shared ARB download). **Deferred:** spectrum-analyzer-assisted pre-distortion correction
+> (**R-7**) and the COM/.NET automation API (**R-10**, though the Assistant `configure_multitone_distortion`
+> tool provides scripted config). Hardware verification is tracked in the verification epic.
+
 ## 1. Product identity
 - **Model / option number:** N7621B (earlier revision: N7621A)
 - **Product name:** Signal Studio for Multitone Distortion (now branded PathWave Signal Generation for Multitone Distortion)

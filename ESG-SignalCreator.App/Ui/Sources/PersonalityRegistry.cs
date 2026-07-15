@@ -7,6 +7,7 @@ using EsgSignalCreator.Personalities.CustomMod;
 using EsgSignalCreator.Personalities.Cw;
 using EsgSignalCreator.Personalities.MultiCarrier;
 using EsgSignalCreator.Personalities.Multitone;
+using EsgSignalCreator.Personalities.MultitoneDistortion;
 using EsgSignalCreator.Personalities.Pulse;
 
 namespace EsgSignalCreator.Ui.Sources
@@ -38,6 +39,7 @@ namespace EsgSignalCreator.Ui.Sources
         {
             new PersonalityDescriptor("cw", "CW / Single tone", () => new CwPersonality()),
             new PersonalityDescriptor("multitone", "Multitone", () => new MultitonePersonality()),
+            new PersonalityDescriptor("multitone-distortion", "Multitone Distortion", () => new MultitoneDistortionPersonality()),
             new PersonalityDescriptor("multi-carrier", "Multi-Carrier", () => new MultiCarrierPersonality()),
             new PersonalityDescriptor("custom-mod", "Custom Digital Modulation", () => new CustomModPersonality()),
             new PersonalityDescriptor("pulse", "Pulse Building", () => new PulsePersonality()),

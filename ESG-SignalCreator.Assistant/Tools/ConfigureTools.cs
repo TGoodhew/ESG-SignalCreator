@@ -19,6 +19,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new SetSourcePersonalityTool(),
             new ConfigureCwTool(),
             new ConfigureMultitoneTool(),
+            new ConfigureMultitoneDistortionTool(),
             new ConfigureCustomModulationTool(),
             new ConfigurePulseTool(),
             new ConfigureAwgnTool(),
@@ -53,7 +54,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multi-Carrier", "CustomMod", "Pulse", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -91,6 +92,26 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("multitone", args), "Configured multitone."));
+        }
+
+        private sealed class ConfigureMultitoneDistortionTool : ConfigureTool
+        {
+            public override string Name => "configure_multitone_distortion";
+            public override string Description =>
+                "Configure the Multitone Distortion (IMD/NPR) source: number of tones (2..4097), tone spacing " +
+                "(Hz), centre offset (Hz), phase preset (Parabolic minimizes PAPR; Random; Constant is aligned " +
+                "and high PAPR), and an optional NPR notch (enable, width Hz, offset Hz from band centre).";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("tone_count", Schema.Integer("number of tones (2..4097)"), required: true),
+                Schema.P("tone_spacing_hz", Schema.Number("tone spacing, Hz")),
+                Schema.P("center_offset_hz", Schema.Number("comb centre offset from baseband, Hz")),
+                Schema.P("phase", Schema.Str("phase preset", new[] { "Parabolic", "Random", "Constant" })),
+                Schema.P("notch_enabled", Schema.Bool("clear an NPR notch")),
+                Schema.P("notch_width_hz", Schema.Number("NPR notch width, Hz")),
+                Schema.P("notch_offset_hz", Schema.Number("NPR notch offset from comb centre, Hz")));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("multitone_distortion", args), "Configured multitone distortion."));
         }
 
         private sealed class ConfigureCustomModulationTool : ConfigureTool
