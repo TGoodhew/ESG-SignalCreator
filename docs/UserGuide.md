@@ -204,6 +204,15 @@ Rate / LE modulation — Gaussian-filtered FSK (BT 0.5) integrated to continuous
 the CPM engine with GMSK (GMSK is GFSK at index 0.5). EDR (π/4-DQPSK / 8DPSK), the LE coded PHY, packet
 framing, and hopping are not yet implemented.
 
+### 5.12 3GPP W-CDMA FDD
+A single-code W-CDMA downlink-style signal (a v1 of Signal Studio for 3GPP W-CDMA FDD, N7600B). Data
+symbols are spread by an **OVSF** (Walsh) code, complex-**scrambled** by a PN sequence, and
+root-raised-cosine shaped (**β** = 0.22) at the **3.84 Mcps** chip rate. Parameters: **chip rate**,
+**samples per chip**, **symbol count**, **spreading factor** (power of two) and **OVSF index**,
+**modulation** (QPSK…), **RRC β**, and **scramble** (enable + seed). Sample rate = chip rate × samples/
+chip. This is a representative single-channel signal — the multi-code downlink (CPICH/P-CCPCH/SCH),
+slot/frame structure, TFCI, transmit diversity, and HSPA channels are not yet implemented.
+
 ---
 
 ## 6. Impairments
