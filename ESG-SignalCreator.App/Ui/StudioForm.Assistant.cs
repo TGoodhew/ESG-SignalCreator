@@ -592,6 +592,7 @@ namespace EsgSignalCreator.Ui
                     case "custom_modulation": case "custom-mod": case "custommod": return "custom-mod";
                     case "pulse": return "pulse";
                     case "jitter": return "jitter";
+                    case "gsm_edge": case "gsm-edge": return "gsm-edge";
                     case "awgn": return "awgn";
                     case "import_iq": case "import-iq": return "import-iq";
                     default: return area;

@@ -122,6 +122,9 @@ Et tæt multitone-/noise-power-ratio-(NPR)-stimulus til linearitetstest af forst
 ### 5.9 Jitter Injection
 Et jittret clock-/tonesignal til jitter-tolerancetest af modtagere (en v1 af Signal Studio for Jitter Injection, E4438C-SP1). Jitter påføres som timing-(fase)-modulation af en sinusformet clock, så envelopen forbliver konstant. Parametre: **clock-rate** (Hz, signalet der jittres); **periodisk jitter**-form (**Sinusoidal / Square / Triangle / SawTooth / Exponential** eller None), **rate** (Hz) og **amplitude** (UI peak-to-peak); og valgfri **random** gaussisk jitter (**RMS** i UI + **seed**). Periodisk + random kombineres til et **composite**-signal, og en given seed reproducerer en identisk sekvens (digital reproducerbarhed). Amplituder angives i unit intervals (1 UI = én clock-periode). Foruddefinerede standardmasker (fx ITU-T G.8251) og automatiske SJ-frekvenssweep er endnu ikke implementeret.
 
+### 5.10 GSM/EDGE (GMSK)
+En GMSK-moduleret GSM-familiebærebølge (en v1 af Signal Studio for GSM/EDGE, N7602B). GMSK er den konstant-envelope-modulation, GSM/GPRS bruger: databit driver en NRZ-frekvenspuls, gaussisk-filtreret (**BT**, standard 0,3) og integreret til kontinuert fase ved modulationsindeks 0,5. Parametre: **symbolrate** (Hz, GSM = 270,833 ksym/s), **samples pr. symbol**, **antal symboler**, **BT**, gaussisk span og **datakilde** (PN9/15/23, all-ones/zeros). Samplingsrate = symbolrate × samples/symbol. EDGE 8PSK (3π/8-roteret) og fuld burst-/træningssekvens-framing er endnu ikke implementeret.
+
 ---
 
 ## 6. Impairments

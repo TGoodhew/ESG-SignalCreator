@@ -3,6 +3,14 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟡 **Implementation status (v1 core):** A **GSM/EDGE (GMSK)** personality now ships in the app
+> (`Core/Personalities/GsmEdge/`). It generates the GSM/GPRS **GMSK** physical-layer modulation
+> (continuous-phase, BT = 0.3, index 0.5) at the correct 270.833 ksym/s symbol rate, with configurable
+> oversampling, symbol count, and PN data — a representative GSM carrier for spectrum/modulation checks.
+> **This is a simplified v1, not a standards-compliant GSM signal.** Deferred: **EDGE 8PSK** (3π/8-rotated,
+> linearised pulse), normal/access **burst** structures, training sequences (TSC), 26/51/52-multiframe
+> framing, and channel coding (CS/MCS). Hardware verification is tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** N7602B (product name in the E4438C data sheet ordering list: "N7602B Signal Studio for GSM/EDGE"). Full product name on the current technical overview: *Signal Studio for GSM/EDGE/Evo*.
 - **Product name:** Signal Studio for GSM/EDGE/Evo (GSM, EDGE and EDGE Evolution / EGPRS2)
