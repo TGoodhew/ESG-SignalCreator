@@ -3,6 +3,13 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟡 **Implementation status (v1 core):** An **802.16e Mobile WiMAX (OFDMA)** personality now ships in the
+> app (`Core/Personalities/WimaxMobile/`, on the shared `Dsp/OfdmEngine`). It generates a
+> scalable-OFDMA-numerology signal (FFT 128/512/1024/2048 at the fixed 10.9375 kHz spacing, selectable CP
+> ratio, QPSK…64QAM). **Modelled as plain OFDM — not a standards-compliant 802.16e frame.** Deferred:
+> OFDMA subchannel permutation zones (PUSC/FUSC/AMC), preamble, FCH/DL-MAP/UL-MAP, pilots, MIMO
+> (Matrix A/B), and CTC/CC coding. Hardware verification is tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** N7615B (E4438C host connectivity provided via the ESG-targeted fixed license)
 - **Product name:** Signal Studio for 802.16 WiMAX (Mobile WiMAX / WiBro / 802.16e OFDMA)

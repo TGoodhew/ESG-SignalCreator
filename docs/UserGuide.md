@@ -270,6 +270,14 @@ with 200 used subcarriers. Parameters: **channel bandwidth** (Hz; sample rate �
 Built on the shared OFDM engine. Representative signal — no long/short preamble, FCH, DL/UL-MAP,
 DCD/UCD, pilot patterns, or RS-CC coding.
 
+### 5.21 802.16e Mobile WiMAX (OFDMA)
+A mobile-WiMAX (IEEE 802.16e) **scalable-OFDMA** signal (a v1 of Signal Studio for 802.16 WiMAX, N7615B)
+at the fixed **10.9375 kHz** subcarrier spacing, with a selectable **FFT size** (128 / 512 / 1024 / 2048
+for ≈ 1.25 / 5 / 10 / 20 MHz) so the sample rate scales with FFT. Parameters: **FFT size**,
+**cyclic-prefix ratio**, **symbol count**, and **modulation** (QPSK…64QAM). Modelled as plain OFDM (no
+OFDMA subchannel permutation). Representative signal — no PUSC/FUSC/AMC zones, preamble, FCH/MAPs,
+pilots, MIMO, or CTC/CC coding.
+
 ---
 
 ## 6. Impairments
