@@ -18,6 +18,7 @@ using EsgSignalCreator.Personalities.Pulse;
 using EsgSignalCreator.Personalities.Sdmb;
 using EsgSignalCreator.Personalities.TdScdma;
 using EsgSignalCreator.Personalities.Wcdma;
+using EsgSignalCreator.Personalities.Wlan;
 
 namespace EsgSignalCreator.Ui.Sources
 {
@@ -62,6 +63,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("s-dmb", "S-DMB (CDM, approx.)", () => new SdmbPersonality()),
             new PersonalityDescriptor("lte-fdd", "3GPP LTE FDD", () => new LteFddPersonality()),
             new PersonalityDescriptor("lte-tdd", "3GPP LTE TDD", () => new LteTddPersonality()),
+            new PersonalityDescriptor("wlan-80211", "802.11 WLAN (OFDM)", () => new WlanPersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };

@@ -255,6 +255,14 @@ layer is common to FDD and TDD (a v1 of Signal Studio for 3GPP LTE TDD, N7625B).
 — DL/UL subframe configurations, the special subframe (DwPTS/GP/UpPTS), and the 10 ms frame structure —
 are not yet implemented.
 
+### 5.19 802.11 WLAN (OFDM)
+A generic 802.11 OFDM signal (a v1 of Signal Studio for 802.11 WLAN, N7617B) with 11a/g/n numerology:
+**312.5 kHz** subcarrier spacing, a **64-point** (20 MHz) or **128-point** (40 MHz) FFT with the standard
+used-subcarrier count and cyclic prefix. Parameters: **bandwidth**, **symbol count**, and subcarrier
+**modulation** (BPSK…256QAM). Built on the shared OFDM engine. Representative signal — no
+L-STF/L-LTF/L-SIG preamble, pilots, coding/interleaving, MIMO, or 80/160 MHz (11ac/ax, which exceed the
+ESG).
+
 ---
 
 ## 6. Impairments
