@@ -220,6 +220,13 @@ higher-order modulation on the high-speed shared channel. Parameters mirror W-CD
 **modulation** choice (QPSK / 16QAM / 64QAM). Representative single-channel signal — HS-SCCH/HS-DPCCH,
 E-DCH channels, H-ARQ, and TTI structure are not yet implemented.
 
+### 5.14 3GPP2 CDMA (cdma2000)
+A single-code cdma2000 forward-link-style signal (a v1 of Signal Studio for 3GPP2 CDMA, N7601B). Same
+DSSS structure as §5.12 at the **1.2288 Mcps** chip rate: QPSK data spread by a **Walsh** code,
+PN-scrambled, pulse-shaped (RRC approximation of the cdma2000 filter). Parameters mirror W-CDMA FDD.
+Representative single-channel signal — pilot/sync/paging channels, radio configurations, and frame/PCG
+structure are not yet implemented, and the exact cdma2000 baseband filter is approximated by RRC.
+
 ---
 
 ## 6. Impairments

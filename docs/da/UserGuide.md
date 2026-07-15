@@ -134,6 +134,9 @@ Et enkeltkode W-CDMA-downlink-lignende signal (en v1 af Signal Studio for 3GPP W
 ### 5.13 3GPP W-CDMA HSPA
 Et HS-PDSCH-lignende HSPA-signal (en v1 af Signal Studio for 3GPP W-CDMA HSPA, E4438C-419). Samme DSSS-struktur som §5.12, men med **16QAM** på en **SF-16**-kode som standard — HSPA's definerende træk er højere-ordens modulation på den højhastigheds-delte kanal. Parametre svarer til W-CDMA FDD plus et **modulations**-valg (QPSK / 16QAM / 64QAM). Repræsentativt enkeltkanalsignal — HS-SCCH/HS-DPCCH, E-DCH-kanaler, H-ARQ og TTI-struktur er endnu ikke implementeret.
 
+### 5.14 3GPP2 CDMA (cdma2000)
+Et enkeltkode cdma2000-forward-link-lignende signal (en v1 af Signal Studio for 3GPP2 CDMA, N7601B). Samme DSSS-struktur som §5.12 ved **1,2288 Mcps** chip-raten: QPSK-data spredt med en **Walsh**-kode, PN-scramblet, pulsformet (RRC-tilnærmelse af cdma2000-filteret). Parametre svarer til W-CDMA FDD. Repræsentativt enkeltkanalsignal — pilot-/sync-/paging-kanaler, radiokonfigurationer og frame-/PCG-struktur er endnu ikke implementeret, og det eksakte cdma2000-basebåndsfilter tilnærmes af RRC.
+
 ---
 
 ## 6. Impairments

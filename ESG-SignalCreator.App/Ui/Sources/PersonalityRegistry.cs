@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using EsgSignalCreator.Personalities;
 using EsgSignalCreator.Personalities.Awgn;
 using EsgSignalCreator.Personalities.Bluetooth;
+using EsgSignalCreator.Personalities.Cdma2000;
 using EsgSignalCreator.Personalities.CustomIq;
 using EsgSignalCreator.Personalities.CustomMod;
 using EsgSignalCreator.Personalities.Cw;
@@ -53,6 +54,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("bluetooth", "Bluetooth (GFSK)", () => new BluetoothPersonality()),
             new PersonalityDescriptor("wcdma-fdd", "3GPP W-CDMA FDD", () => new WcdmaPersonality()),
             new PersonalityDescriptor("wcdma-hspa", "3GPP W-CDMA HSPA", () => new HspaPersonality()),
+            new PersonalityDescriptor("cdma2000", "3GPP2 CDMA (cdma2000)", () => new Cdma2000Personality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };
