@@ -38,6 +38,8 @@ core library, the WinForms app, and an xUnit test project.
   - **Multitone** (tone table, auto-spacing, random/equal/Newman phasing, live PAPR)
   - **Custom digital modulation** (BPSK/QPSK/8PSK/16–256-QAM/MSK, PN9/15/23 data,
     RRC/RC/Gaussian pulse shaping)
+  - **Pulse Building** (radar-style pulse train: PRI/width, raised-cosine edges,
+    intra-pulse LFM chirp or Barker phase codes, per-pulse markers — N7620A v1)
   - **AWGN** (band-limited Gaussian noise with crest-factor clipping)
   - **Import I/Q** (CSV/TSV, raw interleaved int16, WAV)
 - **Verification plots** — I/Q vs time, FFT spectrum, constellation, and CCDF, each
@@ -234,7 +236,7 @@ The solution is split into a UI-free core library, the WinForms app, and a test 
 | [Core/Visa/](ESG-SignalCreator.Core/Visa/) | `EsgInstrument` facade + `*IDN?`/`*OPT?` parsing |
 | [Core/Arb/](ESG-SignalCreator.Core/Arb/) | IEEE-488.2 block framing and the int16/interleave/big-endian ARB encoder |
 | [Core/Model/](ESG-SignalCreator.Core/Model/) | `WaveformModel` — the neutral I/Q output of every signal personality |
-| [Core/Personalities/](ESG-SignalCreator.Core/Personalities/) | `IWaveformPersonality` contract + CW, Multitone, CustomMod, AWGN, Import-IQ |
+| [Core/Personalities/](ESG-SignalCreator.Core/Personalities/) | `IWaveformPersonality` contract + CW, Multitone, Multi-Carrier, CustomMod, Pulse, AWGN, Import-IQ |
 | [Core/Dsp/](ESG-SignalCreator.Core/Dsp/) | FFT, FIR (RRC/RC/Gaussian), windows, CCDF/PAPR, resampling |
 | [Core/Validation/](ESG-SignalCreator.Core/Validation/) | `WaveformValidator` dependency checker |
 | [Core/Capability/](ESG-SignalCreator.Core/Capability/) | Per-target capability profiles (embedded JSON) |

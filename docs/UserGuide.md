@@ -144,12 +144,22 @@ MSK…), **symbol rate** (Hz), a **pulse-shaping filter** (RRC, RC, Gaussian, or
 BT** (alpha), and a **payload** pattern (PN9/PN15/PN23, all-ones/zeros, random). Used for ACP/ACPR and
 modulation-quality work.
 
-### 5.5 AWGN
+### 5.5 Pulse Building
+A repeating radar-style pulse train (a v1 of Signal Studio for Pulse Building, N7620A). Parameters:
+**pulse width** (s), **pulse repetition interval / PRI** (s, ≥ pulse width), an optional raised-cosine
+**rise/fall** time (s, 0 = rectangular edges), a **start delay** (s), and the **intra-pulse
+modulation** — **None** (gated CW burst), **Linear FM chirp** (with a swept **bandwidth** in Hz), or a
+**Barker phase code** (length 2/3/4/5/7/11/13). A single pulse is built and tiled at the PRI to fill
+the waveform; a one-sample **marker** is emitted at each pulse start (handy as an ARB trigger/scope
+sync). Used for radar/EW receiver test and pulse-compression work. Advanced N7620A features (per-pulse
+offset tables, staggered/jittered PRI, antenna-scan patterning, CSV import) are not yet implemented.
+
+### 5.6 AWGN
 Band-limited additive white Gaussian noise. Parameters: **noise bandwidth** (Hz), **carrier-to-noise
 ratio** (dB), and optional **peak clipping**. AWGN has a high crest factor (~10 dB) — a good headroom
 and CCDF test.
 
-### 5.6 Import I/Q
+### 5.7 Import I/Q
 Load I/Q from a file. Parameters: **file path** (you supply it), **format** (CSV, interleaved Int16,
 Float32), source **sample rate** (Hz), and whether to **resample** to the target sample clock. Lets you
 replay externally-captured or externally-generated signals.

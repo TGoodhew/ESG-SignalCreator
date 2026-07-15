@@ -589,6 +589,7 @@ namespace EsgSignalCreator.Ui
                     case "multitone": return "multitone";
                     case "multi_carrier": case "multi-carrier": return "multi-carrier";
                     case "custom_modulation": case "custom-mod": case "custommod": return "custom-mod";
+                    case "pulse": return "pulse";
                     case "awgn": return "awgn";
                     case "import_iq": case "import-iq": return "import-iq";
                     default: return area;
