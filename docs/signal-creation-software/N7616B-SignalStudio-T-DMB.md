@@ -3,6 +3,14 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟡 **Implementation status (v1 core):** A **T-DMB (DAB COFDM)** personality now ships in the app
+> (`Core/Personalities/Tdmb/`, on the shared `Dsp/OfdmEngine`). It generates the DAB COFDM signal
+> underlying T-DMB — a 2.048 MHz signal across all four transmission **modes** (I/II/III/IV, setting
+> FFT/carriers/guard). Modulation is DQPSK, approximated by plain QPSK. **Simplified v1, not a
+> standards-compliant DAB frame.** Deferred: null/phase-reference symbols, synchronisation channel,
+> FIC/MSC multiplex, differential (DQPSK) encoding, and convolutional coding. Hardware verification is
+> tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** N7616B (successor to N7616A)
 - **Product name:** Signal Studio for T-DMB (Terrestrial Digital Multimedia Broadcasting)

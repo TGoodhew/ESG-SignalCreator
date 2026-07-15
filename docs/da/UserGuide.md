@@ -158,6 +158,9 @@ Et fixed-WiMAX-(IEEE 802.16-2004)-**256-FFT-OFDM**-signal (en v1 af Signal Studi
 ### 5.21 802.16e Mobile WiMAX (OFDMA)
 Et mobile-WiMAX-(IEEE 802.16e)-**scalable-OFDMA**-signal (en v1 af Signal Studio for 802.16 WiMAX, N7615B) ved den faste **10,9375 kHz** subcarrier-afstand med en valgbar **FFT-størrelse** (128 / 512 / 1024 / 2048 for ≈ 1,25 / 5 / 10 / 20 MHz), så samplingsraten skalerer med FFT. Parametre: **FFT-størrelse**, **cyklisk-præfiks-forhold**, **antal symboler** og **modulation** (QPSK…64QAM). Modelleret som almindelig OFDM (ingen OFDMA-subkanalpermutation). Repræsentativt signal — ingen PUSC/FUSC/AMC-zoner, præambel, FCH/MAPs, piloter, MIMO eller CTC/CC-kodning.
 
+### 5.22 T-DMB (DAB COFDM)
+DAB-COFDM-signalet, der ligger under Terrestrial-DMB (en v1 af Signal Studio for T-DMB, N7616B). Bevarer en **2,048 MHz** signalbåndbredde på tværs af alle fire **transmissionsmodes** (I/II/III/IV), som sætter FFT-størrelsen (2048 / 512 / 256 / 1024), aktive bærebølger og guard-interval. Parametre: **mode**, **antal symboler**, **datakilde**. Modulationen er DQPSK, her tilnærmet med almindelig QPSK. Bygget på den delte OFDM-motor. Repræsentativt signal — ingen null-/fasereferencesymboler, synkroniseringskanal, FIC/MSC-multipleks, differentiel kodning eller foldningskodning.
+
 ---
 
 ## 6. Impairments

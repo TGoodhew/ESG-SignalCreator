@@ -35,6 +35,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureWlanTool(),
             new ConfigureWimaxFixedTool(),
             new ConfigureWimaxMobileTool(),
+            new ConfigureTdmbTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -67,7 +68,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "WiMAX-Mobile", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "WiMAX-Mobile", "T-DMB", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -182,6 +183,21 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureTdmbTool : ConfigureTool
+        {
+            public override string Name => "configure_tdmb";
+            public override string Description =>
+                "Configure the T-DMB (DAB COFDM) source: DAB transmission mode (ModeI/II/III/IV, sets FFT/carriers/" +
+                "guard at 2.048 MHz bandwidth), number of OFDM symbols, and data source. Modulation is DQPSK (QPSK-approx).";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("mode", Schema.Str("DAB transmission mode", new[] { "ModeI", "ModeII", "ModeIII", "ModeIV" })),
+                Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
+                Schema.P("data", Schema.Str("payload data source", new[] { "PN9", "PN15", "PN23", "AllZeros", "AllOnes" })));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("t_dmb", args), "Configured T-DMB."));
         }
 
         private sealed class ConfigureWimaxMobileTool : ConfigureTool

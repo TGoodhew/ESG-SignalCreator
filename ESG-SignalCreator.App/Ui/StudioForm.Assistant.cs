@@ -604,6 +604,7 @@ namespace EsgSignalCreator.Ui
                     case "wlan": case "wlan_80211": case "80211": return "wlan-80211";
                     case "wimax_fixed": case "wimax-fixed": return "wimax-fixed";
                     case "wimax_mobile": case "wimax-mobile": return "wimax-mobile";
+                    case "t_dmb": case "t-dmb": case "tdmb": return "t-dmb";
                     case "awgn": return "awgn";
                     case "import_iq": case "import-iq": return "import-iq";
                     default: return area;

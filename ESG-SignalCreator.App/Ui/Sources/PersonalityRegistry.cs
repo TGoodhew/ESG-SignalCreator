@@ -16,6 +16,7 @@ using EsgSignalCreator.Personalities.Multitone;
 using EsgSignalCreator.Personalities.MultitoneDistortion;
 using EsgSignalCreator.Personalities.Pulse;
 using EsgSignalCreator.Personalities.Sdmb;
+using EsgSignalCreator.Personalities.Tdmb;
 using EsgSignalCreator.Personalities.TdScdma;
 using EsgSignalCreator.Personalities.Wcdma;
 using EsgSignalCreator.Personalities.WimaxFixed;
@@ -68,6 +69,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("wlan-80211", "802.11 WLAN (OFDM)", () => new WlanPersonality()),
             new PersonalityDescriptor("wimax-fixed", "802.16-2004 WiMAX (OFDM)", () => new WimaxFixedPersonality()),
             new PersonalityDescriptor("wimax-mobile", "802.16e Mobile WiMAX (OFDMA)", () => new WimaxMobilePersonality()),
+            new PersonalityDescriptor("t-dmb", "T-DMB (DAB COFDM)", () => new TdmbPersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };
