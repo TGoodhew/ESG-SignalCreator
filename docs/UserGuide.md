@@ -178,6 +178,16 @@ from band centre) that clears a band of tones so you can measure intermodulation
 notch. Composite bandwidth ≈ tone count × spacing; live PAPR is reported. Spectrum-analyzer-assisted
 pre-distortion correction is not yet implemented.
 
+### 5.9 Jitter Injection
+A jittered clock/tone for receiver jitter-tolerance testing (a v1 of Signal Studio for Jitter
+Injection, E4438C-SP1). Jitter is applied as timing (phase) modulation of a sinusoidal clock, so the
+envelope stays constant. Parameters: **clock rate** (Hz, the signal being jittered); **periodic jitter**
+shape (**Sinusoidal / Square / Triangle / SawTooth / Exponential**, or None), **rate** (Hz), and
+**amplitude** (UI peak-to-peak); and optional **random** Gaussian jitter (**RMS** in UI + **seed**).
+Periodic + random combine into a **composite** signal, and a given seed reproduces an identical
+sequence (digital repeatability). Amplitudes are in unit intervals (1 UI = one clock period). Predefined
+standards masks (e.g. ITU-T G.8251) and automated SJ frequency sweeps are not yet implemented.
+
 ---
 
 ## 6. Impairments
