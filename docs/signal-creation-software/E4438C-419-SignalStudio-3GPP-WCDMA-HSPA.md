@@ -3,6 +3,14 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟡 **Implementation status (v1 core):** A **3GPP W-CDMA HSPA** personality now ships in the app
+> (`Core/Personalities/Hspa/`, on the shared `Dsp/DsssEngine`). It generates a single-code HS-PDSCH-style
+> signal defaulting to **16QAM** on an **SF-16** OVSF code, complex-scrambled and RRC-shaped at
+> 3.84 Mcps — capturing the defining HSPA feature (higher-order modulation on the high-speed shared
+> channel). **Simplified v1, not a standards-compliant HSDPA/HSUPA link.** Deferred: HS-SCCH/HS-DPCCH
+> signalling, E-DCH (HSUPA) channels, H-ARQ, TTI/frame structure, CQI and rate control, 64QAM release
+> features. Hardware verification is tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** E4438C-419 (license-key option; upgrade order number E4438CK-419)
 - **Product name:** Signal Studio for 3GPP W-CDMA HSPA (HSDPA/HSUPA)
