@@ -37,6 +37,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureWimaxMobileTool(),
             new ConfigureTdmbTool(),
             new ConfigureDigitalVideoTool(),
+            new ConfigureBroadcastRadioTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -69,7 +70,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "WiMAX-Mobile", "T-DMB", "Digital-Video", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "WiMAX-Mobile", "T-DMB", "Digital-Video", "Broadcast-Radio", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -184,6 +185,22 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureBroadcastRadioTool : ConfigureTool
+        {
+            public override string Name => "configure_broadcast_radio";
+            public override string Description =>
+                "Configure the Broadcast Radio (FM) source: audio test-tone frequency (Hz), stereo (adds 19 kHz " +
+                "pilot + 38 kHz subcarrier), peak deviation (Hz, 75k), sample rate (Hz), and length.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("audio_tone_hz", Schema.Number("audio test-tone frequency, Hz")),
+                Schema.P("stereo", Schema.Bool("stereo (pilot + subcarrier)")),
+                Schema.P("peak_deviation_hz", Schema.Number("peak FM deviation, Hz")),
+                Schema.P("sample_rate_hz", Schema.Number("sample rate, Hz")));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("broadcast_radio", args), "Configured broadcast radio."));
         }
 
         private sealed class ConfigureDigitalVideoTool : ConfigureTool

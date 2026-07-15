@@ -294,6 +294,15 @@ A DVB-T COFDM signal for an 8 MHz channel (a v1 of Signal Studio for Digital Vid
 dispersal, RS/convolutional coding, or MPEG-TS framing; other digital-video standards (ISDB-T, ATSC
 8VSB, DVB-C/S QAM, DTMB) are not implemented.
 
+### 5.24 Broadcast Radio (FM)
+An analog FM broadcast signal (a v1 of Signal Studio for Broadcast Radio, N7611B). The baseband
+multiplex is an **audio test tone** (mono), optionally with a **19 kHz stereo pilot** and a **38 kHz
+DSB-SC** stereo subcarrier, frequency-modulated onto the carrier (constant envelope). Parameters:
+**audio-tone frequency**, **stereo** on/off, **peak deviation** (75 kHz), **sample rate**, and
+**length**. Representative signal — a single test tone rather than program audio, and no RDS (57 kHz),
+pre-emphasis, or SCA. The digital broadcast formats the product also covers (DAB/DAB+ → see §5.22
+T-DMB; XM/HD Radio) are not implemented here.
+
 ---
 
 ## 6. Impairments

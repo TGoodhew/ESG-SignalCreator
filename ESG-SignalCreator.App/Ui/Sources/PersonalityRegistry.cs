@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using EsgSignalCreator.Personalities;
 using EsgSignalCreator.Personalities.Awgn;
 using EsgSignalCreator.Personalities.Bluetooth;
+using EsgSignalCreator.Personalities.BroadcastRadio;
 using EsgSignalCreator.Personalities.Cdma2000;
 using EsgSignalCreator.Personalities.CustomIq;
 using EsgSignalCreator.Personalities.CustomMod;
@@ -72,6 +73,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("wimax-mobile", "802.16e Mobile WiMAX (OFDMA)", () => new WimaxMobilePersonality()),
             new PersonalityDescriptor("t-dmb", "T-DMB (DAB COFDM)", () => new TdmbPersonality()),
             new PersonalityDescriptor("digital-video", "Digital Video (DVB-T COFDM)", () => new DigitalVideoPersonality()),
+            new PersonalityDescriptor("broadcast-radio", "Broadcast Radio (FM)", () => new BroadcastRadioPersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };
