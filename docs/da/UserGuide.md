@@ -146,6 +146,9 @@ Et **tilnærmet** Satellite-DMB-stimulus (en v1 af Signal Studio for S-DMB, E443
 ### 5.17 3GPP LTE FDD
 Et downlink-OFDM-signal med LTE-numerologi (en v1 af Signal Studio for 3GPP LTE, N7624B). Bruger **15 kHz** subcarrier-afstand og den standardiserede **FFT-størrelse / antal brugte subcarriers** for den valgte **kanalbåndbredde** (1,4 / 3 / 5 / 10 / 15 / 20 MHz → 128…2048-punkts FFT, RB×12 subcarriers) med et normalt cyklisk præfiks. Parametre: **båndbredde**, **antal symboler** og subcarrier-**modulation** (QPSK / 16QAM / 64QAM / 256QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen PSS/SSS, referencesignaler, PBCH/PDCCH/PDSCH-mapping, resource-block-scheduling eller 10 ms-rammestruktur.
 
+### 5.18 3GPP LTE TDD
+Samme downlink-OFDM-signal som §5.17 (identisk LTE-OFDM-numerologi og parametre) — LTE's fysiske lag er fælles for FDD og TDD (en v1 af Signal Studio for 3GPP LTE TDD, N7625B). De TDD-specifikke dele — DL/UL-subframe-konfigurationer, det specielle subframe (DwPTS/GP/UpPTS) og 10 ms-rammestrukturen — er endnu ikke implementeret.
+
 ---
 
 ## 6. Impairments

@@ -249,6 +249,12 @@ normal cyclic prefix. Parameters: **bandwidth**, **symbol count**, and subcarrie
 (QPSK / 16QAM / 64QAM / 256QAM). Built on the shared OFDM engine. Representative signal — no PSS/SSS,
 reference signals, PBCH/PDCCH/PDSCH mapping, resource-block scheduling, or 10 ms frame structure.
 
+### 5.18 3GPP LTE TDD
+The same downlink OFDM signal as §5.17 (identical LTE OFDM numerology and parameters) — LTE's physical
+layer is common to FDD and TDD (a v1 of Signal Studio for 3GPP LTE TDD, N7625B). The TDD-specific parts
+— DL/UL subframe configurations, the special subframe (DwPTS/GP/UpPTS), and the 10 ms frame structure —
+are not yet implemented.
+
 ---
 
 ## 6. Impairments

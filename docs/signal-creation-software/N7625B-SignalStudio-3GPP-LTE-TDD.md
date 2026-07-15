@@ -3,6 +3,14 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟡 **Implementation status (v1 core):** A **3GPP LTE TDD** personality now ships in the app
+> (`Core/Personalities/Lte/LteTddPersonality.cs`), sharing the LTE OFDM numerology and `OfdmEngine` with
+> the FDD personality (the LTE physical layer is common to FDD and TDD). It produces a downlink OFDM
+> signal at 15 kHz spacing per channel bandwidth (1.4–20 MHz), QPSK/16/64/256QAM. **Simplified v1, not a
+> standards-compliant LTE TDD frame.** Deferred: DL/UL subframe configurations, the special subframe
+> (DwPTS/GP/UpPTS), 10 ms frame structure, plus the same reference-signal/channel-mapping deferrals as
+> FDD. Hardware verification is tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** N7625B; E4438C ESG connectivity provided by option **N7625B-1FP** ("Connect to E4438C ESG signal generator").
 - **Product name:** Signal Studio for LTE / LTE-Advanced **TDD** (originally "Signal Studio for 3GPP LTE TDD").

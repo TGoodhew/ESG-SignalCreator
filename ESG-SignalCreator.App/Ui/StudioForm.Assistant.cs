@@ -600,6 +600,7 @@ namespace EsgSignalCreator.Ui
                     case "td_scdma": case "td-scdma": return "td-scdma";
                     case "s_dmb": case "s-dmb": case "sdmb": return "s-dmb";
                     case "lte_fdd": case "lte-fdd": case "lte": return "lte-fdd";
+                    case "lte_tdd": case "lte-tdd": return "lte-tdd";
                     case "awgn": return "awgn";
                     case "import_iq": case "import-iq": return "import-iq";
                     default: return area;
