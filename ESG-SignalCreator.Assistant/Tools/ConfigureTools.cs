@@ -36,6 +36,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureWimaxFixedTool(),
             new ConfigureWimaxMobileTool(),
             new ConfigureTdmbTool(),
+            new ConfigureDigitalVideoTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -68,7 +69,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "WiMAX-Mobile", "T-DMB", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "WiMAX-Mobile", "T-DMB", "Digital-Video", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -183,6 +184,23 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureDigitalVideoTool : ConfigureTool
+        {
+            public override string Name => "configure_digital_video";
+            public override string Description =>
+                "Configure the Digital Video (DVB-T COFDM) source: transmission mode (Mode2K/Mode8K), guard-interval " +
+                "ratio (OneQuarter/OneEighth/OneSixteenth/OneThirtySecond), number of OFDM symbols, and modulation.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("mode", Schema.Str("DVB-T mode", new[] { "Mode2K", "Mode8K" })),
+                Schema.P("guard_interval", Schema.Str("guard-interval ratio",
+                    new[] { "OneQuarter", "OneEighth", "OneSixteenth", "OneThirtySecond" })),
+                Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
+                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "QPSK", "QAM16", "QAM64" })));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("digital_video", args), "Configured digital video."));
         }
 
         private sealed class ConfigureTdmbTool : ConfigureTool

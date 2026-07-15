@@ -3,6 +3,14 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟡 **Implementation status (v1 core):** A **Digital Video (DVB-T COFDM)** personality now ships in the
+> app (`Core/Personalities/DigitalVideo/`, on the shared `Dsp/OfdmEngine`). It generates the DVB-T COFDM
+> PHY for an 8 MHz channel (elementary rate 64/7 MHz, 2K/8K FFT, selectable guard interval, QPSK…64QAM).
+> **Simplified v1, not a standards-compliant transport.** Deferred: TPS/pilot carriers, PRBS energy
+> dispersal, RS/convolutional coding, MPEG-TS framing — and the **many other digital-video standards this
+> product covers** (ISDB-T/Tb, ATSC + ATSC-M/H 8VSB, DVB-C/S/S2 QAM, DTMB/CTTB, CMMB, DVB-H/T2) are **not
+> implemented**. Hardware verification is tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** N7623B
 - **Product name:** Signal Studio for Digital Video
