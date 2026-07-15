@@ -43,7 +43,8 @@ namespace EsgSignalCreator.Personalities.CustomIq
                 Config.Path,
                 Config.SampleRateHz,
                 Config.SwapIq,
-                Config.Scale);
+                Config.Scale,
+                Config.Format);
 
             progress?.Report(50);
 

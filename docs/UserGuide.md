@@ -160,9 +160,14 @@ ratio** (dB), and optional **peak clipping**. AWGN has a high crest factor (~10 
 and CCDF test.
 
 ### 5.7 Import I/Q
-Load I/Q from a file. Parameters: **file path** (you supply it), **format** (CSV, interleaved Int16,
-Float32), source **sample rate** (Hz), and whether to **resample** to the target sample clock. Lets you
-replay externally-captured or externally-generated signals.
+Load I/Q from a file — the app's equivalent of the Signal Studio Toolkit (N7622A) "bring your own I/Q"
+workflow. Parameters: **file path** (you supply it), **format** (**Auto**-detect by extension, delimited
+text CSV/TSV, raw interleaved little-endian **Int16** `.bin`/`.iq`, Agilent/Keysight big-endian
+**Int16** `.agt` — the ESG's native ARB byte order — or 16-bit PCM **WAV**), source **sample rate** (Hz),
+optional **I/Q swap**, and a **scale** multiplier. Set the format explicitly to force the Agilent
+big-endian byte order when an extension is ambiguous. Lets you replay externally-captured or
+externally-generated (MATLAB/C++) signals. *(MATLAB `.mat` import is not yet supported — export to CSV,
+WAV, or a 16-bit binary format.)*
 
 ### 5.8 Multitone Distortion
 A dense multitone / noise-power-ratio (NPR) stimulus for amplifier and converter linearity testing (a

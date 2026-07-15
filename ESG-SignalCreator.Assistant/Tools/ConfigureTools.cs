@@ -174,7 +174,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "sample rate (Hz), and whether to resample to the target clock.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("file_path", Schema.Str("path to the I/Q file (user-supplied)"), required: true),
-                Schema.P("format", Schema.Str("file format", new[] { "CSV", "Int16", "Float32" })),
+                Schema.P("format", Schema.Str("container format", new[] { "Auto", "DelimitedText", "RawInt16", "AgilentInt16Be", "Wav" })),
                 Schema.P("sample_rate_hz", Schema.Number("source sample rate, Hz")),
                 Schema.P("resample", Schema.Bool("resample to the target sample clock")));
 

@@ -1,4 +1,5 @@
 using System.Runtime.Serialization;
+using EsgSignalCreator.Io;
 
 namespace EsgSignalCreator.Personalities.CustomIq
 {
@@ -8,9 +9,17 @@ namespace EsgSignalCreator.Personalities.CustomIq
     [DataContract]
     public sealed class ImportIqConfig
     {
-        /// <summary>Path to the I/Q file (CSV/TSV/TXT, raw int16 .bin/.iq, or 16-bit PCM .wav).</summary>
+        /// <summary>Path to the I/Q file (CSV/TSV/TXT, raw int16 .bin/.iq, Agilent big-endian int16 .agt, or 16-bit PCM .wav).</summary>
         [DataMember(Name = "path")]
         public string Path { get; set; }
+
+        /// <summary>
+        /// Container format. <see cref="IqFileReader.IqFormat.Auto"/> detects from the file extension;
+        /// set explicitly (e.g. <see cref="IqFileReader.IqFormat.AgilentInt16Be"/>) when the extension
+        /// is ambiguous or you need to force the Agilent/Keysight big-endian byte order.
+        /// </summary>
+        [DataMember(Name = "format")]
+        public IqFileReader.IqFormat Format { get; set; } = IqFileReader.IqFormat.Auto;
 
         /// <summary>
         /// Sample rate to use for formats that carry no rate (CSV/TSV, raw int16). Ignored for WAV

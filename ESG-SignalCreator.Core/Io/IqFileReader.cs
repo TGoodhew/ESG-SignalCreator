@@ -14,6 +14,9 @@ namespace EsgSignalCreator.Io
     ///   <item>CSV/TSV/TXT — two numeric columns (I,Q) per line; comma/tab/whitespace delimited;
     ///         an optional non-numeric header line is skipped; blank lines tolerated.</item>
     ///   <item>Raw interleaved little-endian int16 (.bin/.iq) — I,Q,I,Q…, scaled by 1/32768.</item>
+    ///   <item>Agilent/Keysight interleaved big-endian int16 (.agt) — I,Q,I,Q…, scaled by 1/32768.
+    ///         This is the ESG's native ARB byte order (see <c>EsgArbEncoder</c>), so it round-trips
+    ///         waveforms exported from Signal Studio Toolkit (N7622A) / the AWU.</item>
     ///   <item>16-bit PCM WAV (.wav) — stereo maps ch0→I, ch1→Q; mono maps samples→I, Q=0.
     ///         Sample rate is taken from the <c>fmt </c> chunk.</item>
     /// </list>
@@ -30,6 +33,8 @@ namespace EsgSignalCreator.Io
             DelimitedText,
             /// <summary>Raw interleaved little-endian signed 16-bit.</summary>
             RawInt16,
+            /// <summary>Agilent/Keysight interleaved big-endian signed 16-bit (native ESG ARB byte order).</summary>
+            AgilentInt16Be,
             /// <summary>RIFF/WAVE 16-bit PCM.</summary>
             Wav,
             /// <summary>MATLAB .mat (not supported in P1).</summary>
@@ -73,6 +78,11 @@ namespace EsgSignalCreator.Io
                 case IqFormat.RawInt16:
                     ReadRawInt16(path, out i, out q);
                     sampleRateHz = RequirePositiveRate(sampleRateHzOverride, "Raw int16 files carry no sample rate");
+                    break;
+
+                case IqFormat.AgilentInt16Be:
+                    ReadAgilentInt16Be(path, out i, out q);
+                    sampleRateHz = RequirePositiveRate(sampleRateHzOverride, "Agilent int16 files carry no sample rate");
                     break;
 
                 case IqFormat.Wav:
@@ -124,6 +134,8 @@ namespace EsgSignalCreator.Io
                 case ".bin":
                 case ".iq":
                     return IqFormat.RawInt16;
+                case ".agt":
+                    return IqFormat.AgilentInt16Be;
                 case ".wav":
                     return IqFormat.Wav;
                 case ".mat":
@@ -189,6 +201,25 @@ namespace EsgSignalCreator.Io
                 int b = n * 4;
                 short si = (short)(bytes[b] | (bytes[b + 1] << 8));         // little-endian
                 short sq = (short)(bytes[b + 2] | (bytes[b + 3] << 8));
+                i[n] = si / 32768f;
+                q[n] = sq / 32768f;
+            }
+        }
+
+        // --- Agilent/Keysight interleaved big-endian int16 --------------------------------
+
+        private static void ReadAgilentInt16Be(string path, out float[] i, out float[] q)
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            int complete = bytes.Length / 4; // 2 int16 (I,Q) = 4 bytes per complex sample
+            i = new float[complete];
+            q = new float[complete];
+
+            for (int n = 0; n < complete; n++)
+            {
+                int b = n * 4;
+                short si = (short)((bytes[b] << 8) | bytes[b + 1]);         // big-endian
+                short sq = (short)((bytes[b + 2] << 8) | bytes[b + 3]);
                 i[n] = si / 32768f;
                 q[n] = sq / 32768f;
             }

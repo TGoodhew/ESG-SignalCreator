@@ -43,7 +43,8 @@ core library, the WinForms app, and an xUnit test project.
   - **Pulse Building** (radar-style pulse train: PRI/width, raised-cosine edges,
     intra-pulse LFM chirp or Barker phase codes, per-pulse markers — N7620A v1)
   - **AWGN** (band-limited Gaussian noise with crest-factor clipping)
-  - **Import I/Q** (CSV/TSV, raw interleaved int16, WAV)
+  - **Import I/Q** (CSV/TSV, raw interleaved int16, Agilent/Keysight big-endian int16, WAV — the
+    N7622A Toolkit "bring your own I/Q" role)
 - **Verification plots** — I/Q vs time, FFT spectrum, constellation, and CCDF, each
   with a view dropdown and rubber-band zoom.
 - **Deliberate pipeline** — **Calculate** generates I/Q off the UI thread with a
