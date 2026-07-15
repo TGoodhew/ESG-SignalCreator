@@ -3,6 +3,14 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟠 **Implementation status (v1, approximate):** An **S-DMB (CDM, approx.)** personality now ships in
+> the app (`Core/Personalities/Sdmb/`, on the shared `Dsp/DsssEngine`). Because the S-DMB (System E) air
+> interface **could not be confirmed from primary literature** (see §8), it generates a *representative*
+> CDM signal (QPSK spread by an OVSF code, scrambled, RRC-shaped) — **explicitly NOT a verified S-DMB
+> waveform.** Chip rate, spreading, FEC, and framing are placeholders. Before this is treated as real
+> S-DMB, the physical layer must be confirmed and the parameters corrected. Hardware verification is
+> tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** E4438C-407 (instrument option, not an N-series standalone product)
 - **Product name:** Signal Studio for S-DMB (Satellite Digital Multimedia Broadcasting)
