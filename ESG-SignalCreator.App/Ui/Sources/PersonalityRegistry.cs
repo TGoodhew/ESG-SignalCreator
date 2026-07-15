@@ -14,6 +14,7 @@ using EsgSignalCreator.Personalities.MultiCarrier;
 using EsgSignalCreator.Personalities.Multitone;
 using EsgSignalCreator.Personalities.MultitoneDistortion;
 using EsgSignalCreator.Personalities.Pulse;
+using EsgSignalCreator.Personalities.TdScdma;
 using EsgSignalCreator.Personalities.Wcdma;
 
 namespace EsgSignalCreator.Ui.Sources
@@ -55,6 +56,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("wcdma-fdd", "3GPP W-CDMA FDD", () => new WcdmaPersonality()),
             new PersonalityDescriptor("wcdma-hspa", "3GPP W-CDMA HSPA", () => new HspaPersonality()),
             new PersonalityDescriptor("cdma2000", "3GPP2 CDMA (cdma2000)", () => new Cdma2000Personality()),
+            new PersonalityDescriptor("td-scdma", "TD-SCDMA", () => new TdScdmaPersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };

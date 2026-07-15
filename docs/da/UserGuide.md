@@ -137,6 +137,9 @@ Et HS-PDSCH-lignende HSPA-signal (en v1 af Signal Studio for 3GPP W-CDMA HSPA, E
 ### 5.14 3GPP2 CDMA (cdma2000)
 Et enkeltkode cdma2000-forward-link-lignende signal (en v1 af Signal Studio for 3GPP2 CDMA, N7601B). Samme DSSS-struktur som §5.12 ved **1,2288 Mcps** chip-raten: QPSK-data spredt med en **Walsh**-kode, PN-scramblet, pulsformet (RRC-tilnærmelse af cdma2000-filteret). Parametre svarer til W-CDMA FDD. Repræsentativt enkeltkanalsignal — pilot-/sync-/paging-kanaler, radiokonfigurationer og frame-/PCG-struktur er endnu ikke implementeret, og det eksakte cdma2000-basebåndsfilter tilnærmes af RRC.
 
+### 5.15 TD-SCDMA
+Et enkeltkode TD-SCDMA-signal (en v1 af Signal Studio for TD-SCDMA, N7612B) ved **1,28 Mcps** low-chip-rate: QPSK/16QAM/64QAM-data spredt med en OVSF-kode, scramblet, RRC-formet (β = 0,22). Parametre svarer til W-CDMA FDD. Repræsentativt enkeltkanalsignal — 5 ms-subframe/7-timeslot-TDD-burststruktur (DwPTS/UpPTS/GP), midamble-koder, switching points og HSDPA-kanaler er endnu ikke implementeret.
+
 ---
 
 ## 6. Impairments
