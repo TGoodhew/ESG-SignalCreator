@@ -12,6 +12,7 @@ using EsgSignalCreator.Personalities.MultiCarrier;
 using EsgSignalCreator.Personalities.Multitone;
 using EsgSignalCreator.Personalities.MultitoneDistortion;
 using EsgSignalCreator.Personalities.Pulse;
+using EsgSignalCreator.Personalities.Wcdma;
 
 namespace EsgSignalCreator.Ui.Sources
 {
@@ -49,6 +50,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("jitter", "Jitter Injection", () => new JitterPersonality()),
             new PersonalityDescriptor("gsm-edge", "GSM/EDGE (GMSK)", () => new GsmEdgePersonality()),
             new PersonalityDescriptor("bluetooth", "Bluetooth (GFSK)", () => new BluetoothPersonality()),
+            new PersonalityDescriptor("wcdma-fdd", "3GPP W-CDMA FDD", () => new WcdmaPersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };
