@@ -54,7 +54,7 @@ core library, the WinForms app, and an xUnit test project.
     **TD-SCDMA** (1.28 Mcps — N7612B), **S-DMB** (CDM, approx. — E4438C-407),
     **3GPP LTE FDD** (OFDM, 1.4–20 MHz — N7624B), **LTE TDD** (N7625B),
     **802.11 WLAN** (OFDM — N7617B), **802.16-2004 WiMAX** (256-FFT OFDM — N7613A),
-    **802.16e Mobile WiMAX** (scalable OFDMA — N7615B)
+    **802.16e Mobile WiMAX** (scalable OFDMA — N7615B), **T-DMB** (DAB COFDM — N7616B)
 - **Verification plots** — I/Q vs time, FFT spectrum, constellation, and CCDF, each
   with a view dropdown and rubber-band zoom.
 - **Deliberate pipeline** — **Calculate** generates I/Q off the UI thread with a

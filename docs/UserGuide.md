@@ -278,6 +278,14 @@ for ≈ 1.25 / 5 / 10 / 20 MHz) so the sample rate scales with FFT. Parameters: 
 OFDMA subchannel permutation). Representative signal — no PUSC/FUSC/AMC zones, preamble, FCH/MAPs,
 pilots, MIMO, or CTC/CC coding.
 
+### 5.22 T-DMB (DAB COFDM)
+The DAB COFDM signal underlying Terrestrial-DMB (a v1 of Signal Studio for T-DMB, N7616B). Keeps a
+**2.048 MHz** signal bandwidth across all four **transmission modes** (I/II/III/IV), which set the FFT
+size (2048 / 512 / 256 / 1024), active carriers, and guard interval. Parameters: **mode**, **symbol
+count**, **data source**. Modulation is DQPSK, approximated here by plain QPSK. Built on the shared OFDM
+engine. Representative signal — no null/phase-reference symbols, synchronisation channel, FIC/MSC
+multiplex, differential encoding, or convolutional coding.
+
 ---
 
 ## 6. Impairments
