@@ -593,6 +593,7 @@ namespace EsgSignalCreator.Ui
                     case "pulse": return "pulse";
                     case "jitter": return "jitter";
                     case "gsm_edge": case "gsm-edge": return "gsm-edge";
+                    case "bluetooth": return "bluetooth";
                     case "awgn": return "awgn";
                     case "import_iq": case "import-iq": return "import-iq";
                     default: return area;

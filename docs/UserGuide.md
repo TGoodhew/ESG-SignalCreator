@@ -196,6 +196,14 @@ rate** (Hz, GSM = 270.833 ksym/s), **samples per symbol**, **symbol count**, **B
 **data source** (PN9/15/23, all-ones/zeros). Sample rate = symbol rate × samples/symbol. EDGE 8PSK
 (3π/8-rotated), and full burst/training-sequence framing, are not yet implemented.
 
+### 5.11 Bluetooth (GFSK)
+A GFSK-modulated Bluetooth carrier (a v1 of Signal Studio for Bluetooth, N7606B). GFSK is the Basic
+Rate / LE modulation — Gaussian-filtered FSK (BT 0.5) integrated to continuous phase at a configurable
+**modulation index** (BR ≈ 0.32, LE ≈ 0.5). Parameters: **symbol rate** (Hz; BR/LE-1M = 1 M, LE-2M =
+2 M), **samples per symbol**, **symbol count**, **modulation index**, **BT**, and **data source**. Shares
+the CPM engine with GMSK (GMSK is GFSK at index 0.5). EDR (π/4-DQPSK / 8DPSK), the LE coded PHY, packet
+framing, and hopping are not yet implemented.
+
 ---
 
 ## 6. Impairments

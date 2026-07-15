@@ -125,6 +125,9 @@ Et jittret clock-/tonesignal til jitter-tolerancetest af modtagere (en v1 af Sig
 ### 5.10 GSM/EDGE (GMSK)
 En GMSK-moduleret GSM-familiebærebølge (en v1 af Signal Studio for GSM/EDGE, N7602B). GMSK er den konstant-envelope-modulation, GSM/GPRS bruger: databit driver en NRZ-frekvenspuls, gaussisk-filtreret (**BT**, standard 0,3) og integreret til kontinuert fase ved modulationsindeks 0,5. Parametre: **symbolrate** (Hz, GSM = 270,833 ksym/s), **samples pr. symbol**, **antal symboler**, **BT**, gaussisk span og **datakilde** (PN9/15/23, all-ones/zeros). Samplingsrate = symbolrate × samples/symbol. EDGE 8PSK (3π/8-roteret) og fuld burst-/træningssekvens-framing er endnu ikke implementeret.
 
+### 5.11 Bluetooth (GFSK)
+En GFSK-moduleret Bluetooth-bærebølge (en v1 af Signal Studio for Bluetooth, N7606B). GFSK er Basic Rate-/LE-modulationen — gaussisk-filtreret FSK (BT 0,5) integreret til kontinuert fase ved et konfigurerbart **modulationsindeks** (BR ≈ 0,32, LE ≈ 0,5). Parametre: **symbolrate** (Hz; BR/LE-1M = 1 M, LE-2M = 2 M), **samples pr. symbol**, **antal symboler**, **modulationsindeks**, **BT** og **datakilde**. Deler CPM-motoren med GMSK (GMSK er GFSK ved indeks 0,5). EDR (π/4-DQPSK / 8DPSK), LE coded PHY, pakke-framing og hopping er endnu ikke implementeret.
+
 ---
 
 ## 6. Impairments

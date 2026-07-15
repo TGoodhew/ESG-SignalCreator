@@ -48,7 +48,8 @@ core library, the WinForms app, and an xUnit test project.
   - **Import I/Q** (CSV/TSV, raw interleaved int16, Agilent/Keysight big-endian int16, WAV — the
     N7622A Toolkit "bring your own I/Q" role)
   - **Standards personalities** (v1 cores derived from the legacy Signal Studio catalogue — see
-    [docs/signal-creation-software/](docs/signal-creation-software/)): **GSM/EDGE** (GMSK — N7602B)
+    [docs/signal-creation-software/](docs/signal-creation-software/)): **GSM/EDGE** (GMSK — N7602B),
+    **Bluetooth** (GFSK — N7606B)
 - **Verification plots** — I/Q vs time, FFT spectrum, constellation, and CCDF, each
   with a view dropdown and rubber-band zoom.
 - **Deliberate pipeline** — **Calculate** generates I/Q off the UI thread with a

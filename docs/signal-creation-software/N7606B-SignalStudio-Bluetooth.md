@@ -3,6 +3,13 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟡 **Implementation status (v1 core):** A **Bluetooth (GFSK)** personality now ships in the app
+> (`Core/Personalities/Bluetooth/`). It generates the Basic Rate / LE **GFSK** modulation
+> (Gaussian-filtered FSK, BT 0.5, configurable modulation index; 1 Msym/s default) as a
+> constant-envelope carrier — a representative Bluetooth signal, **not standards-compliant**. Deferred:
+> **EDR** (π/4-DQPSK / 8DPSK), the **LE coded PHY**, packet types/framing, access-code/sync words, and
+> channel hopping. Hardware verification is tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** N7606B (listed in the E4438C data sheet ordering list as "N7606B Signal Studio for Bluetooth")
 - **Product name:** Signal Studio for Bluetooth (Bluetooth BR/EDR and Bluetooth Low Energy)
