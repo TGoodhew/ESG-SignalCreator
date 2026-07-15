@@ -7,6 +7,7 @@ using EsgSignalCreator.Personalities.CustomMod;
 using EsgSignalCreator.Personalities.Cw;
 using EsgSignalCreator.Personalities.MultiCarrier;
 using EsgSignalCreator.Personalities.Multitone;
+using EsgSignalCreator.Personalities.Pulse;
 
 namespace EsgSignalCreator.Ui.Sources
 {
@@ -39,6 +40,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("multitone", "Multitone", () => new MultitonePersonality()),
             new PersonalityDescriptor("multi-carrier", "Multi-Carrier", () => new MultiCarrierPersonality()),
             new PersonalityDescriptor("custom-mod", "Custom Digital Modulation", () => new CustomModPersonality()),
+            new PersonalityDescriptor("pulse", "Pulse Building", () => new PulsePersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };

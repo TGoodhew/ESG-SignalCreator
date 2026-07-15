@@ -107,10 +107,13 @@ Flere uafhængigt placerede bærebølger (hver kan have sin egen modulation), su
 ### 5.4 Custom Digital Modulation
 En digitalt moduleret bærebølge. Parametre: **modulationsformat** (BPSK, QPSK, 8PSK, 16/64/256-QAM, MSK…), **symbolrate** (Hz), et **pulsformende filter** (RRC, RC, Gaussian eller intet) med **roll-off / BT** (alpha) og et **payload**-mønster (PN9/PN15/PN23, all-ones/zeros, random). Bruges til ACP/ACPR og modulationskvalitetsarbejde.
 
-### 5.5 AWGN
+### 5.5 Pulse Building
+Et gentaget radarlignende pulstog (en v1 af Signal Studio for Pulse Building, N7620A). Parametre: **pulsbredde** (s), **pulsgentagelsesinterval / PRI** (s, ≥ pulsbredde), en valgfri raised-cosine **stige-/faldtid** (s, 0 = rektangulære kanter), en **startforsinkelse** (s) og **intra-puls-modulationen** — **None** (gated CW-burst), **Linear FM-chirp** (med en fejet **båndbredde** i Hz) eller en **Barker-fasekode** (længde 2/3/4/5/7/11/13). En enkelt puls bygges og gentages ved PRI'en for at udfylde bølgeformen; en et-samples **markør** udsendes ved hver pulsstart (nyttig som ARB-trigger/scope-sync). Bruges til radar/EW-modtagertest og pulskompressionsarbejde. Avancerede N7620A-funktioner (per-puls-offsettabeller, forskudt/jittret PRI, antennescanningsmønstre, CSV-import) er endnu ikke implementeret.
+
+### 5.6 AWGN
 Båndbegrænset additiv hvid gaussisk støj. Parametre: **støjbåndbredde** (Hz), **carrier-to-noise-ratio** (dB) og valgfri **peak clipping**. AWGN har en høj crest-faktor (~10 dB) — en god headroom- og CCDF-test.
 
-### 5.6 Import I/Q
+### 5.7 Import I/Q
 Indlæs I/Q fra en fil. Parametre: **filsti** (du angiver den), **format** (CSV, interleaved Int16, Float32), kilde-**samplingsrate** (Hz) og hvorvidt der skal **resamples** til mål-sample clock'en. Lader dig genafspille eksternt opfangede eller eksternt genererede signaler.
 
 ---

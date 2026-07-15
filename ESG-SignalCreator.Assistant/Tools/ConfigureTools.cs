@@ -20,6 +20,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureCwTool(),
             new ConfigureMultitoneTool(),
             new ConfigureCustomModulationTool(),
+            new ConfigurePulseTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -52,7 +53,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multi-Carrier", "CustomMod", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multi-Carrier", "CustomMod", "Pulse", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -107,6 +108,25 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("custom_modulation", args), "Configured custom modulation."));
+        }
+
+        private sealed class ConfigurePulseTool : ConfigureTool
+        {
+            public override string Name => "configure_pulse";
+            public override string Description =>
+                "Configure the Pulse Building (radar/EW) source: pulse width (s) and pulse-repetition interval " +
+                "(s), optional raised-cosine rise/fall (s), and intra-pulse modulation (None; LinearFmChirp with " +
+                "a swept bandwidth in Hz; or BarkerPhase with a code length of 2/3/4/5/7/11/13).";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("pulse_width_sec", Schema.Number("pulse width (on time), seconds"), required: true),
+                Schema.P("pri_sec", Schema.Number("pulse repetition interval, seconds (>= pulse width)"), required: true),
+                Schema.P("rise_fall_sec", Schema.Number("raised-cosine edge time, seconds (0 = rectangular)")),
+                Schema.P("modulation", Schema.Str("intra-pulse modulation", new[] { "None", "LinearFmChirp", "BarkerPhase" })),
+                Schema.P("chirp_bandwidth_hz", Schema.Number("swept bandwidth for LinearFmChirp, Hz")),
+                Schema.P("barker_length", Schema.Integer("Barker code length (2,3,4,5,7,11,13)")));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("pulse", args), "Configured pulse."));
         }
 
         private sealed class ConfigureAwgnTool : ConfigureTool

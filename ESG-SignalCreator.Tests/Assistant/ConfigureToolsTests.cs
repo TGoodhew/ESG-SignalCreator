@@ -64,7 +64,7 @@ namespace EsgSignalCreator.Tests.Assistant
         public void All_configure_tools_are_configure_effect()
         {
             Assert.All(ConfigureTools.All(), t => Assert.Equal(ToolEffect.Configure, t.Effect));
-            Assert.Equal(9, ConfigureTools.All().Count());
+            Assert.Equal(10, ConfigureTools.All().Count());
         }
 
         [Fact]
@@ -84,6 +84,16 @@ namespace EsgSignalCreator.Tests.Assistant
             await Run("configure_multitone", args, host);
             Assert.Equal("multitone", host.LastConfigureArea);
             Assert.Equal(4, (int)host.LastConfigureArgs["tone_count"]);
+        }
+
+        [Fact]
+        public async Task Configure_pulse_routes_args_to_host_with_area()
+        {
+            var host = new FakeConfigureHost();
+            var args = new JObject { ["pulse_width_sec"] = 1e-6, ["pri_sec"] = 10e-6, ["modulation"] = "LinearFmChirp" };
+            await Run("configure_pulse", args, host);
+            Assert.Equal("pulse", host.LastConfigureArea);
+            Assert.Equal("LinearFmChirp", (string)host.LastConfigureArgs["modulation"]);
         }
 
         [Fact]
