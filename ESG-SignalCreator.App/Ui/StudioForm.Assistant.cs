@@ -599,6 +599,7 @@ namespace EsgSignalCreator.Ui
                     case "cdma2000": case "3gpp2": return "cdma2000";
                     case "td_scdma": case "td-scdma": return "td-scdma";
                     case "s_dmb": case "s-dmb": case "sdmb": return "s-dmb";
+                    case "lte_fdd": case "lte-fdd": case "lte": return "lte-fdd";
                     case "awgn": return "awgn";
                     case "import_iq": case "import-iq": return "import-iq";
                     default: return area;

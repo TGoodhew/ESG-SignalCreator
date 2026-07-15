@@ -30,6 +30,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureCdma2000Tool(),
             new ConfigureTdScdmaTool(),
             new ConfigureSdmbTool(),
+            new ConfigureLteFddTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -62,7 +63,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -177,6 +178,22 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureLteFddTool : ConfigureTool
+        {
+            public override string Name => "configure_lte_fdd";
+            public override string Description =>
+                "Configure the 3GPP LTE FDD source: channel bandwidth (selects FFT/occupied carriers at 15 kHz " +
+                "spacing), number of OFDM symbols, and subcarrier modulation.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("bandwidth", Schema.Str("channel bandwidth",
+                    new[] { "Bw1_4MHz", "Bw3MHz", "Bw5MHz", "Bw10MHz", "Bw15MHz", "Bw20MHz" })),
+                Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
+                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "QPSK", "QAM16", "QAM64", "QAM256" })));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("lte_fdd", args), "Configured LTE FDD."));
         }
 
         private sealed class ConfigureSdmbTool : ConfigureTool
