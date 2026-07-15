@@ -587,6 +587,7 @@ namespace EsgSignalCreator.Ui
                 {
                     case "cw": return "cw";
                     case "multitone": return "multitone";
+                    case "multitone_distortion": case "multitone-distortion": return "multitone-distortion";
                     case "multi_carrier": case "multi-carrier": return "multi-carrier";
                     case "custom_modulation": case "custom-mod": case "custommod": return "custom-mod";
                     case "pulse": return "pulse";

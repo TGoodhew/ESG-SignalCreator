@@ -116,6 +116,9 @@ Båndbegrænset additiv hvid gaussisk støj. Parametre: **støjbåndbredde** (Hz
 ### 5.7 Import I/Q
 Indlæs I/Q fra en fil. Parametre: **filsti** (du angiver den), **format** (CSV, interleaved Int16, Float32), kilde-**samplingsrate** (Hz) og hvorvidt der skal **resamples** til mål-sample clock'en. Lader dig genafspille eksternt opfangede eller eksternt genererede signaler.
 
+### 5.8 Multitone Distortion
+Et tæt multitone-/noise-power-ratio-(NPR)-stimulus til linearitetstest af forstærkere og konvertere (en v1 af Signal Studio for Multitone Distortion, N7621B). Parametre: **antal toner** (2 op til 4097), **toneafstand** (Hz), **centeroffset** (Hz), en **fase-preset** — **Parabolic** (Newman, lav PAPR), **Random** eller **Constant** (justeret, høj PAPR) — og en valgfri **NPR-notch** (aktivér, **bredde** Hz, **offset** Hz fra båndcentrum), der rydder et bånd af toner, så du kan måle intermodulation/støj, der falder ned i notchen. Sammensat båndbredde ≈ antal toner × afstand; live-PAPR rapporteres. Spektrumanalysator-assisteret prædistortionskorrektion er endnu ikke implementeret.
+
 ---
 
 ## 6. Impairments
