@@ -140,6 +140,9 @@ Et enkeltkode cdma2000-forward-link-lignende signal (en v1 af Signal Studio for 
 ### 5.15 TD-SCDMA
 Et enkeltkode TD-SCDMA-signal (en v1 af Signal Studio for TD-SCDMA, N7612B) ved **1,28 Mcps** low-chip-rate: QPSK/16QAM/64QAM-data spredt med en OVSF-kode, scramblet, RRC-formet (β = 0,22). Parametre svarer til W-CDMA FDD. Repræsentativt enkeltkanalsignal — 5 ms-subframe/7-timeslot-TDD-burststruktur (DwPTS/UpPTS/GP), midamble-koder, switching points og HSDPA-kanaler er endnu ikke implementeret.
 
+### 5.16 S-DMB (CDM, tilnærmet)
+Et **tilnærmet** Satellite-DMB-stimulus (en v1 af Signal Studio for S-DMB, E4438C-407). ⚠️ S-DMB-luftgrænsefladen (System E) kunne ikke bekræftes fra primær litteratur, så dette genererer et repræsentativt **CDM**-signal (QPSK spredt med en OVSF-kode, scramblet, RRC-formet) — **ikke en verificeret S-DMB-bølgeform.** Chip-rate, spredning, FEC og framing er pladsholdere; betragt outputtet som "et QPSK spread-spectrum-signal." Parametre svarer til de øvrige CDMA-familie-personligheder.
+
 ---
 
 ## 6. Impairments

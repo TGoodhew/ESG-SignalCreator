@@ -234,6 +234,13 @@ Parameters mirror W-CDMA FDD. Representative single-channel signal — the 5 ms 
 TDD burst structure (DwPTS/UpPTS/GP), midamble codes, switching points, and HSDPA channels are not yet
 implemented.
 
+### 5.16 S-DMB (CDM, approximate)
+An **approximate** Satellite-DMB stimulus (a v1 of Signal Studio for S-DMB, E4438C-407). ⚠️ The S-DMB
+(System E) air interface could not be confirmed from primary literature, so this generates a
+representative **CDM** signal (QPSK spread by an OVSF code, scrambled, RRC-shaped) — **not a verified
+S-DMB waveform.** Chip rate, spreading, FEC, and framing are placeholders; treat the output as "a QPSK
+spread-spectrum signal." Parameters mirror the other CDMA-family personalities.
+
 ---
 
 ## 6. Impairments
