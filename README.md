@@ -52,7 +52,7 @@ core library, the WinForms app, and an xUnit test project.
     **Bluetooth** (GFSK — N7606B), **3GPP W-CDMA FDD** (OVSF-spread QPSK — N7600B),
     **W-CDMA HSPA** (16QAM HS-PDSCH — E4438C-419), **3GPP2 CDMA** (cdma2000 — N7601B),
     **TD-SCDMA** (1.28 Mcps — N7612B), **S-DMB** (CDM, approx. — E4438C-407),
-    **3GPP LTE FDD** (OFDM, 1.4–20 MHz — N7624B)
+    **3GPP LTE FDD** (OFDM, 1.4–20 MHz — N7624B), **LTE TDD** (N7625B)
 - **Verification plots** — I/Q vs time, FFT spectrum, constellation, and CCDF, each
   with a view dropdown and rubber-band zoom.
 - **Deliberate pipeline** — **Calculate** generates I/Q off the UI thread with a

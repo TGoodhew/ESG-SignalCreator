@@ -61,6 +61,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("td-scdma", "TD-SCDMA", () => new TdScdmaPersonality()),
             new PersonalityDescriptor("s-dmb", "S-DMB (CDM, approx.)", () => new SdmbPersonality()),
             new PersonalityDescriptor("lte-fdd", "3GPP LTE FDD", () => new LteFddPersonality()),
+            new PersonalityDescriptor("lte-tdd", "3GPP LTE TDD", () => new LteTddPersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };
