@@ -596,6 +596,7 @@ namespace EsgSignalCreator.Ui
                     case "bluetooth": return "bluetooth";
                     case "wcdma_fdd": case "wcdma": case "w-cdma": return "wcdma-fdd";
                     case "wcdma_hspa": case "hspa": case "w-cdma-hspa": return "wcdma-hspa";
+                    case "cdma2000": case "3gpp2": return "cdma2000";
                     case "awgn": return "awgn";
                     case "import_iq": case "import-iq": return "import-iq";
                     default: return area;

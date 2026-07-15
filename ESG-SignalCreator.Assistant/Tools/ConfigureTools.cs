@@ -27,6 +27,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureBluetoothTool(),
             new ConfigureWcdmaTool(),
             new ConfigureHspaTool(),
+            new ConfigureCdma2000Tool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -59,7 +60,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -174,6 +175,26 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureCdma2000Tool : ConfigureTool
+        {
+            public override string Name => "configure_cdma2000";
+            public override string Description =>
+                "Configure the 3GPP2 CDMA (cdma2000) source: chip rate (Hz, 1.2288M), samples per chip, symbol " +
+                "count, Walsh spreading factor (power of two) and code index, modulation, roll-off, and scrambling.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("chip_rate_hz", Schema.Number("chip rate, Hz")),
+                Schema.P("samples_per_chip", Schema.Integer("oversampling factor")),
+                Schema.P("symbol_count", Schema.Integer("number of data symbols")),
+                Schema.P("spreading_factor", Schema.Integer("Walsh spreading factor (power of 2)")),
+                Schema.P("ovsf_index", Schema.Integer("Walsh code index")),
+                Schema.P("modulation", Schema.Str("data modulation", new[] { "QPSK", "QAM16" })),
+                Schema.P("rrc_beta", Schema.Number("pulse-shape roll-off (0..1)")),
+                Schema.P("scramble", Schema.Bool("apply complex scrambling")));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("cdma2000", args), "Configured cdma2000."));
         }
 
         private sealed class ConfigureHspaTool : ConfigureTool
