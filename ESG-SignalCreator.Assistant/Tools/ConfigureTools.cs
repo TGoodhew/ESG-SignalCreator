@@ -23,6 +23,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureCustomModulationTool(),
             new ConfigurePulseTool(),
             new ConfigureJitterTool(),
+            new ConfigureGsmEdgeTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -55,7 +56,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -170,6 +171,23 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureGsmEdgeTool : ConfigureTool
+        {
+            public override string Name => "configure_gsm_edge";
+            public override string Description =>
+                "Configure the GSM/EDGE (GMSK) source: symbol rate (Hz, GSM = 270.833k), samples per symbol, " +
+                "symbol count, Gaussian BT (GSM = 0.3), and payload data source.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("symbol_rate_hz", Schema.Number("symbol/bit rate, Hz")),
+                Schema.P("samples_per_symbol", Schema.Integer("oversampling factor")),
+                Schema.P("symbol_count", Schema.Integer("number of symbols")),
+                Schema.P("bt", Schema.Number("Gaussian bandwidth-time product")),
+                Schema.P("data", Schema.Str("payload data source", new[] { "PN9", "PN15", "PN23", "AllZeros", "AllOnes" })));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("gsm_edge", args), "Configured GSM/EDGE."));
         }
 
         private sealed class ConfigureAwgnTool : ConfigureTool

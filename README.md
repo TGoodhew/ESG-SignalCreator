@@ -47,6 +47,8 @@ core library, the WinForms app, and an xUnit test project.
   - **AWGN** (band-limited Gaussian noise with crest-factor clipping)
   - **Import I/Q** (CSV/TSV, raw interleaved int16, Agilent/Keysight big-endian int16, WAV — the
     N7622A Toolkit "bring your own I/Q" role)
+  - **Standards personalities** (v1 cores derived from the legacy Signal Studio catalogue — see
+    [docs/signal-creation-software/](docs/signal-creation-software/)): **GSM/EDGE** (GMSK — N7602B)
 - **Verification plots** — I/Q vs time, FFT spectrum, constellation, and CCDF, each
   with a view dropdown and rubber-band zoom.
 - **Deliberate pipeline** — **Calculate** generates I/Q off the UI thread with a
@@ -241,7 +243,7 @@ The solution is split into a UI-free core library, the WinForms app, and a test 
 | [Core/Visa/](ESG-SignalCreator.Core/Visa/) | `EsgInstrument` facade + `*IDN?`/`*OPT?` parsing |
 | [Core/Arb/](ESG-SignalCreator.Core/Arb/) | IEEE-488.2 block framing and the int16/interleave/big-endian ARB encoder |
 | [Core/Model/](ESG-SignalCreator.Core/Model/) | `WaveformModel` — the neutral I/Q output of every signal personality |
-| [Core/Personalities/](ESG-SignalCreator.Core/Personalities/) | `IWaveformPersonality` contract + CW, Multitone, Multitone Distortion, Multi-Carrier, CustomMod, Pulse, Jitter, AWGN, Import-IQ |
+| [Core/Personalities/](ESG-SignalCreator.Core/Personalities/) | `IWaveformPersonality` contract + CW, Multitone, Multitone Distortion, Multi-Carrier, CustomMod, Pulse, Jitter, GSM/EDGE, AWGN, Import-IQ |
 | [Core/Dsp/](ESG-SignalCreator.Core/Dsp/) | FFT, FIR (RRC/RC/Gaussian), windows, CCDF/PAPR, resampling |
 | [Core/Validation/](ESG-SignalCreator.Core/Validation/) | `WaveformValidator` dependency checker |
 | [Core/Capability/](ESG-SignalCreator.Core/Capability/) | Per-target capability profiles (embedded JSON) |

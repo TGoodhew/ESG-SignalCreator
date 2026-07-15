@@ -188,6 +188,14 @@ Periodic + random combine into a **composite** signal, and a given seed reproduc
 sequence (digital repeatability). Amplitudes are in unit intervals (1 UI = one clock period). Predefined
 standards masks (e.g. ITU-T G.8251) and automated SJ frequency sweeps are not yet implemented.
 
+### 5.10 GSM/EDGE (GMSK)
+A GMSK-modulated GSM-family carrier (a v1 of Signal Studio for GSM/EDGE, N7602B). GMSK is the
+constant-envelope modulation used by GSM/GPRS: data bits drive an NRZ frequency pulse, Gaussian-filtered
+(**BT**, default 0.3) and integrated to continuous phase at modulation index 0.5. Parameters: **symbol
+rate** (Hz, GSM = 270.833 ksym/s), **samples per symbol**, **symbol count**, **BT**, Gaussian span, and
+**data source** (PN9/15/23, all-ones/zeros). Sample rate = symbol rate × samples/symbol. EDGE 8PSK
+(3π/8-rotated), and full burst/training-sequence framing, are not yet implemented.
+
 ---
 
 ## 6. Impairments
