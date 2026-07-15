@@ -7,6 +7,7 @@ using EsgSignalCreator.Personalities.Cdma2000;
 using EsgSignalCreator.Personalities.CustomIq;
 using EsgSignalCreator.Personalities.CustomMod;
 using EsgSignalCreator.Personalities.Cw;
+using EsgSignalCreator.Personalities.DigitalVideo;
 using EsgSignalCreator.Personalities.GsmEdge;
 using EsgSignalCreator.Personalities.Hspa;
 using EsgSignalCreator.Personalities.Jitter;
@@ -70,6 +71,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("wimax-fixed", "802.16-2004 WiMAX (OFDM)", () => new WimaxFixedPersonality()),
             new PersonalityDescriptor("wimax-mobile", "802.16e Mobile WiMAX (OFDMA)", () => new WimaxMobilePersonality()),
             new PersonalityDescriptor("t-dmb", "T-DMB (DAB COFDM)", () => new TdmbPersonality()),
+            new PersonalityDescriptor("digital-video", "Digital Video (DVB-T COFDM)", () => new DigitalVideoPersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };

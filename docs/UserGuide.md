@@ -286,6 +286,14 @@ count**, **data source**. Modulation is DQPSK, approximated here by plain QPSK. 
 engine. Representative signal — no null/phase-reference symbols, synchronisation channel, FIC/MSC
 multiplex, differential encoding, or convolutional coding.
 
+### 5.23 Digital Video (DVB-T COFDM)
+A DVB-T COFDM signal for an 8 MHz channel (a v1 of Signal Studio for Digital Video, N7623B). Parameters:
+**transmission mode** (**2K** = 2048-FFT / **8K** = 8192-FFT), **guard-interval** ratio (1/4…1/32),
+**symbol count**, and **modulation** (QPSK / 16QAM / 64QAM). Sample rate is the DVB-T elementary rate
+(64/7 MHz). Built on the shared OFDM engine. Representative signal — no TPS/pilot carriers, PRBS energy
+dispersal, RS/convolutional coding, or MPEG-TS framing; other digital-video standards (ISDB-T, ATSC
+8VSB, DVB-C/S QAM, DTMB) are not implemented.
+
 ---
 
 ## 6. Impairments
