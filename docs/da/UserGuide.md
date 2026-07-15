@@ -131,6 +131,9 @@ En GFSK-moduleret Bluetooth-bærebølge (en v1 af Signal Studio for Bluetooth, N
 ### 5.12 3GPP W-CDMA FDD
 Et enkeltkode W-CDMA-downlink-lignende signal (en v1 af Signal Studio for 3GPP W-CDMA FDD, N7600B). Datasymboler spredes med en **OVSF**-(Walsh)-kode, kompleks-**scrambles** af en PN-sekvens og root-raised-cosine-formes (**β** = 0,22) ved **3,84 Mcps** chip-raten. Parametre: **chip-rate**, **samples pr. chip**, **antal symboler**, **spredningsfaktor** (potens af to) og **OVSF-indeks**, **modulation** (QPSK…), **RRC β** og **scramble** (aktivér + seed). Samplingsrate = chip-rate × samples/chip. Dette er et repræsentativt enkeltkanalsignal — multikode-downlink (CPICH/P-CCPCH/SCH), slot-/frame-struktur, TFCI, transmit diversity og HSPA-kanaler er endnu ikke implementeret.
 
+### 5.13 3GPP W-CDMA HSPA
+Et HS-PDSCH-lignende HSPA-signal (en v1 af Signal Studio for 3GPP W-CDMA HSPA, E4438C-419). Samme DSSS-struktur som §5.12, men med **16QAM** på en **SF-16**-kode som standard — HSPA's definerende træk er højere-ordens modulation på den højhastigheds-delte kanal. Parametre svarer til W-CDMA FDD plus et **modulations**-valg (QPSK / 16QAM / 64QAM). Repræsentativt enkeltkanalsignal — HS-SCCH/HS-DPCCH, E-DCH-kanaler, H-ARQ og TTI-struktur er endnu ikke implementeret.
+
 ---
 
 ## 6. Impairments

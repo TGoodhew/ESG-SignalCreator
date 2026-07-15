@@ -213,6 +213,13 @@ root-raised-cosine shaped (**β** = 0.22) at the **3.84 Mcps** chip rate. Parame
 chip. This is a representative single-channel signal — the multi-code downlink (CPICH/P-CCPCH/SCH),
 slot/frame structure, TFCI, transmit diversity, and HSPA channels are not yet implemented.
 
+### 5.13 3GPP W-CDMA HSPA
+An HS-PDSCH-style HSPA signal (a v1 of Signal Studio for 3GPP W-CDMA HSPA, E4438C-419). Same DSSS
+structure as §5.12 but defaulting to **16QAM** on an **SF-16** code — the defining HSPA feature is
+higher-order modulation on the high-speed shared channel. Parameters mirror W-CDMA FDD plus a
+**modulation** choice (QPSK / 16QAM / 64QAM). Representative single-channel signal — HS-SCCH/HS-DPCCH,
+E-DCH channels, H-ARQ, and TTI structure are not yet implemented.
+
 ---
 
 ## 6. Impairments
