@@ -64,7 +64,7 @@ namespace EsgSignalCreator.Tests.Assistant
         public void All_configure_tools_are_configure_effect()
         {
             Assert.All(ConfigureTools.All(), t => Assert.Equal(ToolEffect.Configure, t.Effect));
-            Assert.Equal(26, ConfigureTools.All().Count());
+            Assert.Equal(27, ConfigureTools.All().Count());
         }
 
         [Fact]
@@ -94,6 +94,14 @@ namespace EsgSignalCreator.Tests.Assistant
             await Run("configure_multitone_distortion", args, host);
             Assert.Equal("multitone_distortion", host.LastConfigureArea);
             Assert.Equal(64, (int)host.LastConfigureArgs["tone_count"]);
+        }
+
+        [Fact]
+        public async Task Configure_broadcast_radio_routes_args_to_host_with_area()
+        {
+            var host = new FakeConfigureHost();
+            await Run("configure_broadcast_radio", new JObject { ["stereo"] = true, ["audio_tone_hz"] = 1000 }, host);
+            Assert.Equal("broadcast_radio", host.LastConfigureArea);
         }
 
         [Fact]

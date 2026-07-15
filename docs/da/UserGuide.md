@@ -164,6 +164,9 @@ DAB-COFDM-signalet, der ligger under Terrestrial-DMB (en v1 af Signal Studio for
 ### 5.23 Digital Video (DVB-T COFDM)
 Et DVB-T-COFDM-signal til en 8 MHz-kanal (en v1 af Signal Studio for Digital Video, N7623B). Parametre: **transmissionsmode** (**2K** = 2048-FFT / **8K** = 8192-FFT), **guard-interval**-forhold (1/4…1/32), **antal symboler** og **modulation** (QPSK / 16QAM / 64QAM). Samplingsraten er DVB-T-elementærraten (64/7 MHz). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen TPS-/pilotbærebølger, PRBS-energispredning, RS-/foldningskodning eller MPEG-TS-framing; andre digital-video-standarder (ISDB-T, ATSC 8VSB, DVB-C/S QAM, DTMB) er ikke implementeret.
 
+### 5.24 Broadcast Radio (FM)
+Et analogt FM-broadcast-signal (en v1 af Signal Studio for Broadcast Radio, N7611B). Basebånd-multipleksen er en **audio-testtone** (mono), valgfrit med en **19 kHz stereo-pilot** og en **38 kHz DSB-SC**-stereo-subbærebølge, frekvensmoduleret på bærebølgen (konstant envelope). Parametre: **audio-tonefrekvens**, **stereo** til/fra, **peak-deviation** (75 kHz), **samplingsrate** og **længde**. Repræsentativt signal — en enkelt testtone i stedet for programlyd, og ingen RDS (57 kHz), pre-emphasis eller SCA. De digitale broadcast-formater, produktet også dækker (DAB/DAB+ → se §5.22 T-DMB; XM/HD Radio), er ikke implementeret her.
+
 ---
 
 ## 6. Impairments

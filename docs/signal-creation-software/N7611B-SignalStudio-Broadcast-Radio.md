@@ -3,6 +3,13 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟡 **Implementation status (v1 core):** A **Broadcast Radio (FM)** personality now ships in the app
+> (`Core/Personalities/BroadcastRadio/`). It generates an analog FM broadcast signal — an audio test tone
+> (mono), optionally with a 19 kHz stereo pilot + 38 kHz DSB-SC subcarrier, FM-modulated at 75 kHz peak
+> deviation (constant envelope). **Simplified v1.** Deferred: RDS (57 kHz) data, pre-emphasis, SCA
+> subcarriers, real program audio, and the digital broadcast formats (DAB/DAB+ — see the T-DMB
+> personality — HD Radio, XM). Hardware verification is tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** N7611B
 - **Product name:** Signal Studio for Broadcast Radio

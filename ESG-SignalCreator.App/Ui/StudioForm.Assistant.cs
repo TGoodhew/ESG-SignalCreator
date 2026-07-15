@@ -606,6 +606,7 @@ namespace EsgSignalCreator.Ui
                     case "wimax_mobile": case "wimax-mobile": return "wimax-mobile";
                     case "t_dmb": case "t-dmb": case "tdmb": return "t-dmb";
                     case "digital_video": case "digital-video": case "dvb": case "dvb-t": return "digital-video";
+                    case "broadcast_radio": case "broadcast-radio": case "fm": return "broadcast-radio";
                     case "awgn": return "awgn";
                     case "import_iq": case "import-iq": return "import-iq";
                     default: return area;
