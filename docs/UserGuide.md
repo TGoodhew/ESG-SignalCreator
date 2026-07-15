@@ -263,6 +263,13 @@ used-subcarrier count and cyclic prefix. Parameters: **bandwidth**, **symbol cou
 L-STF/L-LTF/L-SIG preamble, pilots, coding/interleaving, MIMO, or 80/160 MHz (11ac/ax, which exceed the
 ESG).
 
+### 5.20 802.16-2004 WiMAX (OFDM)
+A fixed-WiMAX (IEEE 802.16-2004) **256-FFT OFDM** signal (a v1 of Signal Studio for 802.16-2004, N7613A)
+with 200 used subcarriers. Parameters: **channel bandwidth** (Hz; sample rate ≈ bandwidth × 8/7),
+**cyclic-prefix ratio** (1/4, 1/8, 1/16, 1/32), **symbol count**, and **modulation** (BPSK…64QAM).
+Built on the shared OFDM engine. Representative signal — no long/short preamble, FCH, DL/UL-MAP,
+DCD/UCD, pilot patterns, or RS-CC coding.
+
 ---
 
 ## 6. Impairments
