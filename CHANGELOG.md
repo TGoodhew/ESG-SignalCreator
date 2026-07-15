@@ -6,6 +6,60 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-15
+
+Signal-personality expansion: a modern implementation of the legacy **"PC-based signal creation
+software"** catalogue from the E4438C ESG data sheet (5988-4039EN). Twenty new source personalities
+were added — one per requirement doc in [`docs/signal-creation-software/`](docs/signal-creation-software/)
+— each on its own branch/PR (#158–#177), plus two shared DSP engines.
+
+> ⚠️ **Experimental — representative v1 cores, not standards-compliant, and not yet bench-verified.**
+> These personalities generate signals with the correct top-level numerology (chip/symbol/subcarrier
+> rates, bandwidths, framing sizes) for spectrum / occupied-bandwidth / PAPR / modulation checks, but
+> they are **not** standards-compliant waveforms — reference/pilot signals, preambles/sync, channel
+> coding, framing, and MIMO are deferred (each doc's status note lists exactly what). None have been
+> validated on a physical E4438C yet; on-hardware verification is tracked in the verification epic
+> (#157). **S-DMB is explicitly approximate** — its air interface could not be confirmed from primary
+> literature. Prefer the bench-validated personalities (CW, Multitone, Custom Digital Modulation, AWGN,
+> Import I/Q) for measurement-critical work until these are verified.
+
+### Added
+- **Signal-personality catalogue** (#156) and per-item requirements docs for all 21 items under the
+  E4438C data sheet's "PC-based signal creation software" heading, English-only, in
+  `docs/signal-creation-software/` with an index README.
+- **General-purpose tools:**
+  - **Pulse Building** (N7620A, #158) — radar/EW pulse train: pulse width / PRI / start delay,
+    raised-cosine edges, intra-pulse None / linear-FM chirp / Barker phase code, per-pulse markers.
+  - **Multitone Distortion** (N7621B, #159) — IMD/NPR stimulus: 2–4097 tones, phase presets
+    (random/parabolic/constant), clearable NPR notch.
+  - **Jitter Injection** (E4438C-SP1, #161) — jittered clock via timing modulation: periodic
+    (sinusoidal/square/triangle/saw/exp) + Gaussian random + composite, in unit intervals.
+  - **Broadcast Radio (FM)** (N7611B, #176) — analog FM: mono/stereo (19 kHz pilot + 38 kHz subcarrier),
+    75 kHz deviation.
+- **CDMA-family personalities** on a shared **`DsssEngine`** (OVSF/Walsh spread → complex scramble →
+  RRC pulse shaping): **W-CDMA FDD** (N7600B, #164), **W-CDMA HSPA** 16QAM HS-PDSCH (E4438C-419, #165),
+  **cdma2000** (N7601B, #166), **TD-SCDMA** (N7612B, #167), and **S-DMB** (approximate; E4438C-407, #168).
+- **OFDM-family personalities** on a shared **`OfdmEngine`** + a new `Fft.Inverse` (IFFT + cyclic
+  prefix): **LTE FDD** (N7624B, #169) and **LTE TDD** (N7625B, #170), **802.11 WLAN** (N7617B, #171),
+  **fixed WiMAX 802.16-2004** (N7613A, #172) and **mobile WiMAX 802.16e** (N7615B, #173), **T-DMB / DAB
+  COFDM** (N7616B, #174), and **Digital Video / DVB-T COFDM** (N7623B, #175).
+- **GSM/EDGE (GMSK)** (N7602B, #162) and **Bluetooth (GFSK)** (N7606B, #163) — Gaussian continuous-phase
+  modulation (GMSK is GFSK at index 0.5).
+- **Import I/Q** gains the Agilent/Keysight **big-endian 16-bit** interleaved format (`.agt`, the ESG's
+  native ARB byte order) and a user-selectable format override — the N7622A Toolkit "bring your own I/Q"
+  role (#160).
+- **Assistant tools** for each new personality (`configure_pulse`, `configure_jitter`,
+  `configure_wcdma`, `configure_lte_fdd`, …) and their entries in `set_source_personality`.
+- **Hardware-verification epic** (#157) with per-personality bench-check steps for the E4438C + VSA.
+
+### Notes
+- All new personalities are unit-tested (I/Q length, sample rate, unit-peak normalization, and
+  personality-specific invariants); the suite is at 531 tests. They are **not** hardware-validated — see
+  the experimental caveat above and epic #157.
+- **Waveform licensing** (E4438C-221–229 / 250–259, #177) is intentionally **not** modelled: the app
+  plays plain, unlicensed ARB waveforms (generic ARB playback needs only the Option 601/602 baseband
+  hardware, not a per-waveform license).
+
 ## [1.1.0] - 2026-07-14
 
 Milestone release: full N9010A (EXA) analyzer support bench-validated end-to-end, capability-binding
