@@ -3,6 +3,14 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
+> 🟡 **Implementation status (v1 core):** An **802.11 WLAN (OFDM)** personality now ships in the app
+> (`Core/Personalities/Wlan/`, on the shared `Dsp/OfdmEngine`). It generates a generic 11a/g/n-style OFDM
+> signal — 312.5 kHz spacing, 64-point (20 MHz) or 128-point (40 MHz) FFT with the standard used-subcarrier
+> count and CP, QPSK…256QAM — for occupied-bandwidth / PAPR checks. **Simplified v1, not a
+> standards-compliant PPDU.** Deferred: L-STF/L-LTF/L-SIG preamble and HT/VHT/HE SIG fields, pilot
+> subcarriers, scrambling/coding/interleaving, MIMO, DSSS/CCK (11b), and 80/160 MHz (11ac/ax, which exceed
+> the legacy ESG). Hardware verification is tracked in the epic.
+
 ## 1. Product identity
 - **Model / option number:** N7617B (listed in the E4438C data sheet ordering list as "N7617B Signal Studio for 802.11 WLAN")
 - **Product name:** Signal Studio for WLAN 802.11a/b/g/j/p/n/ac/ah/ax

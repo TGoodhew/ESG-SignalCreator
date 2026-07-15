@@ -149,6 +149,9 @@ Et downlink-OFDM-signal med LTE-numerologi (en v1 af Signal Studio for 3GPP LTE,
 ### 5.18 3GPP LTE TDD
 Samme downlink-OFDM-signal som §5.17 (identisk LTE-OFDM-numerologi og parametre) — LTE's fysiske lag er fælles for FDD og TDD (en v1 af Signal Studio for 3GPP LTE TDD, N7625B). De TDD-specifikke dele — DL/UL-subframe-konfigurationer, det specielle subframe (DwPTS/GP/UpPTS) og 10 ms-rammestrukturen — er endnu ikke implementeret.
 
+### 5.19 802.11 WLAN (OFDM)
+Et generisk 802.11-OFDM-signal (en v1 af Signal Studio for 802.11 WLAN, N7617B) med 11a/g/n-numerologi: **312,5 kHz** subcarrier-afstand, en **64-punkts** (20 MHz) eller **128-punkts** (40 MHz) FFT med det standardiserede antal brugte subcarriers og cyklisk præfiks. Parametre: **båndbredde**, **antal symboler** og subcarrier-**modulation** (BPSK…256QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen L-STF/L-LTF/L-SIG-præambel, piloter, kodning/interleaving, MIMO eller 80/160 MHz (11ac/ax, som overstiger ESG'en).
+
 ---
 
 ## 6. Impairments

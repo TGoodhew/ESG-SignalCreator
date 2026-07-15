@@ -32,6 +32,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureSdmbTool(),
             new ConfigureLteFddTool(),
             new ConfigureLteTddTool(),
+            new ConfigureWlanTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -64,7 +65,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -179,6 +180,21 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureWlanTool : ConfigureTool
+        {
+            public override string Name => "configure_wlan";
+            public override string Description =>
+                "Configure the 802.11 WLAN (OFDM) source: bandwidth (Bw20MHz = 64-FFT, Bw40MHz = 128-FFT at " +
+                "312.5 kHz spacing), number of OFDM symbols, and subcarrier modulation.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("bandwidth", Schema.Str("channel bandwidth", new[] { "Bw20MHz", "Bw40MHz" })),
+                Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
+                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "BPSK", "QPSK", "QAM16", "QAM64", "QAM256" })));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("wlan", args), "Configured WLAN."));
         }
 
         private sealed class ConfigureLteTddTool : ConfigureTool

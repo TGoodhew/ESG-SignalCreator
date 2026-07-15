@@ -64,7 +64,7 @@ namespace EsgSignalCreator.Tests.Assistant
         public void All_configure_tools_are_configure_effect()
         {
             Assert.All(ConfigureTools.All(), t => Assert.Equal(ToolEffect.Configure, t.Effect));
-            Assert.Equal(21, ConfigureTools.All().Count());
+            Assert.Equal(22, ConfigureTools.All().Count());
         }
 
         [Fact]
@@ -94,6 +94,14 @@ namespace EsgSignalCreator.Tests.Assistant
             await Run("configure_multitone_distortion", args, host);
             Assert.Equal("multitone_distortion", host.LastConfigureArea);
             Assert.Equal(64, (int)host.LastConfigureArgs["tone_count"]);
+        }
+
+        [Fact]
+        public async Task Configure_wlan_routes_args_to_host_with_area()
+        {
+            var host = new FakeConfigureHost();
+            await Run("configure_wlan", new JObject { ["bandwidth"] = "Bw20MHz" }, host);
+            Assert.Equal("wlan", host.LastConfigureArea);
         }
 
         [Fact]

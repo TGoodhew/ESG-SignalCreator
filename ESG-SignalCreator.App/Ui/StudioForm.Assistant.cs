@@ -601,6 +601,7 @@ namespace EsgSignalCreator.Ui
                     case "s_dmb": case "s-dmb": case "sdmb": return "s-dmb";
                     case "lte_fdd": case "lte-fdd": case "lte": return "lte-fdd";
                     case "lte_tdd": case "lte-tdd": return "lte-tdd";
+                    case "wlan": case "wlan_80211": case "80211": return "wlan-80211";
                     case "awgn": return "awgn";
                     case "import_iq": case "import-iq": return "import-iq";
                     default: return area;
