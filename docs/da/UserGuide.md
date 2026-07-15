@@ -152,6 +152,9 @@ Samme downlink-OFDM-signal som §5.17 (identisk LTE-OFDM-numerologi og parametre
 ### 5.19 802.11 WLAN (OFDM)
 Et generisk 802.11-OFDM-signal (en v1 af Signal Studio for 802.11 WLAN, N7617B) med 11a/g/n-numerologi: **312,5 kHz** subcarrier-afstand, en **64-punkts** (20 MHz) eller **128-punkts** (40 MHz) FFT med det standardiserede antal brugte subcarriers og cyklisk præfiks. Parametre: **båndbredde**, **antal symboler** og subcarrier-**modulation** (BPSK…256QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen L-STF/L-LTF/L-SIG-præambel, piloter, kodning/interleaving, MIMO eller 80/160 MHz (11ac/ax, som overstiger ESG'en).
 
+### 5.20 802.16-2004 WiMAX (OFDM)
+Et fixed-WiMAX-(IEEE 802.16-2004)-**256-FFT-OFDM**-signal (en v1 af Signal Studio for 802.16-2004, N7613A) med 200 brugte subcarriers. Parametre: **kanalbåndbredde** (Hz; samplingsrate ≈ båndbredde × 8/7), **cyklisk-præfiks-forhold** (1/4, 1/8, 1/16, 1/32), **antal symboler** og **modulation** (BPSK…64QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen long/short-præambel, FCH, DL/UL-MAP, DCD/UCD, pilotmønstre eller RS-CC-kodning.
+
 ---
 
 ## 6. Impairments

@@ -33,6 +33,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureLteFddTool(),
             new ConfigureLteTddTool(),
             new ConfigureWlanTool(),
+            new ConfigureWimaxFixedTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -65,7 +66,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -180,6 +181,23 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureWimaxFixedTool : ConfigureTool
+        {
+            public override string Name => "configure_wimax_fixed";
+            public override string Description =>
+                "Configure the 802.16-2004 fixed-WiMAX (256-FFT OFDM) source: channel bandwidth (Hz), cyclic-prefix " +
+                "ratio (OneQuarter/OneEighth/OneSixteenth/OneThirtySecond), number of OFDM symbols, and modulation.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("channel_bandwidth_hz", Schema.Number("nominal channel bandwidth, Hz")),
+                Schema.P("cyclic_prefix_ratio", Schema.Str("CP ratio",
+                    new[] { "OneQuarter", "OneEighth", "OneSixteenth", "OneThirtySecond" })),
+                Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
+                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "BPSK", "QPSK", "QAM16", "QAM64" })));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("wimax_fixed", args), "Configured fixed WiMAX."));
         }
 
         private sealed class ConfigureWlanTool : ConfigureTool
