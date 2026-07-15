@@ -155,6 +155,9 @@ Et generisk 802.11-OFDM-signal (en v1 af Signal Studio for 802.11 WLAN, N7617B) 
 ### 5.20 802.16-2004 WiMAX (OFDM)
 Et fixed-WiMAX-(IEEE 802.16-2004)-**256-FFT-OFDM**-signal (en v1 af Signal Studio for 802.16-2004, N7613A) med 200 brugte subcarriers. Parametre: **kanalbåndbredde** (Hz; samplingsrate ≈ båndbredde × 8/7), **cyklisk-præfiks-forhold** (1/4, 1/8, 1/16, 1/32), **antal symboler** og **modulation** (BPSK…64QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen long/short-præambel, FCH, DL/UL-MAP, DCD/UCD, pilotmønstre eller RS-CC-kodning.
 
+### 5.21 802.16e Mobile WiMAX (OFDMA)
+Et mobile-WiMAX-(IEEE 802.16e)-**scalable-OFDMA**-signal (en v1 af Signal Studio for 802.16 WiMAX, N7615B) ved den faste **10,9375 kHz** subcarrier-afstand med en valgbar **FFT-størrelse** (128 / 512 / 1024 / 2048 for ≈ 1,25 / 5 / 10 / 20 MHz), så samplingsraten skalerer med FFT. Parametre: **FFT-størrelse**, **cyklisk-præfiks-forhold**, **antal symboler** og **modulation** (QPSK…64QAM). Modelleret som almindelig OFDM (ingen OFDMA-subkanalpermutation). Repræsentativt signal — ingen PUSC/FUSC/AMC-zoner, præambel, FCH/MAPs, piloter, MIMO eller CTC/CC-kodning.
+
 ---
 
 ## 6. Impairments

@@ -34,6 +34,7 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureLteTddTool(),
             new ConfigureWlanTool(),
             new ConfigureWimaxFixedTool(),
+            new ConfigureWimaxMobileTool(),
             new ConfigureAwgnTool(),
             new ConfigureImportIqTool(),
             new SelectPlotViewTool(),
@@ -66,7 +67,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "WiMAX-Mobile", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -181,6 +182,23 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));
+        }
+
+        private sealed class ConfigureWimaxMobileTool : ConfigureTool
+        {
+            public override string Name => "configure_wimax_mobile";
+            public override string Description =>
+                "Configure the 802.16e mobile-WiMAX (scalable OFDMA) source: FFT size (Fft128/512/1024/2048 at " +
+                "10.9375 kHz spacing), cyclic-prefix ratio, number of OFDM symbols, and modulation.";
+            public override JObject InputSchema => Schema.Object(
+                Schema.P("fft_size", Schema.Str("scalable FFT size", new[] { "Fft128", "Fft512", "Fft1024", "Fft2048" })),
+                Schema.P("cyclic_prefix_ratio", Schema.Str("CP ratio",
+                    new[] { "OneQuarter", "OneEighth", "OneSixteenth", "OneThirtySecond" })),
+                Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
+                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "QPSK", "QAM16", "QAM64" })));
+
+            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
+                Task.FromResult(Done(Host(ctx).Configure("wimax_mobile", args), "Configured mobile WiMAX."));
         }
 
         private sealed class ConfigureWimaxFixedTool : ConfigureTool

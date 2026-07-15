@@ -19,6 +19,7 @@ using EsgSignalCreator.Personalities.Sdmb;
 using EsgSignalCreator.Personalities.TdScdma;
 using EsgSignalCreator.Personalities.Wcdma;
 using EsgSignalCreator.Personalities.WimaxFixed;
+using EsgSignalCreator.Personalities.WimaxMobile;
 using EsgSignalCreator.Personalities.Wlan;
 
 namespace EsgSignalCreator.Ui.Sources
@@ -66,6 +67,7 @@ namespace EsgSignalCreator.Ui.Sources
             new PersonalityDescriptor("lte-tdd", "3GPP LTE TDD", () => new LteTddPersonality()),
             new PersonalityDescriptor("wlan-80211", "802.11 WLAN (OFDM)", () => new WlanPersonality()),
             new PersonalityDescriptor("wimax-fixed", "802.16-2004 WiMAX (OFDM)", () => new WimaxFixedPersonality()),
+            new PersonalityDescriptor("wimax-mobile", "802.16e Mobile WiMAX (OFDMA)", () => new WimaxMobilePersonality()),
             new PersonalityDescriptor("awgn", "AWGN", () => new AwgnPersonality()),
             new PersonalityDescriptor("import-iq", "Import I/Q", () => new ImportIqPersonality()),
         };
