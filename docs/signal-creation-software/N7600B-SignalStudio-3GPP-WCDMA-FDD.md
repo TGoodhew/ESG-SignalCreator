@@ -3,14 +3,18 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** A **3GPP W-CDMA FDD** personality now ships in the app
-> (`Core/Personalities/Wcdma/`, on the shared `Dsp/DsssEngine`). It generates a single-code
-> downlink-style signal — QPSK data spread by an **OVSF** code, complex-scrambled, RRC-shaped (β 0.22)
-> at **3.84 Mcps** — a representative W-CDMA carrier for chip-rate/occupied-bandwidth/spectral-mask
-> checks. **This is a simplified v1, not a standards-compliant multi-code downlink.** Deferred:
-> multi-code composite (CPICH/P-CCPCH/P-SCH/S-SCH), slot/frame (15-slot, 10 ms) structure, TFCI,
-> transmit diversity, cell scrambling-code sets, and HSPA channels (see E4438C-419). Hardware
-> verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** A **3GPP W-CDMA FDD** personality ships in the app
+> (`Core/Personalities/Wcdma/`, on the shared `Dsp/DsssEngine`). Default single-code downlink-style
+> signal — QPSK data spread by an **OVSF** code, complex-scrambled, RRC-shaped (β 0.22) at **3.84 Mcps**.
+> - **Multi-code composite** (✅ v2, #183): `CodeChannelCount` > 1 sums N orthogonal OVSF code channels
+>   (codes 0…N-1, equal power) into a multi-code downlink, scrambled + shaped as one signal (raising the
+>   PAPR). Implemented as a new multi-code path in the shared `DsssEngine`. Partial **R-1/R-2**.
+>
+> Still representative. **Still deferred** (#183): the *named* physical channels with per-channel power
+> (CPICH/P-CCPCH/P-SCH/S-SCH, **R-2**), predefined test models + 15-slot/10 ms slot/frame structure
+> (R-1), higher-order modulation (R-3), HSDPA FRC/RMC (R-4/R-5), TFCI/Tx-diversity/scrambling-code sets
+> (R-6), cubic metric (R-7), multicarrier (R-8), and CCDF (R-10). Hardware verification is tracked in the
+> verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7600B (later branded "Signal Studio for W-CDMA/HSPA+"; supersedes the original N7600A ESG personality)

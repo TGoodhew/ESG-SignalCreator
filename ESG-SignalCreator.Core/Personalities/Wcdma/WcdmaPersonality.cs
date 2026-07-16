@@ -10,8 +10,10 @@ namespace EsgSignalCreator.Personalities.Wcdma
     /// RRC-shaped (β = 0.22) at the 3.84 Mcps chip rate — via the shared <see cref="DsssEngine"/>.
     /// </summary>
     /// <remarks>
-    /// Representative v1 core, not a standards-compliant multi-code downlink (no P-CCPCH/CPICH/SCH,
-    /// slot/frame structure, TFCI, transmit diversity, or HSPA channels — those are deferred).
+    /// Single-code by default; set <see cref="WcdmaConfig.CodeChannelCount"/> &gt; 1 to sum multiple
+    /// orthogonal OVSF code channels into a **multi-code downlink composite** (v2, #183). Still not
+    /// standards-compliant: no P-CCPCH/CPICH/SCH, slot/frame structure, TFCI, transmit diversity, or
+    /// HSPA channels — those remain deferred.
     /// </remarks>
     public sealed class WcdmaPersonality : IWaveformPersonality
     {
@@ -42,6 +44,23 @@ namespace EsgSignalCreator.Personalities.Wcdma
         public WaveformModel Calculate(IProgress<int> progress)
         {
             WcdmaConfig cfg = _config ?? new WcdmaConfig();
+            if (cfg.CodeChannelCount > cfg.SpreadingFactor)
+                throw new InvalidOperationException("CodeChannelCount must be <= SpreadingFactor.");
+
+            DsssEngine.CodeChannel[] channels = null;
+            if (cfg.CodeChannelCount > 1)
+            {
+                channels = new DsssEngine.CodeChannel[cfg.CodeChannelCount];
+                for (int k = 0; k < channels.Length; k++)
+                    channels[k] = new DsssEngine.CodeChannel
+                    {
+                        OvsfIndex = k,
+                        PowerDb = 0.0,
+                        Modulation = cfg.Modulation,
+                        Data = cfg.Data
+                    };
+            }
+
             return DsssEngine.Generate(new DsssEngine.Params
             {
                 ChipRateHz = cfg.ChipRateHz,
@@ -54,6 +73,7 @@ namespace EsgSignalCreator.Personalities.Wcdma
                 Scramble = cfg.Scramble,
                 ScrambleSeed = cfg.ScrambleSeed,
                 Data = cfg.Data,
+                CodeChannels = channels,
                 Name = "W-CDMA FDD"
             }, progress);
         }
