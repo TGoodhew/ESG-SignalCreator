@@ -43,8 +43,9 @@ core library, the WinForms app, and an xUnit test project.
   - **Pulse Building** (radar-style pulse train: PRI/width, raised-cosine edges,
     intra-pulse LFM/NLFM chirp, FM/AM step, BPSK/QPSK/Barker/Frank/P4 codes,
     per-pulse frequency/phase/power offsets, staggered/jittered PRI, markers — N7620A v2)
-  - **Jitter Injection** (jittered clock: periodic sinusoidal/square/triangle/saw/exp
-    + Gaussian random + composite jitter, in UI — E4438C-SP1 v1)
+  - **Jitter Injection** (jittered clock: periodic sinusoidal/square/triangle/saw/exp/custom
+    + Gaussian random + composite jitter, SJ frequency sweep with tolerance masks
+    (custom + approx. ITU-T G.8251), range enforcement, in UI — E4438C-SP1 v2)
   - **AWGN** (band-limited Gaussian noise with crest-factor clipping)
   - **Import I/Q** (CSV/TSV, raw interleaved int16, Agilent/Keysight big-endian int16 & 14-bit, WAV,
     MATLAB Level-5 `.mat` incl. compressed, plus marker/trigger authoring — the N7622A Toolkit

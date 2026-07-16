@@ -114,6 +114,128 @@ namespace EsgSignalCreator.Tests.Personalities
             Assert.Throws<InvalidOperationException>(() => p.Calculate(null));
         }
 
+        // ---- v2 (#182): custom shape, sweep, masks, range enforcement ----
+
+        [Fact]
+        public void Custom_shape_is_used_and_stays_phase_only()
+        {
+            // A custom one-period profile: a simple ramp table. Envelope must remain unit-magnitude.
+            var cfg = Base();
+            cfg.PeriodicShape = JitterShape.Custom;
+            cfg.PeriodicUiPp = 0.4;
+            cfg.CustomShapeSamples = new[] { -1.0, -0.5, 0.0, 0.5, 1.0, 0.5, 0.0, -0.5 };
+
+            var p = new JitterPersonality();
+            p.LoadConfig(cfg);
+            WaveformModel wf = p.Calculate(null);
+
+            for (int s = 0; s < wf.Length; s++)
+            {
+                double mag = Math.Sqrt(wf.I[s] * wf.I[s] + wf.Q[s] * wf.Q[s]);
+                Assert.Equal(1.0, mag, 4);
+            }
+            // Peak displacement = (UIpp/2)*(1/clock) since the table reaches +/-1.
+            Assert.Equal((0.4 / 2.0) / cfg.ClockRateHz, p.LastPeakJitterSec, 12);
+        }
+
+        [Fact]
+        public void Empty_custom_shape_behaves_as_no_jitter()
+        {
+            var cfg = Base();
+            cfg.PeriodicShape = JitterShape.Custom;
+            cfg.CustomShapeSamples = null;
+
+            var p = new JitterPersonality();
+            p.LoadConfig(cfg);
+            p.Calculate(null);
+            Assert.Equal(0.0, p.LastPeakJitterSec, 12);
+        }
+
+        [Fact]
+        public void Sweep_changes_the_waveform_and_is_repeatable()
+        {
+            var cfg = Base();
+            cfg.Length = 16384;
+            cfg.PeriodicShape = JitterShape.Sinusoidal;
+            cfg.PeriodicUiPp = 0.5;
+            cfg.SweepEnabled = true;
+            cfg.SweepStartHz = 10e3;
+            cfg.SweepStopHz = 1e6;
+            cfg.SweepMode = JitterSweepMode.Logarithmic;
+
+            WaveformModel a = Calc(cfg);
+            WaveformModel b = Calc(cfg);
+            for (int s = 0; s < a.Length; s += 101) Assert.Equal(a.I[s], b.I[s], 6); // deterministic
+
+            var clean = Base(); clean.Length = 16384; clean.PeriodicShape = JitterShape.None;
+            WaveformModel wc = Calc(clean);
+            double maxDiff = 0;
+            for (int s = 0; s < a.Length; s++) maxDiff = Math.Max(maxDiff, Math.Abs(a.I[s] - wc.I[s]));
+            Assert.True(maxDiff > 0.1, "the sweep should modulate the tone");
+        }
+
+        [Fact]
+        public void Sweep_following_a_custom_mask_scales_amplitude_with_frequency()
+        {
+            // Custom mask: 1.0 UIpp at 1 kHz down to 0.01 UIpp at 1 MHz. Sweeping start->stop should
+            // give a larger peak deviation near the start (high UI) than a high-freq-only sweep.
+            JitterConfig Make(double startHz, double stopHz) => new JitterConfig
+            {
+                SampleRateHz = 100e6, Length = 16384, ClockRateHz = 10e6,
+                PeriodicShape = JitterShape.Sinusoidal,
+                SweepEnabled = true, SweepStartHz = startHz, SweepStopHz = stopHz,
+                SweepMode = JitterSweepMode.Logarithmic, SweepFollowMask = true,
+                MaskStandard = JitterMask.Custom,
+                CustomMaskFreqHz = new[] { 1e3, 1e6 },
+                CustomMaskUiPp = new[] { 1.0, 0.01 }
+            };
+
+            var lowBand = new JitterPersonality(); lowBand.LoadConfig(Make(1e3, 3e3));
+            lowBand.Calculate(null);
+            var highBand = new JitterPersonality(); highBand.LoadConfig(Make(300e3, 1e6));
+            highBand.Calculate(null);
+
+            Assert.True(lowBand.LastPeakJitterSec > highBand.LastPeakJitterSec * 5,
+                "low-frequency sweep should see much larger mask amplitude");
+        }
+
+        [Fact]
+        public void G8251_mask_has_the_expected_shape()
+        {
+            // Flat plateau at low freq, 0.15 UIpp floor at high freq, monotonic roll-off between.
+            double lo = JitterMasks.AmplitudeUiPp(JitterMask.G8251Oc192, 100, null, null);
+            double mid = JitterMasks.AmplitudeUiPp(JitterMask.G8251Oc192, 260_000, null, null);
+            double hi = JitterMasks.AmplitudeUiPp(JitterMask.G8251Oc192, 20e6, null, null);
+
+            Assert.Equal(15.0, lo, 6);
+            Assert.Equal(0.15, hi, 6);
+            Assert.True(mid < lo && mid > hi, "the roll-off amplitude must sit between the plateau and the floor");
+        }
+
+        [Fact]
+        public void Clock_at_or_above_nyquist_is_rejected()
+        {
+            var cfg = Base(); cfg.SampleRateHz = 10e6; cfg.ClockRateHz = 5e6; // exactly Nyquist
+            var p = new JitterPersonality(); p.LoadConfig(cfg);
+            Assert.Throws<InvalidOperationException>(() => p.Calculate(null));
+        }
+
+        [Fact]
+        public void Jitter_rate_above_nyquist_is_rejected()
+        {
+            var cfg = Base(); cfg.SampleRateHz = 100e6; cfg.PeriodicRateHz = 60e6;
+            var p = new JitterPersonality(); p.LoadConfig(cfg);
+            Assert.Throws<InvalidOperationException>(() => p.Calculate(null));
+        }
+
+        [Fact]
+        public void Amplitude_above_the_max_cap_is_rejected()
+        {
+            var cfg = Base(); cfg.PeriodicUiPp = 0.5; cfg.MaxJitterUiPp = 0.2;
+            var p = new JitterPersonality(); p.LoadConfig(cfg);
+            Assert.Throws<InvalidOperationException>(() => p.Calculate(null));
+        }
+
         private static JitterConfig Base() => new JitterConfig
         {
             SampleRateHz = 100e6,
