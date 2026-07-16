@@ -10,9 +10,10 @@ namespace EsgSignalCreator.Personalities.Wlan
     /// the standard used-subcarrier count and cyclic prefix — via the shared <see cref="OfdmEngine"/>.
     /// </summary>
     /// <remarks>
-    /// Representative v1 core, not a standards-compliant PPDU: no L-STF/L-LTF/L-SIG preamble, pilot
-    /// subcarriers, scrambling/coding/interleaving, MIMO streams, or 80/160 MHz (11ac/ax) bandwidths
-    /// (which exceed the legacy ESG). Those are deferred.
+    /// Two modes: the default generic OFDM fill (v1 core), or — with <see cref="WlanConfig.FrameStructured"/>
+    /// set (20 MHz) — a representative 802.11a/g <b>PPDU</b> (v2, #191) via <see cref="WlanPpdu"/> with an
+    /// optional L-LTF preamble, pilot subcarriers (±7, ±21), and a selectable guard interval. The L-STF/
+    /// L-SIG fields, channel coding/interleaving, MAC framing, MIMO, and 80/160 MHz remain deferred.
     /// </remarks>
     public sealed class WlanPersonality : IWaveformPersonality
     {
@@ -43,6 +44,9 @@ namespace EsgSignalCreator.Personalities.Wlan
         public WaveformModel Calculate(IProgress<int> progress)
         {
             WlanConfig cfg = _config ?? new WlanConfig();
+            if (cfg.FrameStructured)
+                return WlanPpdu.Generate(cfg, progress);
+
             Numerology(cfg.Bandwidth, out int fft, out int occupied, out int cp);
             return OfdmEngine.Generate(new OfdmEngine.Params
             {

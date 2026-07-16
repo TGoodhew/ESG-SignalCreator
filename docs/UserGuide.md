@@ -315,12 +315,21 @@ Same scope caveats as FDD (§5.17): representative frame, single antenna port, n
 uplink physical channels / MIMO / HARQ / carrier aggregation remain deferred.
 
 ### 5.19 802.11 WLAN (OFDM)
-A generic 802.11 OFDM signal (a v1 of Signal Studio for 802.11 WLAN, N7617B) with 11a/g/n numerology:
-**312.5 kHz** subcarrier spacing, a **64-point** (20 MHz) or **128-point** (40 MHz) FFT with the standard
+An 802.11 OFDM signal (Signal Studio for 802.11 WLAN, N7617B) with 11a/g/n numerology: **312.5 kHz**
+subcarrier spacing, a **64-point** (20 MHz) or **128-point** (40 MHz) FFT with the standard
 used-subcarrier count and cyclic prefix. Parameters: **bandwidth**, **symbol count**, and subcarrier
-**modulation** (BPSK…256QAM). Built on the shared OFDM engine. Representative signal — no
-L-STF/L-LTF/L-SIG preamble, pilots, coding/interleaving, MIMO, or 80/160 MHz (11ac/ax, which exceed the
-ESG).
+**modulation** (BPSK…256QAM). Two modes:
+
+- **Generic** (default) — a plain OFDM data fill, for occupied-bandwidth / PAPR / spectral checks.
+- **Frame-structured** (v2, #191, 20 MHz only) — enable **frame structured** to build a representative
+  **802.11a/g PPDU**: an optional **L-LTF** training preamble (two long training symbols + double guard
+  interval) followed by data OFDM symbols that carry the four **pilot subcarriers** (±7, ±21) with the
+  standard polarity, using a selectable **guard interval** (**Long** 0.8 µs / **Short** 0.4 µs, the
+  802.11n short-GI option).
+
+The L-LTF sequence and pilot positions/polarity follow IEEE 802.11. It's a representative PPDU — the
+L-STF/L-SIG fields, channel coding/interleaving, MAC framing, MIMO, and 80/160 MHz (11ac/ax, which
+exceed the ESG) remain deferred.
 
 ### 5.20 802.16-2004 WiMAX (OFDM)
 A fixed-WiMAX (IEEE 802.16-2004) **256-FFT OFDM** signal (a v1 of Signal Studio for 802.16-2004, N7613A)

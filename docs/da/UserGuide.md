@@ -175,7 +175,12 @@ Samme LTE-OFDM-numerologi og parametre som §5.17 — LTE's fysiske lag er fæll
 Samme scope-forbehold som FDD (§5.17): repræsentativ ramme, enkelt antenneport, ingen kanalkodning, og uplink-fysiske kanaler / MIMO / HARQ / carrier aggregation er stadig udskudt.
 
 ### 5.19 802.11 WLAN (OFDM)
-Et generisk 802.11-OFDM-signal (en v1 af Signal Studio for 802.11 WLAN, N7617B) med 11a/g/n-numerologi: **312,5 kHz** subcarrier-afstand, en **64-punkts** (20 MHz) eller **128-punkts** (40 MHz) FFT med det standardiserede antal brugte subcarriers og cyklisk præfiks. Parametre: **båndbredde**, **antal symboler** og subcarrier-**modulation** (BPSK…256QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen L-STF/L-LTF/L-SIG-præambel, piloter, kodning/interleaving, MIMO eller 80/160 MHz (11ac/ax, som overstiger ESG'en).
+Et 802.11-OFDM-signal (Signal Studio for 802.11 WLAN, N7617B) med 11a/g/n-numerologi: **312,5 kHz** subcarrier-afstand, en **64-punkts** (20 MHz) eller **128-punkts** (40 MHz) FFT med det standardiserede antal brugte subcarriers og cyklisk præfiks. Parametre: **båndbredde**, **antal symboler** og subcarrier-**modulation** (BPSK…256QAM). To tilstande:
+
+- **Generisk** (standard) — en almindelig OFDM-datafyldning til båndbredde-/PAPR-/spektralkontroller.
+- **Rammestruktureret** (v2, #191, kun 20 MHz) — aktivér **frame structured** for at bygge en repræsentativ **802.11a/g-PPDU**: en valgfri **L-LTF**-træningspræambel (to lange træningssymboler + dobbelt guard interval) efterfulgt af data-OFDM-symboler, der bærer de fire **pilot-subcarriers** (±7, ±21) med standardpolariteten, med et valgbart **guard interval** (**Long** 0,8 µs / **Short** 0,4 µs, 802.11n's korte GI).
+
+L-LTF-sekvensen og pilotpositioner/-polaritet følger IEEE 802.11. Det er en repræsentativ PPDU — L-STF/L-SIG-felterne, kanalkodning/interleaving, MAC-framing, MIMO og 80/160 MHz (11ac/ax, som overstiger ESG'en) er stadig udskudt.
 
 ### 5.20 802.16-2004 WiMAX (OFDM)
 Et fixed-WiMAX-(IEEE 802.16-2004)-**256-FFT-OFDM**-signal (en v1 af Signal Studio for 802.16-2004, N7613A) med 200 brugte subcarriers. Parametre: **kanalbåndbredde** (Hz; samplingsrate ≈ båndbredde × 8/7), **cyklisk-præfiks-forhold** (1/4, 1/8, 1/16, 1/32), **antal symboler** og **modulation** (BPSK…64QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen long/short-præambel, FCH, DL/UL-MAP, DCD/UCD, pilotmønstre eller RS-CC-kodning.
