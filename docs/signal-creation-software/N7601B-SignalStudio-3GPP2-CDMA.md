@@ -3,12 +3,16 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** A **3GPP2 CDMA (cdma2000)** personality now ships in the app
-> (`Core/Personalities/Cdma2000/`, on the shared `Dsp/DsssEngine`). It generates a single-code forward-link-style
-> signal — QPSK data spread by a Walsh code, PN-scrambled, pulse-shaped at **1.2288 Mcps** — for
-> chip-rate/occupied-bandwidth checks. **Simplified v1, not standards-compliant.** Deferred: pilot/sync/paging
-> channels, radio configurations (RC1–5), 1xEV-DO Rev 0/A slot structure, frame/PCG timing, and the exact
-> cdma2000 baseband filter (an RRC approximation is used). Hardware verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** A **3GPP2 CDMA (cdma2000)** personality ships in the app
+> (`Core/Personalities/Cdma2000/`, on the shared `Dsp/DsssEngine`). Default single-code forward-link-style
+> signal — QPSK data spread by a Walsh code, PN-scrambled, pulse-shaped at **1.2288 Mcps**.
+> - **Multi-code** (✅ v2, #185): `CodeChannelCount` > 1 sums several **Walsh code channels** into a
+>   multi-channel forward-link composite via the shared engine's multi-code path — partial **R-2**.
+>
+> Still representative, not standards-compliant. **Still deferred** (#185): the *named* forward/reverse
+> channels — pilot/sync/paging (R-2), RC1–5 + 1xEV-DO (R-1), mixed-format multicarrier (R-3/R-4),
+> higher-order modulation (R-5), coding (R-6/R-7), real-time (R-8), and the exact cdma2000 baseband filter
+> (an RRC approximation is used). Hardware verification is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7601B (later branded "Signal Studio for cdma2000/1xEV-DO"; supersedes the original N7601A ESG personality)

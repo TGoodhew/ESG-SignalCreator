@@ -23,8 +23,12 @@ namespace EsgSignalCreator.Personalities.Cdma2000
         /// <summary>Walsh/OVSF spreading factor (power of two). cdma2000 uses 4…128.</summary>
         [DataMember] public int SpreadingFactor { get; set; } = 16;
 
-        /// <summary>Walsh code index within the spreading factor.</summary>
+        /// <summary>Walsh code index within the spreading factor (single-code mode).</summary>
         [DataMember] public int OvsfIndex { get; set; } = 1;
+
+        /// <summary>Number of Walsh code channels to sum into a multi-channel forward-link composite
+        /// (1 = single-code v1). Channels use Walsh codes 0…N-1 at equal power, N ≤ SF. (N7601B R-2.)</summary>
+        [DataMember] public int CodeChannelCount { get; set; } = 1;
 
         /// <summary>Data modulation (cdma2000 forward traffic is QPSK).</summary>
         [DataMember] public Modulation Modulation { get; set; } = Modulation.QPSK;
