@@ -3,13 +3,16 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** A **3GPP W-CDMA HSPA** personality now ships in the app
-> (`Core/Personalities/Hspa/`, on the shared `Dsp/DsssEngine`). It generates a single-code HS-PDSCH-style
-> signal defaulting to **16QAM** on an **SF-16** OVSF code, complex-scrambled and RRC-shaped at
-> 3.84 Mcps — capturing the defining HSPA feature (higher-order modulation on the high-speed shared
-> channel). **Simplified v1, not a standards-compliant HSDPA/HSUPA link.** Deferred: HS-SCCH/HS-DPCCH
-> signalling, E-DCH (HSUPA) channels, H-ARQ, TTI/frame structure, CQI and rate control, 64QAM release
-> features. Hardware verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** A **3GPP W-CDMA HSPA** personality ships in the app
+> (`Core/Personalities/Hspa/`, on the shared `Dsp/DsssEngine`). Default single-code HS-PDSCH-style
+> signal, **16QAM** on an **SF-16** OVSF code, complex-scrambled and RRC-shaped at 3.84 Mcps.
+> - **Multicode** (✅ v2, #184): `CodeChannelCount` > 1 sums multiple **HS-PDSCH multicodes** (as HSDPA
+>   does) via the shared engine's multi-code path — partial **R-2**.
+>
+> Still representative, not a standards-compliant HSDPA/HSUPA link. **Still deferred** (#184): HS-SCCH
+> and multicode *signalling* (R-2), HSUPA/E-DCH (R-1/R-4), transport coding + H-ARQ (R-5), TTI/frame
+> timing (R-6), HS-DPCCH/CQI (R-7), base W-CDMA carrier framework (R-8), 64QAM release features. Hardware
+> verification is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** E4438C-419 (license-key option; upgrade order number E4438CK-419)

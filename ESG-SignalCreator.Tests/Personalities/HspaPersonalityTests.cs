@@ -54,6 +54,39 @@ namespace EsgSignalCreator.Tests.Personalities
             for (int s = 0; s < a.Length; s++) Assert.Equal(a.I[s], b.I[s], 6);
         }
 
+        // ---- v2 (#184): multi-code (HS-PDSCH multicodes) ----
+
+        [Fact]
+        public void Multi_code_keeps_layout_differs_and_raises_papr()
+        {
+            var single = new HspaConfig { SymbolCount = 128, SpreadingFactor = 16, CodeChannelCount = 1 };
+            var multi = new HspaConfig { SymbolCount = 128, SpreadingFactor = 16, CodeChannelCount = 6 };
+            WaveformModel a = Calc(single), b = Calc(multi);
+
+            Assert.Equal(a.Length, b.Length);
+            Assert.Equal(1.0, b.PeakMagnitude(), 4);
+            double maxDiff = 0;
+            for (int s = 0; s < a.Length; s++) maxDiff = Math.Max(maxDiff, Math.Abs(a.I[s] - b.I[s]));
+            Assert.True(maxDiff > 0.05, "multi-code must differ from single-code");
+            Assert.True(AvgPower(b) < AvgPower(a), "multi-code raises PAPR (lower avg power at unit peak)");
+        }
+
+        [Fact]
+        public void Code_channel_count_above_spreading_factor_is_rejected()
+        {
+            var cfg = new HspaConfig { SpreadingFactor = 4, CodeChannelCount = 8 };
+            var p = new HspaPersonality();
+            p.LoadConfig(cfg);
+            Assert.Throws<InvalidOperationException>(() => p.Calculate(null));
+        }
+
+        private static double AvgPower(WaveformModel wf)
+        {
+            double sum = 0;
+            for (int s = 0; s < wf.Length; s++) sum += (double)wf.I[s] * wf.I[s] + (double)wf.Q[s] * wf.Q[s];
+            return sum / wf.Length;
+        }
+
         private static WaveformModel Calc(HspaConfig cfg)
         {
             var p = new HspaPersonality();

@@ -453,13 +453,14 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Description =>
                 "Configure the 3GPP W-CDMA HSPA (HS-PDSCH) source: chip rate (3.84M), samples per chip, symbol " +
                 "count, OVSF spreading factor (16) and code index, HS modulation (QPSK/QAM16/QAM64), RRC roll-off, " +
-                "and scrambling.";
+                "and scrambling. Set code_channel_count > 1 to sum multiple HS-PDSCH multicodes (<= SF).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("chip_rate_hz", Schema.Number("chip rate, Hz")),
                 Schema.P("samples_per_chip", Schema.Integer("oversampling factor")),
                 Schema.P("symbol_count", Schema.Integer("number of data symbols")),
                 Schema.P("spreading_factor", Schema.Integer("OVSF spreading factor (power of 2)")),
-                Schema.P("ovsf_index", Schema.Integer("OVSF code index")),
+                Schema.P("ovsf_index", Schema.Integer("OVSF code index (single-code mode)")),
+                Schema.P("code_channel_count", Schema.Integer("HS-PDSCH multicodes to sum (1 = single-code; <= SF)")),
                 Schema.P("modulation", Schema.Str("HS modulation", new[] { "QPSK", "QAM16", "QAM64" })),
                 Schema.P("rrc_beta", Schema.Number("RRC roll-off (0..1)")),
                 Schema.P("scramble", Schema.Bool("apply complex scrambling")));

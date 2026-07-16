@@ -44,6 +44,16 @@ namespace EsgSignalCreator.Personalities.Hspa
         public WaveformModel Calculate(IProgress<int> progress)
         {
             HspaConfig cfg = _config ?? new HspaConfig();
+            if (cfg.CodeChannelCount > cfg.SpreadingFactor)
+                throw new InvalidOperationException("CodeChannelCount must be <= SpreadingFactor.");
+            DsssEngine.CodeChannel[] channels = null;
+            if (cfg.CodeChannelCount > 1)
+            {
+                channels = new DsssEngine.CodeChannel[cfg.CodeChannelCount];
+                for (int k = 0; k < channels.Length; k++)
+                    channels[k] = new DsssEngine.CodeChannel { OvsfIndex = k, PowerDb = 0.0, Modulation = cfg.Modulation, Data = cfg.Data };
+            }
+
             return DsssEngine.Generate(new DsssEngine.Params
             {
                 ChipRateHz = cfg.ChipRateHz,
@@ -56,6 +66,7 @@ namespace EsgSignalCreator.Personalities.Hspa
                 Scramble = cfg.Scramble,
                 ScrambleSeed = cfg.ScrambleSeed,
                 Data = cfg.Data,
+                CodeChannels = channels,
                 Name = "W-CDMA HSPA"
             }, progress);
         }
