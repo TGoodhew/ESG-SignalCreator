@@ -207,7 +207,12 @@ DAB-COFDM-signalet, der ligger under Terrestrial-DMB (Signal Studio for T-DMB, N
 Null- + fasereferencesymbolerne og den differentielle (DQPSK) kodning følger DAB-rammestrukturen (ETSI EN 300 401). Repræsentativt — den præcise fasereferencetabel, FIC/MSC-multipleks, TII og foldningskodning er stadig udskudt.
 
 ### 5.23 Digital Video (DVB-T COFDM)
-Et DVB-T-COFDM-signal til en 8 MHz-kanal (en v1 af Signal Studio for Digital Video, N7623B). Parametre: **transmissionsmode** (**2K** = 2048-FFT / **8K** = 8192-FFT), **guard-interval**-forhold (1/4…1/32), **antal symboler** og **modulation** (QPSK / 16QAM / 64QAM). Samplingsraten er DVB-T-elementærraten (64/7 MHz). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen TPS-/pilotbærebølger, PRBS-energispredning, RS-/foldningskodning eller MPEG-TS-framing; andre digital-video-standarder (ISDB-T, ATSC 8VSB, DVB-C/S QAM, DTMB) er ikke implementeret.
+Et DVB-T-COFDM-signal til en 8 MHz-kanal (Signal Studio for Digital Video, N7623B). Parametre: **transmissionsmode** (**2K** = 2048-FFT / **8K** = 8192-FFT), **guard-interval**-forhold (1/4…1/32), **antal symboler** og **modulation** (QPSK / 16QAM / 64QAM). Samplingsraten er DVB-T-elementærraten (64/7 MHz). To tilstande:
+
+- **Generisk** (standard) — en almindelig OFDM-datafyldning af de aktive bærebølger.
+- **Rammestruktureret** (v2, #196) — aktivér **frame structured** for at indsætte de standardiserede DVB-T **scattered pilots**: på hvert symbol bærer bærebølgerne, hvor `k mod 12 == 3·(l mod 4)`, boostede (4/3) BPSK-piloter, så pilotmønstret forskydes med 3 subcarriers hvert symbol og gentages hvert 4. symbol. Pilotværdierne kommer fra DVB-T-referens-PRBS'en (X¹¹ + X² + 1).
+
+Scattered-pilot-positionerne, 4/3-boostningen og referens-PRBS'en følger ETSI EN 300 744. Repræsentativt — de kontinuerlige/TPS-bærebølger, PRBS-energispredning, RS-/foldningskodning og MPEG-TS-framing er stadig udskudt, og de andre digital-video-standarder (ISDB-T, ATSC 8VSB, DVB-C/S QAM, DTMB) er ikke implementeret.
 
 ### 5.24 Broadcast Radio (FM)
 Et analogt FM-broadcast-signal (en v1 af Signal Studio for Broadcast Radio, N7611B). Basebånd-multipleksen er en **audio-testtone** (mono), valgfrit med en **19 kHz stereo-pilot** og en **38 kHz DSB-SC**-stereo-subbærebølge, frekvensmoduleret på bærebølgen (konstant envelope). Parametre: **audio-tonefrekvens**, **stereo** til/fra, **peak-deviation** (75 kHz), **samplingsrate** og **længde**. Repræsentativt signal — en enkelt testtone i stedet for programlyd, og ingen RDS (57 kHz), pre-emphasis eller SCA. De digitale broadcast-formater, produktet også dækker (DAB/DAB+ → se §5.22 T-DMB; XM/HD Radio), er ikke implementeret her.

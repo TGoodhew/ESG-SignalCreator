@@ -245,13 +245,16 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_digital_video";
             public override string Description =>
                 "Configure the Digital Video (DVB-T COFDM) source: transmission mode (Mode2K/Mode8K), guard-interval " +
-                "ratio (OneQuarter/OneEighth/OneSixteenth/OneThirtySecond), number of OFDM symbols, and modulation.";
+                "ratio (OneQuarter/OneEighth/OneSixteenth/OneThirtySecond), number of OFDM symbols, and modulation. " +
+                "Set frame_structured=true to insert the standard DVB-T scattered pilots (boosted, shifting by 3 " +
+                "each symbol).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("mode", Schema.Str("DVB-T mode", new[] { "Mode2K", "Mode8K" })),
                 Schema.P("guard_interval", Schema.Str("guard-interval ratio",
                     new[] { "OneQuarter", "OneEighth", "OneSixteenth", "OneThirtySecond" })),
                 Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
-                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "QPSK", "QAM16", "QAM64" })));
+                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "QPSK", "QAM16", "QAM64" })),
+                Schema.P("frame_structured", Schema.Bool("insert the DVB-T scattered pilots")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("digital_video", args), "Configured digital video."));
