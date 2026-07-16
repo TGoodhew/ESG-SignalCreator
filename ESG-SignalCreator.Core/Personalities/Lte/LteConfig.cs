@@ -68,5 +68,13 @@ namespace EsgSignalCreator.Personalities.Lte
 
         /// <summary>Number of 1 ms subframes to generate in frame-structured mode (10 = one radio frame).</summary>
         [DataMember] public int SubframeCount { get; set; } = 10;
+
+        /// <summary>TDD uplink-downlink configuration 0..6 (36.211 Table 4.2-2) — the D/S/U subframe
+        /// pattern. Frame-structured LTE TDD only. (N7625B R-2.)</summary>
+        [DataMember] public int TddUlDlConfig { get; set; } = 1;
+
+        /// <summary>TDD special-subframe configuration 0..9 (36.211 Table 4.2-1) — sets the DwPTS / GP /
+        /// UpPTS split of the special subframe. Frame-structured LTE TDD only. (N7625B R-2.)</summary>
+        [DataMember] public int TddSpecialSubframeConfig { get; set; } = 7;
     }
 }

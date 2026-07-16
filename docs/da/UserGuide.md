@@ -167,7 +167,12 @@ Et downlink-OFDM-signal med LTE-numerologi (Signal Studio for 3GPP LTE, N7624B).
 Den rammestrukturerede tilstand følger 3GPP TS 36.211 for PSS/SSS/CRS-sekvenser og -positioner; det er en repræsentativ ramme, ikke fuldt konform: enkelt antenneport, ingen PBCH/PDCCH-payloads eller kanalkodning, ingen PDSCH-scrambling. Uplink, MIMO, HARQ og carrier aggregation er stadig uden for scope.
 
 ### 5.18 3GPP LTE TDD
-Samme downlink-OFDM-signal som §5.17 (identisk LTE-OFDM-numerologi og parametre) — LTE's fysiske lag er fælles for FDD og TDD (en v1 af Signal Studio for 3GPP LTE TDD, N7625B). De TDD-specifikke dele — DL/UL-subframe-konfigurationer, det specielle subframe (DwPTS/GP/UpPTS) og 10 ms-rammestrukturen — er endnu ikke implementeret.
+Samme LTE-OFDM-numerologi og parametre som §5.17 — LTE's fysiske lag er fælles for FDD og TDD (Signal Studio for 3GPP LTE TDD, N7625B). To tilstande, ligesom FDD:
+
+- **Generisk** (standard) — en almindelig downlink-OFDM-datafyldning.
+- **Rammestruktureret** (v2, #189) — aktivér **frame structured** for at bygge en rigtig **E-UTRA TDD downlink-ramme** (rammestruktur type 2): **D/S/U-subframe-mønsteret** for den valgte **uplink-downlink-konfiguration** (**0…6**), det **specielle subframe** opdelt i DwPTS / GP / UpPTS ved **special-subframe-konfigurationen** (**0…9**), TDD-placeret **PSS** (i DwPTS i subframe 1 & 6) og **SSS** (sidste symbol i subframe 0 & 5), **CRS** og en **PDSCH**-fyldning på downlink-symbolerne. Uplink-subframes og GP/UpPTS sendes tavse (appen er en downlink-generator). Sæt også **cyclic prefix** (Normal/Extended), **physical cell ID** (0…503) og **subframe count**.
+
+Samme scope-forbehold som FDD (§5.17): repræsentativ ramme, enkelt antenneport, ingen kanalkodning, og uplink-fysiske kanaler / MIMO / HARQ / carrier aggregation er stadig udskudt.
 
 ### 5.19 802.11 WLAN (OFDM)
 Et generisk 802.11-OFDM-signal (en v1 af Signal Studio for 802.11 WLAN, N7617B) med 11a/g/n-numerologi: **312,5 kHz** subcarrier-afstand, en **64-punkts** (20 MHz) eller **128-punkts** (40 MHz) FFT med det standardiserede antal brugte subcarriers og cyklisk præfiks. Parametre: **båndbredde**, **antal symboler** og subcarrier-**modulation** (BPSK…256QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen L-STF/L-LTF/L-SIG-præambel, piloter, kodning/interleaving, MIMO eller 80/160 MHz (11ac/ax, som overstiger ESG'en).
