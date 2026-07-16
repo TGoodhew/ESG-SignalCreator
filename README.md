@@ -1,5 +1,11 @@
 # ESG-SignalCreator
 
+[![Latest release](https://img.shields.io/github/v/release/TGoodhew/ESG-SignalCreator?label=release&color=0E8A16)](https://github.com/TGoodhew/ESG-SignalCreator/releases/latest)
+[![Latest prerelease](https://img.shields.io/github/v/release/TGoodhew/ESG-SignalCreator?include_prereleases&sort=date&label=prerelease&color=FBCA04)](https://github.com/TGoodhew/ESG-SignalCreator/releases)
+
+📦 **Downloads:** [latest stable release](https://github.com/TGoodhew/ESG-SignalCreator/releases/latest) ·
+[latest prerelease (newest build off `main`)](https://github.com/TGoodhew/ESG-SignalCreator/releases)
+
 A Windows desktop application — **ESG Signal Studio** — for driving Agilent/Keysight
 **ESG-series RF signal generators** (e.g. the **E4438C**, E4400-series). It builds
 baseband I/Q waveforms on the PC, previews and validates them, and downloads them to
