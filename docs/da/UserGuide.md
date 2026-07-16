@@ -137,7 +137,7 @@ Et jittret clock-/tonesignal til jitter-tolerancetest af modtagere (Signal Studi
 
 **Custom-form** bruger en profiltabel for én periode (normaliseret til ±1), interpoleret hen over jitter-perioden. **SJ-frekvenssweep** (aktivér) sweeper den sinusformede jitters frekvens **lineært** eller **logaritmisk** fra en start- til en stopfrekvens hen over optagelsen — den klassiske måde at tegne en jitter-tolerancemaske på. Under et sweep kan amplituden **følge en tolerancemaske**: en **Custom**-maske (dine frekvens/UI-brydepunkter) eller en foruddefineret **ITU-T G.8251**-maske (**OC-48 / OC-192 / OC-768**). *De foruddefinerede G.8251-hjørneværdier er omtrentlige/repræsentative — verificér dem mod standarden før brug til overensstemmelse.* **Håndhævelse af opnåeligt område** afviser en clock- eller jitterfrekvens ved/over Nyquist og, hvis en **maks. jitter (UI pp)**-grænse er sat, en periodisk amplitude derover.
 
-### 5.10 GSM/EDGE (GMSK)
+### 5.10 GSM/EDGE
 En GSM-familiebærebølge (Signal Studio for GSM/EDGE, N7602B) med to **modulationer**:
 
 - **GMSK** (GSM/GPRS) — den konstant-envelope-modulation: databit driver en NRZ-frekvenspuls, gaussisk-filtreret (**BT**, standard 0,3) og integreret til kontinuert fase ved modulationsindeks 0,5.
@@ -145,7 +145,7 @@ En GSM-familiebærebølge (Signal Studio for GSM/EDGE, N7602B) med to **modulati
 
 Parametre: **modulation**, **symbolrate** (Hz, 270,833 ksym/s), **samples pr. symbol**, **antal symboler**, **BT** (GMSK) / **EDGE RRC β**, gaussisk span og **datakilde**. Samplingsrate = symbolrate × samples/symbol. Fuld burst-/træningssekvens-framing og kanalkodning er endnu ikke implementeret.
 
-### 5.11 Bluetooth (GFSK)
+### 5.11 Bluetooth
 En Bluetooth-bærebølge (Signal Studio for Bluetooth, N7606B) med to **modulationer**:
 
 - **GFSK** (Basic Rate / LE) — gaussisk-filtreret FSK (BT 0,5) integreret til kontinuert fase ved et konfigurerbart **modulationsindeks** (BR ≈ 0,32, LE ≈ 0,5); konstant envelope.

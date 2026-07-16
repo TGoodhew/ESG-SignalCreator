@@ -14,6 +14,14 @@ template, ending with numbered `R-x` requirements framed for the **ESG-SignalCre
 > newer hardware and **exceed the legacy E4438C's RF/ARB limits** — treat those as
 > capability-gated when triaging into the app. See the tracking issue for the review workflow.
 
+> ✅ **Implementation status (2026-07-16).** These docs are no longer just a backlog: **20 of the 21
+> products have shipped** as app personalities across #158–#177 (each file's line-6 banner records its
+> status and v2 increment). The lone exception is **E4438C-407 (S-DMB)**, which is **not implemented**
+> — its unverified placeholder was removed (PR #222) because the physical layer needs a paid primary
+> spec; that file documents the block. The two waveform-license items (E4438C-221-229 / -250-259) are
+> deliberate "no app modelling" decisions. Bench verification of the shipped set is tracked in epic
+> **#157** (with HIL-battery and tutorial-capture follow-ups #229 / #230).
+
 ## Index
 
 ### Cellular / wireless standards

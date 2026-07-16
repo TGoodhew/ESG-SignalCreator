@@ -85,7 +85,7 @@ sådan her:
    den valgte model.
 4. I **RF-path safety**-indstillingerne:
    - **Armed** → **on**.
-   - **Analyzer max safe input (dBm)** → lad modellens standard stå (**+30** E4406A / **+25** N9010A).
+   - **Analyzer max safe input (dBm)** → lad modellens standard stå (**+30** E4406A / **+30** N9010A).
    - **Path loss (dB)** → dit inline-tab, eller **0** hvis direkte kablet.
 
 ### Trin 3 — (Anbefalet) Indfang banetab

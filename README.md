@@ -44,6 +44,8 @@ core library, the WinForms app, and an xUnit test project.
   - **Multitone** (tone table, auto-spacing, random/equal/Newman phasing, live PAPR)
   - **Multitone Distortion** (IMD/NPR stimulus: up to 4097 tones, phase presets, clearable
     NPR notch, per-tone magnitude/phase tables, in-band pre-distortion correction — N7621B v2)
+  - **Multi-Carrier** (composite of several carriers, each with its own modulation and
+    frequency offset — multi-channel / multi-standard test scenarios)
   - **Custom digital modulation** (BPSK/QPSK/8PSK/16–256-QAM/MSK, PN9/15/23 data,
     RRC/RC/Gaussian pulse shaping)
   - **Pulse Building** (radar-style pulse train: PRI/width, raised-cosine edges,
@@ -278,7 +280,7 @@ The solution is split into a UI-free core library, the WinForms app, and a test 
 | [Core/Measure/](ESG-SignalCreator.Core/Measure/) | VSA measurements (E4406A Basic-mode / N9010A SA + IQ Analyzer, via a per-model SCPI dialect): Channel Power, ACP, CCDF, Spectrum, Waveform, Power-vs-Time + mask |
 | [Core/Verify/](ESG-SignalCreator.Core/Verify/) | Closed-loop verification harness/profile/result, RF-path safety gate, path calibration |
 | [ESG-SignalCreator.Assistant/](ESG-SignalCreator.Assistant/) | In-app Claude assistant: Messages API client, agent loop, tool surface (read/configure/hardware), guardrails, DPAPI secrets |
-| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (356: framing, encoder, DSP, personalities, validation, sequencing, measurements, verification, assistant tools + guardrails + acceptance, …) |
+| [ESG-SignalCreator.Tests/](ESG-SignalCreator.Tests/) | xUnit tests (721: framing, encoder, DSP, personalities, validation, sequencing, measurements, verification, assistant tools + guardrails + acceptance, …) |
 | [ESG-SignalCreator.HilHarness/](ESG-SignalCreator.HilHarness/) | Headless hardware-in-the-loop test runner for a real E4438C |
 
 Run the tests with `dotnet test` or VS Test Explorer.

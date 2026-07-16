@@ -85,7 +85,7 @@ this:
    the selected model.
 4. In the **RF-path safety** settings:
    - **Armed** → **on**.
-   - **Analyzer max safe input (dBm)** → leave the model default (**+30** E4406A / **+25** N9010A).
+   - **Analyzer max safe input (dBm)** → leave the model default (**+30** E4406A / **+30** N9010A).
    - **Path loss (dB)** → your inline loss, or **0** if directly cabled.
 
 ### Step 3 — (Recommended) Capture path loss
