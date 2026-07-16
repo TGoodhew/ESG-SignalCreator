@@ -77,6 +77,49 @@ namespace EsgSignalCreator.Tests.Personalities
             Assert.Throws<InvalidOperationException>(() => p.Calculate(null));
         }
 
+        // ---- v2 (#186): EDGE 3π/8-rotated 8-PSK ----
+
+        [Fact]
+        public void Edge_output_length_and_sample_rate()
+        {
+            var cfg = new GsmEdgeConfig { Modulation = GsmModulation.Edge8Psk, SymbolCount = 200, SamplesPerSymbol = 16 };
+            WaveformModel wf = Calc(cfg);
+            Assert.Equal(200 * 16, wf.Length);
+            Assert.Equal(cfg.SymbolRateHz * 16, wf.SampleRateHz, 3);
+        }
+
+        [Fact]
+        public void Edge_is_not_constant_envelope_unlike_gmsk()
+        {
+            var edge = Calc(new GsmEdgeConfig { Modulation = GsmModulation.Edge8Psk, SymbolCount = 400, SamplesPerSymbol = 16 });
+            var gmsk = Calc(new GsmEdgeConfig { Modulation = GsmModulation.Gmsk, SymbolCount = 400, SamplesPerSymbol = 16 });
+
+            // GMSK is constant-envelope (|s| = 1 everywhere); EDGE 8-PSK with pulse shaping dips well below peak.
+            Assert.True(MinEnvelope(gmsk) > 0.95, "GMSK should be (near) constant envelope");
+            Assert.True(MinEnvelope(edge) < 0.6, "EDGE 8-PSK should have envelope variation");
+        }
+
+        [Fact]
+        public void Edge_differs_from_gmsk()
+        {
+            var edge = Calc(new GsmEdgeConfig { Modulation = GsmModulation.Edge8Psk, SymbolCount = 200, SamplesPerSymbol = 16 });
+            var gmsk = Calc(new GsmEdgeConfig { Modulation = GsmModulation.Gmsk, SymbolCount = 200, SamplesPerSymbol = 16 });
+            double maxDiff = 0;
+            int n = Math.Min(edge.Length, gmsk.Length);
+            for (int s = 0; s < n; s++) maxDiff = Math.Max(maxDiff, Math.Abs(edge.I[s] - gmsk.I[s]));
+            Assert.True(maxDiff > 0.1, "EDGE 8-PSK must differ from GMSK");
+        }
+
+        private static double MinEnvelope(WaveformModel wf)
+        {
+            // Ignore the filter warm-up/tail edges where the pulse-shaped signal ramps.
+            double min = double.MaxValue;
+            int guard = 64;
+            for (int s = guard; s < wf.Length - guard; s++)
+                min = Math.Min(min, Math.Sqrt(wf.I[s] * wf.I[s] + wf.Q[s] * wf.Q[s]));
+            return min;
+        }
+
         private static WaveformModel Calc(GsmEdgeConfig cfg)
         {
             var p = new GsmEdgePersonality();

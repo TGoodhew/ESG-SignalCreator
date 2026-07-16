@@ -518,13 +518,15 @@ namespace EsgSignalCreator.Assistant.Tools
         {
             public override string Name => "configure_gsm_edge";
             public override string Description =>
-                "Configure the GSM/EDGE (GMSK) source: symbol rate (Hz, GSM = 270.833k), samples per symbol, " +
-                "symbol count, Gaussian BT (GSM = 0.3), and payload data source.";
+                "Configure the GSM/EDGE source: modulation (Gmsk = GSM/GPRS constant-envelope; Edge8Psk = EDGE " +
+                "3π/8-rotated 8-PSK), symbol rate (Hz, 270.833k), samples per symbol, symbol count, Gaussian BT " +
+                "(GMSK, 0.3), and payload data source.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("symbol_rate_hz", Schema.Number("symbol/bit rate, Hz")),
+                Schema.P("modulation", Schema.Str("modulation", new[] { "Gmsk", "Edge8Psk" })),
+                Schema.P("symbol_rate_hz", Schema.Number("symbol rate, Hz")),
                 Schema.P("samples_per_symbol", Schema.Integer("oversampling factor")),
                 Schema.P("symbol_count", Schema.Integer("number of symbols")),
-                Schema.P("bt", Schema.Number("Gaussian bandwidth-time product")),
+                Schema.P("bt", Schema.Number("Gaussian bandwidth-time product (GMSK)")),
                 Schema.P("data", Schema.Str("payload data source", new[] { "PN9", "PN15", "PN23", "AllZeros", "AllOnes" })));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>

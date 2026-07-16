@@ -57,6 +57,9 @@ namespace EsgSignalCreator.Personalities.GsmEdge
             if (cfg.GaussianSpanSymbols < 1)
                 throw new InvalidOperationException("GaussianSpanSymbols must be at least 1.");
 
+            if (cfg.Modulation == GsmModulation.Edge8Psk)
+                return GenerateEdge(cfg, progress);
+
             int sps = cfg.SamplesPerSymbol;
             int n = cfg.SymbolCount * sps;
             double sampleRate = cfg.SymbolRateHz * sps;
@@ -95,6 +98,57 @@ namespace EsgSignalCreator.Personalities.GsmEdge
             progress?.Report(100);
 
             return new WaveformModel(i, q, sampleRate, "GSM/EDGE");
+        }
+
+        /// <summary>
+        /// EDGE modulation: 3π/8-continuously-rotated 8-PSK (3 bits/symbol), zero-stuffed to the sample
+        /// rate and RRC pulse-shaped (a representative stand-in for the linearised GMSK pulse). Unlike
+        /// GMSK this is not constant-envelope. Peak-normalized to 1.0.
+        /// </summary>
+        private static WaveformModel GenerateEdge(GsmEdgeConfig cfg, IProgress<int> progress)
+        {
+            if (cfg.EdgeRrcBeta < 0 || cfg.EdgeRrcBeta > 1)
+                throw new InvalidOperationException("EdgeRrcBeta must be in [0,1].");
+
+            int sps = cfg.SamplesPerSymbol;
+            int n = cfg.SymbolCount * sps;
+            double sampleRate = cfg.SymbolRateHz * sps;
+
+            progress?.Report(10);
+
+            Func<int> bit = Prbs.CreateBitGenerator(cfg.Data);
+            var upI = new double[n];
+            var upQ = new double[n];
+            const double rot = 3.0 * Math.PI / 8.0; // per-symbol continuous rotation
+
+            for (int k = 0; k < cfg.SymbolCount; k++)
+            {
+                int idx = (bit() << 2) | (bit() << 1) | bit(); // 3 bits -> 8-PSK point (0..7)
+                double phase = 2.0 * Math.PI * idx / 8.0 + k * rot;
+                upI[k * sps] = Math.Cos(phase); // zero-stuff one symbol per sps samples
+                upQ[k * sps] = Math.Sin(phase);
+            }
+
+            progress?.Report(50);
+
+            double[] taps = Fir.RootRaisedCosine(cfg.EdgeRrcBeta, sps, cfg.GaussianSpanSymbols);
+            Fir.ApplyComplex(upI, upQ, taps, out double[] fi, out double[] fq);
+
+            progress?.Report(85);
+
+            double peak = 0.0;
+            for (int s = 0; s < n; s++)
+            {
+                double m = Math.Sqrt(fi[s] * fi[s] + fq[s] * fq[s]);
+                if (m > peak) peak = m;
+            }
+            var i = new float[n];
+            var q = new float[n];
+            double scale = peak > 0 ? 1.0 / peak : 1.0;
+            for (int s = 0; s < n; s++) { i[s] = (float)(fi[s] * scale); q[s] = (float)(fq[s] * scale); }
+
+            progress?.Report(100);
+            return new WaveformModel(i, q, sampleRate, "GSM/EDGE (8PSK)");
         }
     }
 }

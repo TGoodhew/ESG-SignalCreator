@@ -225,13 +225,18 @@ jitter-tolerance mask. During a sweep the amplitude can **follow a tolerance mas
 before conformance use.* **Achievable-range enforcement** rejects a clock or jitter frequency at/above
 Nyquist and, if a **max jitter (UI pp)** cap is set, a periodic amplitude above it.
 
-### 5.10 GSM/EDGE (GMSK)
-A GMSK-modulated GSM-family carrier (a v1 of Signal Studio for GSM/EDGE, N7602B). GMSK is the
-constant-envelope modulation used by GSM/GPRS: data bits drive an NRZ frequency pulse, Gaussian-filtered
-(**BT**, default 0.3) and integrated to continuous phase at modulation index 0.5. Parameters: **symbol
-rate** (Hz, GSM = 270.833 ksym/s), **samples per symbol**, **symbol count**, **BT**, Gaussian span, and
-**data source** (PN9/15/23, all-ones/zeros). Sample rate = symbol rate × samples/symbol. EDGE 8PSK
-(3π/8-rotated), and full burst/training-sequence framing, are not yet implemented.
+### 5.10 GSM/EDGE
+A GSM-family carrier (Signal Studio for GSM/EDGE, N7602B) with two **modulations**:
+
+- **GMSK** (GSM/GPRS) — the constant-envelope modulation: data bits drive an NRZ frequency pulse,
+  Gaussian-filtered (**BT**, default 0.3) and integrated to continuous phase at modulation index 0.5.
+- **EDGE 8-PSK** (v2, #186) — **3π/8-continuously-rotated 8-PSK** (3 bits/symbol), pulse-shaped and
+  peak-normalized (non-constant envelope, unlike GMSK). The pulse is a representative RRC stand-in for
+  the linearised GMSK pulse.
+
+Parameters: **modulation**, **symbol rate** (Hz, 270.833 ksym/s), **samples per symbol**, **symbol
+count**, **BT** (GMSK) / **EDGE RRC β**, Gaussian span, and **data source**. Sample rate = symbol rate ×
+samples/symbol. Full burst/training-sequence framing and channel coding are not yet implemented.
 
 ### 5.11 Bluetooth (GFSK)
 A GFSK-modulated Bluetooth carrier (a v1 of Signal Studio for Bluetooth, N7606B). GFSK is the Basic
