@@ -114,19 +114,32 @@ recommended download) with their SHA256s.
 
 ### Build runner
 
+The workflow pins `runs-on: [ self-hosted, windows ]`, so it **requires a self-hosted Windows runner**.
 Since #102, `Core` references only the **IVI VISA.NET Shared Components** (`Ivi.Visa`) by `HintPath` —
-no NI-specific assemblies. So the build runs on any Windows runner (MSBuild + .NET SDK) that has the
-**IVI VISA.NET Shared Components** installed; those ship with *any* VISA provider (Keysight IO
-Libraries, NI-VISA, R&S, Rigol, …), so a lab machine that already talks to instruments works as a
-**self-hosted** runner with no extra setup:
+no NI-specific assemblies — so any Windows machine with the **IVI VISA.NET Shared Components** installed
+qualifies; those ship with *any* VISA provider (Keysight IO Libraries, NI-VISA, R&S, Rigol, …), so a lab
+machine that already talks to instruments works as the runner with no extra setup:
 
 1. GitHub → repo **Settings → Actions → Runners → New self-hosted runner** (Windows).
 2. Follow the steps; give it the labels **`self-hosted`** and **`windows`**.
-3. Run it as a service so releases build unattended.
+3. Run it as a service (`svc.cmd install` / `--runasservice`) so releases build unattended.
 
-> A GitHub-hosted runner can also work if a step installs the IVI VISA.NET Shared Components (or the
-> reference is switched to the `Ivi.Visa` NuGet package); the runtime still needs an installed VISA
-> provider, which is why a VISA-equipped self-hosted runner is the simplest choice.
+> A GitHub-hosted runner would need a step to install the IVI VISA.NET Shared Components (or switching
+> the reference to the `Ivi.Visa` NuGet package) plus an installed VISA provider — which is why the
+> workflow targets a VISA-equipped self-hosted runner.
+
+#### Service-account accommodations
+
+Running the runner **as a Windows service** (rather than an interactive console) changes two defaults
+that the workflow explicitly works around — keep both if you edit `release.yml`:
+
+- **PowerShell execution policy.** A service account defaults to **Restricted**, which blocks the
+  runner's generated step scripts. The workflow sets a job-level default shell of
+  `powershell -ExecutionPolicy Bypass -Command ". '{0}'"` so every step runs unattended (added in
+  PR #212).
+- **WiX MSI ICE validation.** The service account can't reach the Windows Installer service for ICE
+  validation, so the MSI build passes `-p:SuppressValidation=true` (added in PR #213). If you build the
+  MSI locally on an interactive account you can drop this flag, but it must stay for the service runner.
 
 ## Code signing (optional)
 

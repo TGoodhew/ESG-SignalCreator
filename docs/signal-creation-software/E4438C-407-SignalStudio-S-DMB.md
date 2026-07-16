@@ -6,8 +6,8 @@
 > 🔴 **Implementation status: NOT IMPLEMENTED (placeholder removed 2026-07-16).** The app no longer
 > ships an S-DMB personality. The earlier v1 was an *unverified* CDM approximation (QPSK spread by an
 > OVSF code, scrambled, RRC-shaped) whose chip rate, spreading, FEC, and framing were placeholders —
-> **not a verified S-DMB waveform.** It was **removed** (#197) rather than left as a partial, because the
-> physical layer cannot be confirmed without a primary specification.
+> **not a verified S-DMB waveform.** It was **removed** (PR #222, closing #197) rather than left as a
+> partial, because the physical layer cannot be confirmed without a primary specification.
 >
 > **v2 confirmation attempt (#197, 2026-07-16):** a web-research pass *confirmed the standard designation*
 > — S-DMB uses **ITU-R BO.1130-4 "System E"**, a CDM/CDMA satellite-broadcasting air interface (Korean

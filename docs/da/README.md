@@ -28,10 +28,34 @@ kernebibliotek, WinForms-appen og et xUnit-testprojekt.
 - **Signal-personalities** — tilkoblelige kilder, der producerer normaliseret I/Q:
   - **CW / enkelt tone** (frekvens-offset, sømløst løkkende)
   - **Multitone** (tonetabel, auto-spacing, random/equal/Newman-phasing, live PAPR)
+  - **Multitone Distortion** (IMD/NPR-stimulus: op til 4097 toner, fasepresets, ryddeligt
+    NPR-notch, per-tone magnitude/fase-tabeller, in-band prædistortionskorrektion — N7621B v2)
+  - **Multi-Carrier** (komposit af flere bærebølger, hver med egen modulation og
+    frekvens-offset — multi-kanal / multi-standard-testscenarier)
   - **Brugerdefineret digital modulation** (BPSK/QPSK/8PSK/16–256-QAM/MSK, PN9/15/23-data,
     RRC/RC/Gaussisk pulsformning)
+  - **Pulse Building** (radar-agtigt pulstog: PRI/bredde, raised-cosine-kanter,
+    intra-puls LFM/NLFM-chirp, FM/AM-trin, BPSK/QPSK/Barker/Frank/P4-koder,
+    per-puls frekvens/fase/effekt-offsets, staggered/jittered PRI, markører — N7620A v2)
+  - **Jitter Injection** (jittret ur: periodisk sinus/firkant/trekant/sav/eksp/brugerdefineret
+    + Gaussisk random + komposit-jitter, SJ-frekvenssweep med tolerancemasker
+    (brugerdefineret + ca. ITU-T G.8251), rækkeviddehåndhævelse — E4438C-SP1 v2)
   - **AWGN** (båndbegrænset Gaussisk støj med crest-factor-clipping)
-  - **Importér I/Q** (CSV/TSV, rå interleaved int16, WAV)
+  - **Importér I/Q** (CSV/TSV, rå interleaved int16, Agilent/Keysight big-endian int16 & 14-bit, WAV,
+    MATLAB Level-5 `.mat` inkl. komprimeret, plus markør/trigger-authoring — N7622A Toolkit-rollen, v2)
+  - **Standard-personalities** (v1-kerner afledt af det ældre Signal Studio-katalog — se
+    [docs/signal-creation-software/](../signal-creation-software/)): **GSM/EDGE** (GMSK + v2 EDGE 8-PSK — N7602B),
+    **Bluetooth** (GFSK + v2 EDR π/4-DQPSK/8-DPSK — N7606B), **3GPP W-CDMA FDD** (OVSF-spredt QPSK; v2 valgfrit
+    multi-kode-komposit — N7600B), **W-CDMA HSPA** (16QAM HS-PDSCH; v2 valgfri multikode — E4438C-419),
+    **3GPP2 CDMA** (cdma2000; v2 valgfri multi-kode — N7601B), **TD-SCDMA** (1,28 Mcps; v2 valgfri multi-kode — N7612B),
+    **3GPP LTE FDD** (OFDM, 1,4–20 MHz; v2 valgfri E-UTRA-frame — normal/udvidet CP — N7624B),
+    **LTE TDD** (v2 valgfri E-UTRA TDD-frame — D/S/U-subframe-mønster — N7625B),
+    **802.11 WLAN** (OFDM; v2 valgfri 802.11a/g PPDU — L-LTF-præambel, valgbar GI — N7617B),
+    **802.16-2004 WiMAX** (256-FFT OFDM; v2 valgfri frame — pilotkort + præambel — N7613A),
+    **802.16e Mobile WiMAX** (skalerbar OFDMA; v2 valgfri DL-frame — præambel + DL-PUSC-piloter — N7615B),
+    **T-DMB** (DAB COFDM; v2 valgfri DAB-frame — null + fasereference-symbol, DQPSK — N7616B),
+    **Digital Video** (DVB-T COFDM; v2 valgfri spredte piloter — N7623B),
+    **Broadcast Radio** (FM-stereo; v2 valgfri RDS 57 kHz-underbærebølge — N7611B)
 - **Verifikationsplot** — I/Q vs. tid, FFT-spektrum, konstellation og CCDF, hver
   med en view-dropdown og rubber-band-zoom.
 - **Bevidst pipeline** — **Calculate** genererer I/Q uden for UI-tråden med en
@@ -237,7 +261,7 @@ Solutionen er opdelt i et UI-frit kernebibliotek, WinForms-appen og et testproje
 | [Core/Measure/](../../ESG-SignalCreator.Core/Measure/) | VSA-målinger (E4406A Basic-mode / N9010A SA + IQ Analyzer, via en per-model SCPI-dialekt): Channel Power, ACP, CCDF, Spectrum, Waveform, Power-vs-Time + mask |
 | [Core/Verify/](../../ESG-SignalCreator.Core/Verify/) | Closed-loop-verifikation harness/profil/resultat, RF-path-sikkerhedsgate, path-kalibrering |
 | [ESG-SignalCreator.Assistant/](../../ESG-SignalCreator.Assistant/) | Indbygget Claude-assistent: Messages API-klient, agent-loop, værktøjsoverflade (read/configure/hardware), guardrails, DPAPI-hemmeligheder |
-| [ESG-SignalCreator.Tests/](../../ESG-SignalCreator.Tests/) | xUnit-tests (356: framing, encoder, DSP, personalities, validering, sekvensering, målinger, verifikation, assistent-værktøjer + guardrails + acceptance, …) |
+| [ESG-SignalCreator.Tests/](../../ESG-SignalCreator.Tests/) | xUnit-tests (721: framing, encoder, DSP, personalities, validering, sekvensering, målinger, verifikation, assistent-værktøjer + guardrails + acceptance, …) |
 | [ESG-SignalCreator.HilHarness/](../../ESG-SignalCreator.HilHarness/) | Headless hardware-in-the-loop-testkører for en rigtig E4438C |
 
 Kør testene med `dotnet test` eller VS Test Explorer.
