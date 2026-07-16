@@ -37,7 +37,7 @@ core library, the WinForms app, and an xUnit test project.
   - **CW / single tone** (frequency-offset, seamless-looping)
   - **Multitone** (tone table, auto-spacing, random/equal/Newman phasing, live PAPR)
   - **Multitone Distortion** (IMD/NPR stimulus: up to 4097 tones, phase presets, clearable
-    NPR notch — N7621B v1)
+    NPR notch, per-tone magnitude/phase tables, in-band pre-distortion correction — N7621B v2)
   - **Custom digital modulation** (BPSK/QPSK/8PSK/16–256-QAM/MSK, PN9/15/23 data,
     RRC/RC/Gaussian pulse shaping)
   - **Pulse Building** (radar-style pulse train: PRI/width, raised-cosine edges,

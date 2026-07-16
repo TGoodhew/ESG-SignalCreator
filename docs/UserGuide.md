@@ -183,13 +183,20 @@ externally-generated (MATLAB/C++) signals. *(MATLAB `.mat` import is not yet sup
 WAV, or a 16-bit binary format.)*
 
 ### 5.8 Multitone Distortion
-A dense multitone / noise-power-ratio (NPR) stimulus for amplifier and converter linearity testing (a
-v1 of Signal Studio for Multitone Distortion, N7621B). Parameters: **tone count** (2 up to 4097), **tone
+A dense multitone / noise-power-ratio (NPR) stimulus for amplifier and converter linearity testing
+(Signal Studio for Multitone Distortion, N7621B). Parameters: **tone count** (2 up to 4097), **tone
 spacing** (Hz), **centre offset** (Hz), a **phase preset** — **Parabolic** (Newman, low PAPR), **Random**,
 or **Constant** (aligned, high PAPR) — and an optional **NPR notch** (enable, **width** Hz, **offset** Hz
 from band centre) that clears a band of tones so you can measure intermodulation/noise falling into the
-notch. Composite bandwidth ≈ tone count × spacing; live PAPR is reported. Spectrum-analyzer-assisted
-pre-distortion correction is not yet implemented.
+notch. Composite bandwidth ≈ tone count × spacing; live PAPR is reported.
+
+**Per-tone tables.** Optional **per-tone magnitude** (dB) and **per-tone phase** (degrees) tables cycle
+across the comb (tone *k* uses element *k* mod length), overriding the uniform power and the phase preset
+— use them to shape the comb or hand-tune the crest factor. **Pre-distortion correction** (enable) takes
+**measured per-tone magnitude/phase error** tables (from a signal analyzer, e.g. via the closed-loop
+Verify path) and subtracts them from the base per-tone values, pre-inverting the measured channel response
+so the emitted comb lands flat and IMD in the NPR notch is suppressed. Out-of-band notch-cancellation
+(injecting correction tones inside the notch) is not yet implemented.
 
 ### 5.9 Jitter Injection
 A jittered clock/tone for receiver jitter-tolerance testing (a v1 of Signal Studio for Jitter
