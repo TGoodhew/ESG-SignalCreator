@@ -6,6 +6,32 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### General-tools v2 — deferred features beyond the v1 cores
+
+The four general-purpose (fully-synthesizable) personalities were extended beyond their v1 cores with
+their deferred requirements — each on its own branch/PR, following the per-requirement process. These
+remain non-hardware-verified (bench verification is tracked in the verification epic, #157); the
+predefined ITU-T G.8251 jitter masks use **approximate corner values** pending verification against the
+standard.
+
+- **Pulse Building v2** (N7620A, #179 / PR #198) — completed the intra-pulse modulation set
+  (non-linear-FM chirp, FM step, AM step, BPSK, QPSK, Frank, and P4 polyphase, on top of None /
+  linear-FM / Barker); added **per-pulse frequency/phase/power offset tables** and **PRI patterning**
+  (fixed / staggered / jittered). *(Still deferred: custom envelope shapes, antenna-scan patterning,
+  pattern nesting, CSV import/export, scenario impairments.)*
+- **Multitone Distortion v2** (N7621B, #180 / PR #199) — **per-tone magnitude/phase tables** (via a new
+  `Manual` phase strategy on the shared multitone engine) and **in-band pre-distortion correction**
+  (subtracts a measured per-tone magnitude/phase error to pre-invert a measured channel response).
+  *(Still deferred: out-of-band IMD-notch cancellation, COM/.NET automation API.)*
+- **Toolkit / Import I/Q v2** (N7622A, #181 / PR #200) — **MATLAB Level-5 `.mat`** import (uncompressed
+  and zlib-compressed, complex vector or real 2×N/N×2), **14-bit** Agilent/Keysight big-endian import,
+  and **marker/trigger authoring** on the imported segment (Start / Periodic / Range).
+  *(Still deferred: COM/.NET automation API.)*
+- **Jitter Injection v2** (E4438C-SP1, #182 / PR #201) — a **custom** one-period jitter profile, an
+  **SJ frequency sweep** (linear/log), predefined/custom **tolerance masks** (custom + approximate
+  ITU-T G.8251 OC-48/192/768; the sweep can follow a mask), and **achievable-range enforcement**
+  (Nyquist limits + optional max-UI cap).
+
 ## [1.2.0] - 2026-07-15
 
 Signal-personality expansion: a modern implementation of the legacy **"PC-based signal creation
