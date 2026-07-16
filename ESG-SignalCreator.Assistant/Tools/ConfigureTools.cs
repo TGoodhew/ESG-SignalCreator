@@ -474,13 +474,15 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Description =>
                 "Configure the 3GPP W-CDMA FDD source: chip rate (Hz, 3.84M), samples per chip, symbol count, " +
                 "OVSF spreading factor (power of two) and code index, modulation, RRC roll-off (0.22), and " +
-                "scrambling (enable + seed).";
+                "scrambling (enable + seed). Set code_channel_count > 1 for a multi-code downlink composite " +
+                "(N orthogonal OVSF codes summed at equal power).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("chip_rate_hz", Schema.Number("chip rate, Hz")),
                 Schema.P("samples_per_chip", Schema.Integer("oversampling factor")),
                 Schema.P("symbol_count", Schema.Integer("number of data symbols")),
                 Schema.P("spreading_factor", Schema.Integer("OVSF spreading factor (power of 2)")),
-                Schema.P("ovsf_index", Schema.Integer("OVSF code index")),
+                Schema.P("ovsf_index", Schema.Integer("OVSF code index (single-code mode)")),
+                Schema.P("code_channel_count", Schema.Integer("orthogonal code channels to sum (1 = single-code; <= SF)")),
                 Schema.P("modulation", Schema.Str("data modulation", new[] { "QPSK", "QAM16", "QAM64" })),
                 Schema.P("rrc_beta", Schema.Number("RRC roll-off (0..1)")),
                 Schema.P("scramble", Schema.Bool("apply complex scrambling")));

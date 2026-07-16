@@ -242,12 +242,16 @@ the CPM engine with GMSK (GMSK is GFSK at index 0.5). EDR (π/4-DQPSK / 8DPSK), 
 framing, and hopping are not yet implemented.
 
 ### 5.12 3GPP W-CDMA FDD
-A single-code W-CDMA downlink-style signal (a v1 of Signal Studio for 3GPP W-CDMA FDD, N7600B). Data
+A W-CDMA downlink-style signal (Signal Studio for 3GPP W-CDMA FDD, N7600B). Data
 symbols are spread by an **OVSF** (Walsh) code, complex-**scrambled** by a PN sequence, and
 root-raised-cosine shaped (**β** = 0.22) at the **3.84 Mcps** chip rate. Parameters: **chip rate**,
 **samples per chip**, **symbol count**, **spreading factor** (power of two) and **OVSF index**,
 **modulation** (QPSK…), **RRC β**, and **scramble** (enable + seed). Sample rate = chip rate × samples/
-chip. This is a representative single-channel signal — the multi-code downlink (CPICH/P-CCPCH/SCH),
+chip.
+
+**Multi-code composite** (v2, #183): set **code channel count** > 1 to sum that many orthogonal OVSF code
+channels (codes 0…N-1, equal power) into a multi-code downlink — the composite is scrambled and shaped as
+one signal (raising the PAPR). Still representative — the named physical channels (CPICH/P-CCPCH/SCH),
 slot/frame structure, TFCI, transmit diversity, and HSPA channels are not yet implemented.
 
 ### 5.13 3GPP W-CDMA HSPA

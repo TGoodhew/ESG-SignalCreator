@@ -23,8 +23,13 @@ namespace EsgSignalCreator.Personalities.Wcdma
         /// <summary>OVSF spreading factor (power of two). W-CDMA DL uses 4…512.</summary>
         [DataMember] public int SpreadingFactor { get; set; } = 16;
 
-        /// <summary>OVSF code index within the spreading factor.</summary>
+        /// <summary>OVSF code index within the spreading factor (single-code mode).</summary>
         [DataMember] public int OvsfIndex { get; set; } = 1;
+
+        /// <summary>Number of orthogonal code channels to sum into a multi-code downlink composite
+        /// (1 = the single-code v1 signal). Channels use OVSF codes 0…N-1 at equal power. Must be
+        /// ≤ <see cref="SpreadingFactor"/>. (N7600B R-1/R-2 multi-code.)</summary>
+        [DataMember] public int CodeChannelCount { get; set; } = 1;
 
         /// <summary>Modulation of the data symbols before spreading (W-CDMA DPCH is QPSK).</summary>
         [DataMember] public Modulation Modulation { get; set; } = Modulation.QPSK;

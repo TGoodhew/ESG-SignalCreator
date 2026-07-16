@@ -58,7 +58,8 @@ core library, the WinForms app, and an xUnit test project.
     "bring your own I/Q" role, v2)
   - **Standards personalities** (v1 cores derived from the legacy Signal Studio catalogue — see
     [docs/signal-creation-software/](docs/signal-creation-software/)): **GSM/EDGE** (GMSK — N7602B),
-    **Bluetooth** (GFSK — N7606B), **3GPP W-CDMA FDD** (OVSF-spread QPSK — N7600B),
+    **Bluetooth** (GFSK — N7606B), **3GPP W-CDMA FDD** (OVSF-spread QPSK; v2 optional
+    multi-code composite — N7600B),
     **W-CDMA HSPA** (16QAM HS-PDSCH — E4438C-419), **3GPP2 CDMA** (cdma2000 — N7601B),
     **TD-SCDMA** (1.28 Mcps — N7612B), **S-DMB** (CDM, approx. — E4438C-407),
     **3GPP LTE FDD** (OFDM, 1.4–20 MHz; v2 optional E-UTRA frame — PSS/SSS/CRS + PDSCH,
