@@ -29,7 +29,6 @@ namespace EsgSignalCreator.Assistant.Tools
             new ConfigureHspaTool(),
             new ConfigureCdma2000Tool(),
             new ConfigureTdScdmaTool(),
-            new ConfigureSdmbTool(),
             new ConfigureLteFddTool(),
             new ConfigureLteTddTool(),
             new ConfigureWlanTool(),
@@ -70,7 +69,7 @@ namespace EsgSignalCreator.Assistant.Tools
                 "Select the active source personality. Use list_personalities first to see valid names. " +
                 "This resets the source configuration to that personality's defaults.";
             public override JObject InputSchema => Schema.Object(
-                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "S-DMB", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "WiMAX-Mobile", "T-DMB", "Digital-Video", "Broadcast-Radio", "AWGN", "Import-IQ" }), required: true));
+                Schema.P("personality", Schema.Str("personality name", new[] { "CW", "Multitone", "Multitone-Distortion", "Multi-Carrier", "CustomMod", "Pulse", "Jitter", "GSM-EDGE", "Bluetooth", "W-CDMA", "W-CDMA-HSPA", "cdma2000", "TD-SCDMA", "LTE-FDD", "LTE-TDD", "WLAN", "WiMAX-Fixed", "WiMAX-Mobile", "T-DMB", "Digital-Video", "Broadcast-Radio", "AWGN", "Import-IQ" }), required: true));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct)
             {
@@ -388,26 +387,6 @@ namespace EsgSignalCreator.Assistant.Tools
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("lte_fdd", args), "Configured LTE FDD."));
-        }
-
-        private sealed class ConfigureSdmbTool : ConfigureTool
-        {
-            public override string Name => "configure_s_dmb";
-            public override string Description =>
-                "Configure the S-DMB (CDM, approximate) source: chip rate (Hz), samples per chip, symbol count, " +
-                "OVSF spreading factor and code index, RRC roll-off, and scrambling. NOTE: a representative CDM " +
-                "signal, not a verified S-DMB waveform (air-interface unconfirmed).";
-            public override JObject InputSchema => Schema.Object(
-                Schema.P("chip_rate_hz", Schema.Number("chip rate, Hz")),
-                Schema.P("samples_per_chip", Schema.Integer("oversampling factor")),
-                Schema.P("symbol_count", Schema.Integer("number of data symbols")),
-                Schema.P("spreading_factor", Schema.Integer("OVSF spreading factor (power of 2)")),
-                Schema.P("ovsf_index", Schema.Integer("OVSF code index")),
-                Schema.P("rrc_beta", Schema.Number("RRC roll-off (0..1)")),
-                Schema.P("scramble", Schema.Bool("apply complex scrambling")));
-
-            public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
-                Task.FromResult(Done(Host(ctx).Configure("s_dmb", args), "Configured S-DMB."));
         }
 
         private sealed class ConfigureTdScdmaTool : ConfigureTool

@@ -6,6 +6,14 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+### Removed
+- **S-DMB (E4438C-407) personality** — the v1 was an explicitly *unverified* CDM placeholder (its chip
+  rate, spreading, FEC, and framing were guesses). A research pass (#197) confirmed the air interface is
+  **ITU-R BO.1130-4 "System E"** but could not recover the baseband parameters from accessible sources
+  (they're in the paid ITU-R / ARIB STD-B41 standards). Rather than keep a partial, unverifiable
+  personality, it was removed; the requirements doc records the research and the standards-procurement
+  block.
+
 ## [1.3.0] - 2026-07-16
 
 **v2 personality expansion** — the experimental v1 cores from 1.2.0 were extended toward their deferred

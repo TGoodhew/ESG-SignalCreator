@@ -289,14 +289,7 @@ code channels within a timeslot into the composite. Representative — the 5 ms 
 TDD burst structure (DwPTS/UpPTS/GP), midamble codes, switching points, and HSDPA channels are not yet
 implemented.
 
-### 5.16 S-DMB (CDM, approximate)
-An **approximate** Satellite-DMB stimulus (a v1 of Signal Studio for S-DMB, E4438C-407). ⚠️ The S-DMB
-(System E) air interface could not be confirmed from primary literature, so this generates a
-representative **CDM** signal (QPSK spread by an OVSF code, scrambled, RRC-shaped) — **not a verified
-S-DMB waveform.** Chip rate, spreading, FEC, and framing are placeholders; treat the output as "a QPSK
-spread-spectrum signal." Parameters mirror the other CDMA-family personalities.
-
-### 5.17 3GPP LTE FDD
+### 5.16 3GPP LTE FDD
 A downlink OFDM signal with LTE numerology (Signal Studio for 3GPP LTE, N7624B). Uses a **15 kHz**
 subcarrier spacing and the standard **FFT size / occupied-subcarrier count** for the selected
 **channel bandwidth** (1.4 / 3 / 5 / 10 / 15 / 20 MHz → 128…2048-point FFT, RB×12 subcarriers).
@@ -316,8 +309,8 @@ The frame-structured mode follows 3GPP TS 36.211 for the PSS/SSS/CRS sequences a
 representative frame, not fully conformant: single antenna port, no PBCH/PDCCH payloads or channel
 coding, no PDSCH scrambling. Uplink, MIMO, HARQ, and carrier aggregation remain out of scope.
 
-### 5.18 3GPP LTE TDD
-The same LTE OFDM numerology and parameters as §5.17 — LTE's physical layer is common to FDD and TDD
+### 5.17 3GPP LTE TDD
+The same LTE OFDM numerology and parameters as §5.16 — LTE's physical layer is common to FDD and TDD
 (Signal Studio for 3GPP LTE TDD, N7625B). Two modes, like FDD:
 
 - **Generic** (default) — a plain downlink OFDM data fill.
@@ -329,10 +322,10 @@ The same LTE OFDM numerology and parameters as §5.17 — LTE's physical layer i
   Uplink subframes and the GP/UpPTS are transmitted silent (the app is a downlink generator). Also set
   the **cyclic prefix** (Normal/Extended), **physical cell ID** (0…503), and **subframe count**.
 
-Same scope caveats as FDD (§5.17): representative frame, single antenna port, no channel coding, and
+Same scope caveats as FDD (§5.16): representative frame, single antenna port, no channel coding, and
 uplink physical channels / MIMO / HARQ / carrier aggregation remain deferred.
 
-### 5.19 802.11 WLAN (OFDM)
+### 5.18 802.11 WLAN (OFDM)
 An 802.11 OFDM signal (Signal Studio for 802.11 WLAN, N7617B) with 11a/g/n numerology: **312.5 kHz**
 subcarrier spacing, a **64-point** (20 MHz) or **128-point** (40 MHz) FFT with the standard
 used-subcarrier count and cyclic prefix. Parameters: **bandwidth**, **symbol count**, and subcarrier
@@ -349,7 +342,7 @@ The L-LTF sequence and pilot positions/polarity follow IEEE 802.11. It's a repre
 L-STF/L-SIG fields, channel coding/interleaving, MAC framing, MIMO, and 80/160 MHz (11ac/ax, which
 exceed the ESG) remain deferred.
 
-### 5.20 802.16-2004 WiMAX (OFDM)
+### 5.19 802.16-2004 WiMAX (OFDM)
 A fixed-WiMAX (IEEE 802.16-2004) **256-FFT OFDM** signal (Signal Studio for 802.16-2004, N7613A) with
 200 used subcarriers. Parameters: **channel bandwidth** (Hz; sample rate ≈ bandwidth × 8/7),
 **cyclic-prefix ratio** (1/4, 1/8, 1/16, 1/32), **symbol count**, and **modulation** (BPSK…64QAM). Two
@@ -364,7 +357,7 @@ modes:
 Pilot positions and the pilot PRBS follow IEEE 802.16-2004. Representative frame — the exact two-symbol
 long preamble, FCH, DL/UL-MAP, DCD/UCD, RS-CC channel coding, and MAC framing remain deferred.
 
-### 5.21 802.16e Mobile WiMAX (OFDMA)
+### 5.20 802.16e Mobile WiMAX (OFDMA)
 A mobile-WiMAX (IEEE 802.16e) **scalable-OFDMA** signal (Signal Studio for 802.16 WiMAX, N7615B) at the
 fixed **10.9375 kHz** subcarrier spacing, with a selectable **FFT size** (128 / 512 / 1024 / 2048 for
 ≈ 1.25 / 5 / 10 / 20 MHz) so the sample rate scales with FFT. Parameters: **FFT size**, **cyclic-prefix
@@ -380,7 +373,7 @@ The preamble's every-3rd-subcarrier layout and the 14-subcarrier DL-PUSC cluster
 structure, but this is a representative frame — the exact preamble PN per IDcell, the full
 PUSC/FUSC/AMC subchannel permutation, FCH/DL-MAP/UL-MAP, MIMO, and CTC/CC coding remain deferred.
 
-### 5.22 T-DMB (DAB COFDM)
+### 5.21 T-DMB (DAB COFDM)
 The DAB COFDM signal underlying Terrestrial-DMB (Signal Studio for T-DMB, N7616B). Keeps a
 **2.048 MHz** signal bandwidth across all four **transmission modes** (I/II/III/IV), which set the FFT
 size (2048 / 512 / 256 / 1024), active carriers, and guard interval. Parameters: **mode**, **symbol
@@ -396,7 +389,7 @@ The null + phase-reference symbols and the differential (DQPSK) encoding follow 
 (ETSI EN 300 401). Representative — the exact phase-reference table, the FIC/MSC multiplex, the TII, and
 convolutional coding remain deferred.
 
-### 5.23 Digital Video (DVB-T COFDM)
+### 5.22 Digital Video (DVB-T COFDM)
 A DVB-T COFDM signal for an 8 MHz channel (Signal Studio for Digital Video, N7623B). Parameters:
 **transmission mode** (**2K** = 2048-FFT / **8K** = 8192-FFT), **guard-interval** ratio (1/4…1/32),
 **symbol count**, and **modulation** (QPSK / 16QAM / 64QAM). Sample rate is the DVB-T elementary rate
@@ -412,7 +405,7 @@ The scattered-pilot positions, 4/3 boosting, and reference PRBS follow ETSI EN 3
 the continual/TPS carriers, PRBS energy dispersal, RS/convolutional coding, and MPEG-TS framing remain
 deferred, and the other digital-video standards (ISDB-T, ATSC 8VSB, DVB-C/S QAM, DTMB) are not implemented.
 
-### 5.24 Broadcast Radio (FM)
+### 5.23 Broadcast Radio (FM)
 An analog FM broadcast signal (Signal Studio for Broadcast Radio, N7611B). The baseband multiplex is an
 **audio test tone** (mono), optionally with a **19 kHz stereo pilot** and a **38 kHz DSB-SC** stereo
 subcarrier, frequency-modulated onto the carrier. Parameters: **audio-tone frequency**, **stereo** on/off,
@@ -422,7 +415,7 @@ subcarrier, frequency-modulated onto the carrier. Parameters: **audio-tone frequ
 (Manchester) data stream (differentially-encoded PRBS), DSB-SC on 57 kHz (3× the 19 kHz pilot), with a
 configurable **RDS deviation** (~2 kHz of the 75 kHz total). Representative — a single test tone rather
 than program audio, real RDS group content (PS/PTY/RT/…), pre-emphasis, and SCA are not implemented, and
-the digital broadcast formats (DAB/DAB+ → see §5.22 T-DMB; XM/HD Radio) are covered elsewhere or deferred.
+the digital broadcast formats (DAB/DAB+ → see §5.21 T-DMB; XM/HD Radio) are covered elsewhere or deferred.
 
 ---
 

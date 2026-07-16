@@ -167,10 +167,7 @@ Et cdma2000-forward-link-lignende signal (Signal Studio for 3GPP2 CDMA, N7601B).
 ### 5.15 TD-SCDMA
 Et TD-SCDMA-signal (Signal Studio for TD-SCDMA, N7612B) ved **1,28 Mcps** low-chip-rate: QPSK/16QAM/64QAM-data spredt med en OVSF-kode, scramblet, RRC-formet (β = 0,22). Parametre svarer til W-CDMA FDD. **Multikode** (v2, #187): sæt **code channel count** > 1 for at summere flere kodekanaler inden for en timeslot til kompositten. Repræsentativt — 5 ms-subframe/7-timeslot-TDD-burststruktur (DwPTS/UpPTS/GP), midamble-koder, switching points og HSDPA-kanaler er endnu ikke implementeret.
 
-### 5.16 S-DMB (CDM, tilnærmet)
-Et **tilnærmet** Satellite-DMB-stimulus (en v1 af Signal Studio for S-DMB, E4438C-407). ⚠️ S-DMB-luftgrænsefladen (System E) kunne ikke bekræftes fra primær litteratur, så dette genererer et repræsentativt **CDM**-signal (QPSK spredt med en OVSF-kode, scramblet, RRC-formet) — **ikke en verificeret S-DMB-bølgeform.** Chip-rate, spredning, FEC og framing er pladsholdere; betragt outputtet som "et QPSK spread-spectrum-signal." Parametre svarer til de øvrige CDMA-familie-personligheder.
-
-### 5.17 3GPP LTE FDD
+### 5.16 3GPP LTE FDD
 Et downlink-OFDM-signal med LTE-numerologi (Signal Studio for 3GPP LTE, N7624B). Bruger **15 kHz** subcarrier-afstand og den standardiserede **FFT-størrelse / antal brugte subcarriers** for den valgte **kanalbåndbredde** (1,4 / 3 / 5 / 10 / 15 / 20 MHz → 128…2048-punkts FFT, RB×12 subcarriers). Parametre: **båndbredde**, **antal symboler** og subcarrier-/PDSCH-**modulation** (QPSK / 16QAM / 64QAM / 256QAM). To tilstande:
 
 - **Generisk** (standard) — en almindelig OFDM-datafyldning på alle brugte subcarriers, til båndbredde-/PAPR-/spektralkontroller.
@@ -178,15 +175,15 @@ Et downlink-OFDM-signal med LTE-numerologi (Signal Studio for 3GPP LTE, N7624B).
 
 Den rammestrukturerede tilstand følger 3GPP TS 36.211 for PSS/SSS/CRS-sekvenser og -positioner; det er en repræsentativ ramme, ikke fuldt konform: enkelt antenneport, ingen PBCH/PDCCH-payloads eller kanalkodning, ingen PDSCH-scrambling. Uplink, MIMO, HARQ og carrier aggregation er stadig uden for scope.
 
-### 5.18 3GPP LTE TDD
-Samme LTE-OFDM-numerologi og parametre som §5.17 — LTE's fysiske lag er fælles for FDD og TDD (Signal Studio for 3GPP LTE TDD, N7625B). To tilstande, ligesom FDD:
+### 5.17 3GPP LTE TDD
+Samme LTE-OFDM-numerologi og parametre som §5.16 — LTE's fysiske lag er fælles for FDD og TDD (Signal Studio for 3GPP LTE TDD, N7625B). To tilstande, ligesom FDD:
 
 - **Generisk** (standard) — en almindelig downlink-OFDM-datafyldning.
 - **Rammestruktureret** (v2, #189) — aktivér **frame structured** for at bygge en rigtig **E-UTRA TDD downlink-ramme** (rammestruktur type 2): **D/S/U-subframe-mønsteret** for den valgte **uplink-downlink-konfiguration** (**0…6**), det **specielle subframe** opdelt i DwPTS / GP / UpPTS ved **special-subframe-konfigurationen** (**0…9**), TDD-placeret **PSS** (i DwPTS i subframe 1 & 6) og **SSS** (sidste symbol i subframe 0 & 5), **CRS** og en **PDSCH**-fyldning på downlink-symbolerne. Uplink-subframes og GP/UpPTS sendes tavse (appen er en downlink-generator). Sæt også **cyclic prefix** (Normal/Extended), **physical cell ID** (0…503) og **subframe count**.
 
-Samme scope-forbehold som FDD (§5.17): repræsentativ ramme, enkelt antenneport, ingen kanalkodning, og uplink-fysiske kanaler / MIMO / HARQ / carrier aggregation er stadig udskudt.
+Samme scope-forbehold som FDD (§5.16): repræsentativ ramme, enkelt antenneport, ingen kanalkodning, og uplink-fysiske kanaler / MIMO / HARQ / carrier aggregation er stadig udskudt.
 
-### 5.19 802.11 WLAN (OFDM)
+### 5.18 802.11 WLAN (OFDM)
 Et 802.11-OFDM-signal (Signal Studio for 802.11 WLAN, N7617B) med 11a/g/n-numerologi: **312,5 kHz** subcarrier-afstand, en **64-punkts** (20 MHz) eller **128-punkts** (40 MHz) FFT med det standardiserede antal brugte subcarriers og cyklisk præfiks. Parametre: **båndbredde**, **antal symboler** og subcarrier-**modulation** (BPSK…256QAM). To tilstande:
 
 - **Generisk** (standard) — en almindelig OFDM-datafyldning til båndbredde-/PAPR-/spektralkontroller.
@@ -194,7 +191,7 @@ Et 802.11-OFDM-signal (Signal Studio for 802.11 WLAN, N7617B) med 11a/g/n-numero
 
 L-LTF-sekvensen og pilotpositioner/-polaritet følger IEEE 802.11. Det er en repræsentativ PPDU — L-STF/L-SIG-felterne, kanalkodning/interleaving, MAC-framing, MIMO og 80/160 MHz (11ac/ax, som overstiger ESG'en) er stadig udskudt.
 
-### 5.20 802.16-2004 WiMAX (OFDM)
+### 5.19 802.16-2004 WiMAX (OFDM)
 Et fixed-WiMAX-(IEEE 802.16-2004)-**256-FFT-OFDM**-signal (Signal Studio for 802.16-2004, N7613A) med 200 brugte subcarriers. Parametre: **kanalbåndbredde** (Hz; samplingsrate ≈ båndbredde × 8/7), **cyklisk-præfiks-forhold** (1/4, 1/8, 1/16, 1/32), **antal symboler** og **modulation** (BPSK…64QAM). To tilstande:
 
 - **Generisk** (standard) — en almindelig OFDM-fyldning af de 200 brugte subcarriers.
@@ -202,7 +199,7 @@ Et fixed-WiMAX-(IEEE 802.16-2004)-**256-FFT-OFDM**-signal (Signal Studio for 802
 
 Pilotpositioner og pilot-PRBS'en følger IEEE 802.16-2004. Repræsentativ ramme — den præcise to-symbols lange præambel, FCH, DL/UL-MAP, DCD/UCD, RS-CC-kanalkodning og MAC-framing er stadig udskudt.
 
-### 5.21 802.16e Mobile WiMAX (OFDMA)
+### 5.20 802.16e Mobile WiMAX (OFDMA)
 Et mobile-WiMAX-(IEEE 802.16e)-**scalable-OFDMA**-signal (Signal Studio for 802.16 WiMAX, N7615B) ved den faste **10,9375 kHz** subcarrier-afstand med en valgbar **FFT-størrelse** (128 / 512 / 1024 / 2048 for ≈ 1,25 / 5 / 10 / 20 MHz), så samplingsraten skalerer med FFT. Parametre: **FFT-størrelse**, **cyklisk-præfiks-forhold**, **antal symboler** og **modulation** (QPSK…64QAM). To tilstande:
 
 - **Generisk** (standard) — almindelig OFDM (ingen OFDMA-subkanalpermutation).
@@ -210,7 +207,7 @@ Et mobile-WiMAX-(IEEE 802.16e)-**scalable-OFDMA**-signal (Signal Studio for 802.
 
 Præamblens hver-3.-subcarrier-layout og den 14-subcarrier DL-PUSC-klynge følger 802.16e-strukturen, men det er en repræsentativ ramme — den præcise præambel-PN pr. IDcell, den fulde PUSC/FUSC/AMC-subkanalpermutation, FCH/DL-MAP/UL-MAP, MIMO og CTC/CC-kodning er stadig udskudt.
 
-### 5.22 T-DMB (DAB COFDM)
+### 5.21 T-DMB (DAB COFDM)
 DAB-COFDM-signalet, der ligger under Terrestrial-DMB (Signal Studio for T-DMB, N7616B). Bevarer en **2,048 MHz** signalbåndbredde på tværs af alle fire **transmissionsmodes** (I/II/III/IV), som sætter FFT-størrelsen (2048 / 512 / 256 / 1024), aktive bærebølger og guard-interval. Parametre: **mode**, **antal symboler**, **datakilde**. To tilstande:
 
 - **Generisk** (standard) — en almindelig QPSK-OFDM-fyldning (DQPSK tilnærmet med QPSK).
@@ -218,7 +215,7 @@ DAB-COFDM-signalet, der ligger under Terrestrial-DMB (Signal Studio for T-DMB, N
 
 Null- + fasereferencesymbolerne og den differentielle (DQPSK) kodning følger DAB-rammestrukturen (ETSI EN 300 401). Repræsentativt — den præcise fasereferencetabel, FIC/MSC-multipleks, TII og foldningskodning er stadig udskudt.
 
-### 5.23 Digital Video (DVB-T COFDM)
+### 5.22 Digital Video (DVB-T COFDM)
 Et DVB-T-COFDM-signal til en 8 MHz-kanal (Signal Studio for Digital Video, N7623B). Parametre: **transmissionsmode** (**2K** = 2048-FFT / **8K** = 8192-FFT), **guard-interval**-forhold (1/4…1/32), **antal symboler** og **modulation** (QPSK / 16QAM / 64QAM). Samplingsraten er DVB-T-elementærraten (64/7 MHz). To tilstande:
 
 - **Generisk** (standard) — en almindelig OFDM-datafyldning af de aktive bærebølger.
@@ -226,10 +223,10 @@ Et DVB-T-COFDM-signal til en 8 MHz-kanal (Signal Studio for Digital Video, N7623
 
 Scattered-pilot-positionerne, 4/3-boostningen og referens-PRBS'en følger ETSI EN 300 744. Repræsentativt — de kontinuerlige/TPS-bærebølger, PRBS-energispredning, RS-/foldningskodning og MPEG-TS-framing er stadig udskudt, og de andre digital-video-standarder (ISDB-T, ATSC 8VSB, DVB-C/S QAM, DTMB) er ikke implementeret.
 
-### 5.24 Broadcast Radio (FM)
+### 5.23 Broadcast Radio (FM)
 Et analogt FM-broadcast-signal (Signal Studio for Broadcast Radio, N7611B). Basebånd-multipleksen er en **audio-testtone** (mono), valgfrit med en **19 kHz stereo-pilot** og en **38 kHz DSB-SC**-stereo-subbærebølge, frekvensmoduleret på bærebølgen. Parametre: **audio-tonefrekvens**, **stereo** til/fra, **peak-deviation** (75 kHz), **samplingsrate** og **længde**.
 
-**RDS** (v2, #194): aktivér **RDS** for at tilføje **57 kHz**-datasubbærebølgen — en **1187,5 bps** biphase-(Manchester)-datastrøm (differentielt kodet PRBS), DSB-SC på 57 kHz (3× 19 kHz-piloten), med en konfigurerbar **RDS-deviation** (~2 kHz af de 75 kHz i alt). Repræsentativt — en enkelt testtone i stedet for programlyd, ægte RDS-gruppeindhold (PS/PTY/RT/…), pre-emphasis og SCA er ikke implementeret, og de digitale broadcast-formater (DAB/DAB+ → se §5.22 T-DMB; XM/HD Radio) dækkes andetsteds eller er udskudt.
+**RDS** (v2, #194): aktivér **RDS** for at tilføje **57 kHz**-datasubbærebølgen — en **1187,5 bps** biphase-(Manchester)-datastrøm (differentielt kodet PRBS), DSB-SC på 57 kHz (3× 19 kHz-piloten), med en konfigurerbar **RDS-deviation** (~2 kHz af de 75 kHz i alt). Repræsentativt — en enkelt testtone i stedet for programlyd, ægte RDS-gruppeindhold (PS/PTY/RT/…), pre-emphasis og SCA er ikke implementeret, og de digitale broadcast-formater (DAB/DAB+ → se §5.21 T-DMB; XM/HD Radio) dækkes andetsteds eller er udskudt.
 
 ---
 
