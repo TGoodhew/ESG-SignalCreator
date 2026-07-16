@@ -57,7 +57,7 @@ core library, the WinForms app, and an xUnit test project.
     MATLAB Level-5 `.mat` incl. compressed, plus marker/trigger authoring — the N7622A Toolkit
     "bring your own I/Q" role, v2)
   - **Standards personalities** (v1 cores derived from the legacy Signal Studio catalogue — see
-    [docs/signal-creation-software/](docs/signal-creation-software/)): **GSM/EDGE** (GMSK — N7602B),
+    [docs/signal-creation-software/](docs/signal-creation-software/)): **GSM/EDGE** (GMSK + v2 EDGE 8-PSK — N7602B),
     **Bluetooth** (GFSK — N7606B), **3GPP W-CDMA FDD** (OVSF-spread QPSK; v2 optional
     multi-code composite — N7600B),
     **W-CDMA HSPA** (16QAM HS-PDSCH; v2 optional multicode — E4438C-419), **3GPP2 CDMA** (cdma2000; v2 optional multi-code — N7601B),

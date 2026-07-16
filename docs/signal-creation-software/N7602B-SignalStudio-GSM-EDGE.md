@@ -3,13 +3,18 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** A **GSM/EDGE (GMSK)** personality now ships in the app
-> (`Core/Personalities/GsmEdge/`). It generates the GSM/GPRS **GMSK** physical-layer modulation
-> (continuous-phase, BT = 0.3, index 0.5) at the correct 270.833 ksym/s symbol rate, with configurable
-> oversampling, symbol count, and PN data — a representative GSM carrier for spectrum/modulation checks.
-> **This is a simplified v1, not a standards-compliant GSM signal.** Deferred: **EDGE 8PSK** (3π/8-rotated,
-> linearised pulse), normal/access **burst** structures, training sequences (TSC), 26/51/52-multiframe
-> framing, and channel coding (CS/MCS). Hardware verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** A **GSM/EDGE** personality ships in the app
+> (`Core/Personalities/GsmEdge/`) with two modulations:
+> - **GMSK** (v1 core) — the GSM/GPRS continuous-phase modulation (BT = 0.3, index 0.5) at 270.833 ksym/s.
+> - **EDGE 8-PSK** (✅ v2, #186): **3π/8-continuously-rotated 8-PSK** (3 bits/symbol), pulse-shaped and
+>   peak-normalized (non-constant envelope) — partial **R-2**. The pulse is a representative RRC stand-in
+>   for the linearised GMSK pulse.
+>
+> Still representative, not a standards-compliant GSM/EDGE signal. **Still deferred** (#186): EDGE
+> Evolution / EGPRS2 higher-order formats (R-1/R-2), HSR (R-3), normal/access **burst** structures + TSC
+> (R-4), channel coding CS/MCS (R-5), 13/26/51/52-multiframe framing (R-6), control channels (R-7),
+> multi-carrier (R-8), and per-timeslot power (R-11). Hardware verification is tracked in the verification
+> epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7602B (product name in the E4438C data sheet ordering list: "N7602B Signal Studio for GSM/EDGE"). Full product name on the current technical overview: *Signal Studio for GSM/EDGE/Evo*.
