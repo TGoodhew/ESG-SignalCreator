@@ -6,13 +6,38 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-16
+
+**v2 personality expansion, cont'd** — the cellular and short-range/broadcast personalities gained their
+next deferred increments, and the unverified S-DMB placeholder was removed. Same experimental caveat as
+1.3.0: representative signals, not standards-compliant, and not yet bench-verified (tracked in epic #157;
+each requirements-doc status note lists what remains deferred).
+
+### Cellular — multi-code composites (shared `DsssEngine`)
+
+A new multi-code path on the shared DSSS engine sums several orthogonal code channels (OVSF/Walsh) into a
+composite (opt-in via each personality's `CodeChannelCount`); the single-code v1 output is unchanged.
+
+- **W-CDMA FDD** (N7600B, #183 / PR #214) — multi-code downlink composite.
+- **W-CDMA HSPA** (E4438C-419, #184 / PR #215) — HS-PDSCH multicode.
+- **cdma2000** (N7601B, #185 / PR #216) — Walsh multi-channel forward link.
+- **TD-SCDMA** (N7612B, #187 / PR #217) — multi-code within a timeslot.
+- **GSM/EDGE** (N7602B, #186 / PR #218) — added **EDGE 3π/8-rotated 8-PSK** (2/3 bits/symbol,
+  non-constant envelope) alongside GMSK.
+
+### Short-range / broadcast
+
+- **Bluetooth** (N7606B, #190 / PR #219) — added **EDR** π/4-DQPSK (2 Mbps) / 8-DPSK (3 Mbps) alongside GFSK.
+- **Broadcast Radio** (N7611B, #194 / PR #220) — added the **RDS 57 kHz** data subcarrier (1187.5 bps
+  biphase, DSB-SC on 57 kHz).
+
 ### Removed
 - **S-DMB (E4438C-407) personality** — the v1 was an explicitly *unverified* CDM placeholder (its chip
   rate, spreading, FEC, and framing were guesses). A research pass (#197) confirmed the air interface is
   **ITU-R BO.1130-4 "System E"** but could not recover the baseband parameters from accessible sources
   (they're in the paid ITU-R / ARIB STD-B41 standards). Rather than keep a partial, unverifiable
-  personality, it was removed; the requirements doc records the research and the standards-procurement
-  block.
+  personality, it was removed (PR #222); the requirements doc records the research and the
+  standards-procurement block.
 
 ## [1.3.0] - 2026-07-16
 
