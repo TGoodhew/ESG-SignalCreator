@@ -42,8 +42,9 @@ core library, the WinForms app, and an xUnit test project.
     RRC/RC/Gaussian pulse shaping)
   - **Pulse Building** (radar-style pulse train: PRI/width, raised-cosine edges,
     intra-pulse LFM chirp or Barker phase codes, per-pulse markers — N7620A v1)
-  - **Jitter Injection** (jittered clock: periodic sinusoidal/square/triangle/saw/exp
-    + Gaussian random + composite jitter, in UI — E4438C-SP1 v1)
+  - **Jitter Injection** (jittered clock: periodic sinusoidal/square/triangle/saw/exp/custom
+    + Gaussian random + composite jitter, SJ frequency sweep with tolerance masks
+    (custom + approx. ITU-T G.8251), range enforcement, in UI — E4438C-SP1 v2)
   - **AWGN** (band-limited Gaussian noise with crest-factor clipping)
   - **Import I/Q** (CSV/TSV, raw interleaved int16, Agilent/Keysight big-endian int16, WAV — the
     N7622A Toolkit "bring your own I/Q" role)

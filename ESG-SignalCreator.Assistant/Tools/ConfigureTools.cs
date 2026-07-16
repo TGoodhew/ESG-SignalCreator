@@ -171,17 +171,28 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_jitter";
             public override string Description =>
                 "Configure the Jitter Injection source: underlying clock rate (Hz); periodic jitter shape " +
-                "(None/Sinusoidal/Square/Triangle/SawTooth/Exponential), rate (Hz) and amplitude (UI pk-pk); " +
-                "and optional random (Gaussian) jitter (enable, RMS in UI, seed). Composite = periodic + random.";
+                "(None/Sinusoidal/Square/Triangle/SawTooth/Exponential/Custom), rate (Hz) and amplitude (UI pk-pk); " +
+                "optional random (Gaussian) jitter (enable, RMS in UI, seed); an optional SJ frequency sweep " +
+                "(sweep_enabled, start/stop Hz, Linear/Logarithmic) that can follow a tolerance mask " +
+                "(mask_standard None/Custom/G8251Oc48/G8251Oc192/G8251Oc768 — G.8251 values are approximate); " +
+                "and an optional max_jitter_ui_pp cap. Composite = periodic + random.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("clock_rate_hz", Schema.Number("underlying clock/tone rate, Hz"), required: true),
                 Schema.P("periodic_shape", Schema.Str("periodic jitter shape",
-                    new[] { "None", "Sinusoidal", "Square", "Triangle", "SawTooth", "Exponential" })),
+                    new[] { "None", "Sinusoidal", "Square", "Triangle", "SawTooth", "Exponential", "Custom" })),
                 Schema.P("periodic_rate_hz", Schema.Number("periodic jitter rate, Hz")),
                 Schema.P("periodic_ui_pp", Schema.Number("periodic jitter amplitude, UI peak-to-peak")),
                 Schema.P("random_enabled", Schema.Bool("add Gaussian random jitter")),
                 Schema.P("random_ui_rms", Schema.Number("random jitter std dev (RMS), UI")),
-                Schema.P("random_seed", Schema.Integer("random jitter seed")));
+                Schema.P("random_seed", Schema.Integer("random jitter seed")),
+                Schema.P("sweep_enabled", Schema.Bool("sweep the SJ frequency to trace a tolerance mask")),
+                Schema.P("sweep_start_hz", Schema.Number("SJ sweep start frequency, Hz")),
+                Schema.P("sweep_stop_hz", Schema.Number("SJ sweep stop frequency, Hz")),
+                Schema.P("sweep_mode", Schema.Str("SJ sweep mode", new[] { "Linear", "Logarithmic" })),
+                Schema.P("mask_standard", Schema.Str("tolerance mask",
+                    new[] { "None", "Custom", "G8251Oc48", "G8251Oc192", "G8251Oc768" })),
+                Schema.P("sweep_follow_mask", Schema.Bool("take the SJ amplitude from the mask during the sweep")),
+                Schema.P("max_jitter_ui_pp", Schema.Number("optional cap on periodic amplitude, UI pk-pk (0 = none)")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("jitter", args), "Configured jitter injection."));

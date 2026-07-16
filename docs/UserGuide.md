@@ -179,14 +179,22 @@ notch. Composite bandwidth ≈ tone count × spacing; live PAPR is reported. Spe
 pre-distortion correction is not yet implemented.
 
 ### 5.9 Jitter Injection
-A jittered clock/tone for receiver jitter-tolerance testing (a v1 of Signal Studio for Jitter
-Injection, E4438C-SP1). Jitter is applied as timing (phase) modulation of a sinusoidal clock, so the
-envelope stays constant. Parameters: **clock rate** (Hz, the signal being jittered); **periodic jitter**
-shape (**Sinusoidal / Square / Triangle / SawTooth / Exponential**, or None), **rate** (Hz), and
+A jittered clock/tone for receiver jitter-tolerance testing (Signal Studio for Jitter Injection,
+E4438C-SP1). Jitter is applied as timing (phase) modulation of a sinusoidal clock, so the envelope stays
+constant. Parameters: **clock rate** (Hz, the signal being jittered); **periodic jitter** shape
+(**Sinusoidal / Square / Triangle / SawTooth / Exponential / Custom**, or None), **rate** (Hz), and
 **amplitude** (UI peak-to-peak); and optional **random** Gaussian jitter (**RMS** in UI + **seed**).
 Periodic + random combine into a **composite** signal, and a given seed reproduces an identical
-sequence (digital repeatability). Amplitudes are in unit intervals (1 UI = one clock period). Predefined
-standards masks (e.g. ITU-T G.8251) and automated SJ frequency sweeps are not yet implemented.
+sequence (digital repeatability). Amplitudes are in unit intervals (1 UI = one clock period).
+
+**Custom shape** takes a one-period profile table (normalized to ±1), interpolated across the jitter
+period. **SJ frequency sweep** (enable) sweeps the sinusoidal-jitter frequency **linearly** or
+**logarithmically** from a start to a stop frequency across the record — the classic way to trace a
+jitter-tolerance mask. During a sweep the amplitude can **follow a tolerance mask**: a **Custom** mask
+(your frequency/UI breakpoints) or a predefined **ITU-T G.8251** mask (**OC-48 / OC-192 / OC-768**).
+*The predefined G.8251 corner values are approximate/representative — verify them against the standard
+before conformance use.* **Achievable-range enforcement** rejects a clock or jitter frequency at/above
+Nyquist and, if a **max jitter (UI pp)** cap is set, a periodic amplitude above it.
 
 ### 5.10 GSM/EDGE (GMSK)
 A GMSK-modulated GSM-family carrier (a v1 of Signal Studio for GSM/EDGE, N7602B). GMSK is the

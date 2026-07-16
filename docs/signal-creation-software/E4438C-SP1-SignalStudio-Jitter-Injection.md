@@ -3,15 +3,21 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟢 **Implementation status (v1):** A **Jitter Injection** personality now ships in the app
+> 🟢 **Implementation status (v2):** A **Jitter Injection** personality ships in the app
 > (`Core/Personalities/Jitter/`). It generates a jittered clock/tone via timing (phase) modulation:
 > periodic jitter (**Sinusoidal / Square / Triangle / SawTooth / Exponential**) at a configurable rate
 > and UI peak-to-peak amplitude, optional Gaussian **random** jitter (UI RMS + seed), and their
-> **composite** — covering **R-1**, **R-2** (custom shape deferred), **R-3**, **R-4**, **R-5**, and
-> **R-7** (digital repeatability via the seed). **Deferred:** predefined standards masks (ITU-T G.8251
-> OC-48/192/768, **R-6**), automated SJ frequency sweeps (**R-8**), and the achievable-range enforcement
-> for ESG hardware (**R-10**, which the doc flags as unverified). Waveform save (**R-9**) is via the
-> existing project save. Hardware verification is tracked in the epic.
+> **composite** — covering **R-1**, **R-3**, **R-4**, **R-5**, and **R-7** (digital repeatability).
+> - **R-2** (✅ v2, #182): a **Custom** one-period jitter profile (interpolated table), alongside the fixed shapes.
+> - **R-6** (✅ v2, #182): predefined/**Custom** SJ **tolerance masks** (amplitude vs frequency). The
+>   predefined **ITU-T G.8251** OC-48/192/768 masks use the correct mask *shape* (plateau → −20 dB/decade
+>   → 0.15 UIpp floor) with **approximate corner values** — verify against the standard before conformance use.
+> - **R-8** (✅ v2, #182): an automated **SJ frequency sweep** (linear/log) that can follow a mask.
+> - **R-10** (✅ v2, #182): **achievable-range enforcement** — clock and jitter frequencies below Nyquist,
+>   plus an optional max-UI cap.
+>
+> Waveform save (**R-9**) is via the existing project save. Hardware verification is tracked in the
+> verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** E4438C-SP1 (license-key option; upgrade order number E4438CK-SP1)
