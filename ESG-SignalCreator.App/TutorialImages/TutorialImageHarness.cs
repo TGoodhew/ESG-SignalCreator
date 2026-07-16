@@ -6,6 +6,7 @@ using System.Text;
 using EsgSignalCreator.Model;
 using EsgSignalCreator.Personalities.CustomMod;
 using EsgSignalCreator.Ui.Plots;
+using EsgSignalCreator.Verify;
 
 namespace EsgSignalCreator.Ui.TutorialImages
 {
@@ -62,6 +63,23 @@ namespace EsgSignalCreator.Ui.TutorialImages
             WaveformModel qpsk = Qpsk(qpskSps);
             shots.Add(new Shot { File = "t05-qpsk-constellation.png", Tutorial = "Tutorial 5", Caption = "QPSK — constellation (app view)", View = PlotPane.ViewType.Constellation, Waveform = qpsk });
             shots.Add(new Shot { File = "t05-qpsk-eye.png", Tutorial = "Tutorial 5", Caption = "QPSK — eye diagram (app view)", View = PlotPane.ViewType.Eye, Waveform = qpsk, SamplesPerSymbol = qpskSps });
+
+            // Part I — one app-rendered spectrum per source personality, sourced from the canonical
+            // VerificationBattery (#228). Iterating the battery makes this pass registry-aware: a new
+            // personality is covered automatically, and the battery id set is guarded by
+            // VerificationBatteryTests, so an uncovered personality fails loud rather than silently
+            // dropping out of the image set. Analyzer spectrum/CCDF captures are separate (#230).
+            foreach (BatteryEntry entry in VerificationBattery.All(1e6))
+            {
+                shots.Add(new Shot
+                {
+                    File = "ref-" + entry.Id + "-spectrum.png",
+                    Tutorial = "Part I — Personality reference",
+                    Caption = entry.Description + " — spectrum (app view)",
+                    View = PlotPane.ViewType.Spectrum,
+                    Waveform = entry.Build(null),
+                });
+            }
 
             return shots;
         }

@@ -82,6 +82,9 @@ afsnit i User Guide (f.eks. "se UserGuide §5.2"). For et overblik samt build- o
 20. [Headless hardware-in-the-loop](#tutorial-20--headless-hardware-in-the-loop)
 21. [Byg og installér MSI'en](#tutorial-21--byg-og-installér-msien)
 
+**Del I — Signalpersonlighedsreference**
+- [Signalpersonlighedsreference (standarder, broadcast & værktøjer)](#del-i--signalpersonlighedsreference)
+
 ---
 
 ## Del A — Offline-grundbegreber
@@ -1076,6 +1079,157 @@ NuGet automatisk — ingen toolset-installation nødvendig.)
 - Installer-projektet holdes uden for solutionen, så en maskine uden WiX stadig bygger appen.
 - For fulde build-/CI-detaljer (herunder den kontinuerlige-release GitHub Actions-workflow), se
   [Packaging.md](../Packaging.md).
+
+---
+
+## Del I — Signalpersonlighedsreference
+
+Del A–H gennemgår grundlaget hands-on. Denne del er et **referenceappendiks** for de standard-,
+broadcast- og værktøjspersonligheder, der ikke har en dedikeret trin-for-trin-tutorial: hver post
+fortæller, hvad signalet er, dets nøgleparametre, dets **v2**-mulighed, og hvordan man bygger det, med
+et **app-renderet spektrum**, så du ved, hvad du kan forvente på skærmen, før du rører hardware.
+
+**Omfang & sådan læses det.** Posterne er bevidst korte — byggeopskriften har altid samme form, som du
+lærte i Del C (**Kilde → vælg personligheden → sæt parametre → Beregn → inspicér plot-visningerne**), så
+vi gentager ikke hvert klik. Spektrene nedenfor er **offline app-renderinger** (deterministiske,
+genereret af `ESG-SignalCreator.exe --tutorial-images`, så de genereres identisk igen). De tilsvarende
+**rigtige analyzer-optagelser** (spektrum / CCDF på en N9010A eller E4406A) er en separat bænk-opgave og
+spores i issue #230; de er ikke nødvendige for at følge denne reference.
+
+**De seks grundlæggende har allerede fulde tutorials** — start dér for det grundlæggende:
+
+| Personlighed | Tutorial |
+|---|---|
+| CW / enkelttone | [Tutorial 1](#tutorial-1--tag-rundvisningen--byg-din-første-cw-tone-offline) / [2](#tutorial-2--forbind-til-esgen-og-afspil-en-cw-tone) |
+| Multitone | [Tutorial 3](#tutorial-3--multitone-og-papr) |
+| AWGN | [Tutorial 4](#tutorial-4--båndbegrænset-støj-awgn) |
+| Brugerdefineret digital modulation | [Tutorial 5](#tutorial-5--brugerdefineret-digital-modulation-qpsk--rrc) |
+| Multi-Carrier | [Tutorial 6](#tutorial-6--multi-carrier-signaler) |
+| Importér I/Q | [Tutorial 7](#tutorial-7--importér-en-iq-fil) |
+
+Alt nedenfor nås på samme måde: **Kilde**, vælg personligheden i vælgeren, sæt parametrene, **Beregn**,
+og læs så visningerne **Spektrum**/**CCDF**/**Konstellation** (se UserGuide §5, *Signalpersonligheder*,
+for den autoritative parameterreference).
+
+### I.1 — Cellulær CDMA (multi-kode-kompositter)
+
+Alle fire spreder datasymboler med en OVSF-kode, kompleks-scrambler og root-raised-cosine-former ved
+chip-raten. Deres **v2**-tilføjelse er et **multi-kode-komposit** — sæt **antal kodekanaler > 1** for at
+summere flere ortogonale kodekanaler (et mere realistisk downlink) i stedet for en enkelt kode.
+
+**3GPP W-CDMA FDD (`wcdma-fdd`)** — 3,84 Mcps, SF 16, QPSK. v2: `code_channel_count = 4`.
+Byg: Kilde → **3GPP W-CDMA FDD** → spredningsfaktor 16, kodekanaler 4 → Beregn → Spektrum.
+
+![W-CDMA FDD 4-kode-multipleks — spektrum](../images/tutorials/ref-wcdma-fdd-spectrum.png)
+
+**3GPP W-CDMA HSPA (`wcdma-hspa`)** — W-CDMA med højere-ordens modulation (QAM16 som standard). v2:
+`code_channel_count = 4`.
+
+![HSPA 4-kode-multipleks — spektrum](../images/tutorials/ref-wcdma-hspa-spectrum.png)
+
+**3GPP2 cdma2000 (`cdma2000`)** — 1,2288 Mcps, Walsh-kodet, QPSK. v2: `code_channel_count = 4`.
+
+![cdma2000 4-kode-multipleks — spektrum](../images/tutorials/ref-cdma2000-spectrum.png)
+
+**TD-SCDMA (`td-scdma`)** — 1,28 Mcps lav-chip-rate TDD-CDMA. v2: `code_channel_count = 4`.
+
+![TD-SCDMA 4-kode-multipleks — spektrum](../images/tutorials/ref-td-scdma-spectrum.png)
+
+### I.2 — Cellulær OFDM (LTE)
+
+E-UTRA OFDM. **v2**-tilføjelsen er en **frame-struktureret** tilstand (`frame_structured = true`), der
+bygger et rigtigt subframe/frame-gitter med korrekt cyklisk præfiks og fysisk-celle-id, i stedet for en
+generisk OFDM-blok.
+
+**3GPP LTE FDD (`lte-fdd`)** — båndbredde (1,4–20 MHz), modulation, normalt/udvidet CP, antal subframes.
+v2 bygget her ved 5 MHz, QAM16, normalt CP.
+
+![LTE FDD 5 MHz E-UTRA-frame — spektrum](../images/tutorials/ref-lte-fdd-spectrum.png)
+
+**3GPP LTE TDD (`lte-tdd`)** — tilføjer TDD uplink/downlink-konfiguration (0–6) og special-subframe-
+konfiguration (0–9). v2 bygget her ved 5 MHz, UL/DL-konfiguration 1, special-subframe-konfiguration 7.
+
+![LTE TDD 5 MHz-frame — spektrum](../images/tutorials/ref-lte-tdd-spectrum.png)
+
+### I.3 — Trådløst LAN & WiMAX
+
+OFDM/OFDMA. **v2** tilføjer en **frame-struktureret** PPDU/frame med præamblen/LTF og standardens valg
+af cyklisk præfiks / guard-interval.
+
+**802.11 WLAN (`wlan-80211`)** — 20/40 MHz OFDM. v2 (20 MHz): `frame_structured = true`, langt
+guard-interval, LTF-præambel.
+
+![802.11 20 MHz PPDU — spektrum](../images/tutorials/ref-wlan-80211-spectrum.png)
+
+**802.16-2004 Fixed WiMAX (`wimax-fixed`)** — kanalbåndbredde-drevet OFDM. v2: framet med en præambel og
+et cyklisk-præfiks-forhold (¼…1⁄32).
+
+![Fixed WiMAX 3,5 MHz-frame — spektrum](../images/tutorials/ref-wimax-fixed-spectrum.png)
+
+**802.16e Mobile WiMAX (`wimax-mobile`)** — skalerbar OFDMA (128–2048-FFT). v2: framet med præambel +
+cyklisk-præfiks-forhold.
+
+![Mobile WiMAX 512-FFT OFDMA-frame — spektrum](../images/tutorials/ref-wimax-mobile-spectrum.png)
+
+### I.4 — Digital broadcast (COFDM)
+
+DAB/DVB-familie-COFDM. **v2** tilføjer **frame-strukturen** — sync/fasereference-symboler (T-DMB) og
+spredte piloter (DVB-T).
+
+**T-DMB (`t-dmb`)** — DAB-COFDM (transmissionstilstande I–IV), DQPSK. v2: `frame_structured = true`
+(tilføjer null- + fasereference-sync-symbolerne). Vist her i Mode III.
+
+![T-DMB Mode III COFDM-frame — spektrum](../images/tutorials/ref-t-dmb-spectrum.png)
+
+**Digital Video / DVB-T (`digital-video`)** — 2K/8K COFDM med et guard-interval. v2:
+`frame_structured = true` indsætter de spredte piloter. Vist her i 2K.
+
+![DVB-T 2K COFDM med spredte piloter — spektrum](../images/tutorials/ref-digital-video-spectrum.png)
+
+### I.5 — Kortrækkende & cellulær smalbånd
+
+Konstant-envelope-standarder med en højere-ordens **v2**-tilstand.
+
+**GSM/EDGE (`gsm-edge`)** — GMSK som standard; **v2** vælger **EDGE 3π/8-roteret 8-PSK**
+(`modulation = Edge8Psk`) til EDGE-lineær-modulationsstien.
+
+![EDGE 8-PSK — spektrum](../images/tutorials/ref-gsm-edge-spectrum.png)
+
+**Bluetooth (`bluetooth`)** — GFSK som standard; **v2** vælger **Enhanced Data Rate** —
+`Edr2Mbps` (π/4-DQPSK) eller `Edr3Mbps` (8-DPSK). Vist her ved EDR 3 Mb/s.
+
+![Bluetooth EDR 8-DPSK — spektrum](../images/tutorials/ref-bluetooth-spectrum.png)
+
+### I.6 — Analog broadcast
+
+**Broadcast Radio / FM (`broadcast-radio`)** — stereo-FM-multipleks (mono + 38 kHz stereo-underbærebølge
++ 19 kHz pilot). **v2** tilføjer **RDS** 57 kHz bifase-underbærebølge (`rds = true`, `rds_deviation_hz`).
+
+![Stereo-FM med RDS-underbærebølge — spektrum](../images/tutorials/ref-broadcast-radio-spectrum.png)
+
+### I.7 — Test- & impairment-værktøjer
+
+**Multitone Distortion (`multitone-distortion`)** — en tæt lige-tone-kam til IMD/NPR-test. **v2**
+tilføjer per-tone magnitude/fase-tabeller, prædistortion og et NPR-notch. Vist med et notch.
+
+![16-tone-kam med et NPR-notch — spektrum](../images/tutorials/ref-multitone-distortion-spectrum.png)
+
+**Pulse (`pulse`)** — et pulstog med konfigurerbar bredde/PRI. **v2** tilføjer intra-puls-modulation
+(LFM-chirp, Barker/Frank/polyfase-koder) og PRI-mønstre (staggered/jittered). Vist som en LFM-chirp.
+
+![1 µs LFM-chirp, 10 µs PRI — spektrum](../images/tutorials/ref-pulse-spectrum.png)
+
+**Jitter (`jitter`)** — et jittret ur til seriel-link-stress. **v2** tilføjer et SJ-frekvenssweep og
+standard-jitter-masker (med en brugerdefineret-maske-mulighed). Vist som sinusformet SJ på et 10 MHz-ur.
+
+![10 MHz-ur, sinusformet SJ — spektrum](../images/tutorials/ref-jitter-spectrum.png)
+
+> 🧭 **Dækningsnote.** Hver registreret personlighed har en post her eller en fuld tutorial i Del A–H —
+> referencebillederne genereres ved at iterere appens verifikationsbatteri, så en nyligt tilføjet
+> personlighed inkluderes automatisk (og batteriet er beskyttet af en test, så den ikke kan forsvinde
+> stille). Det, der bevidst *ikke* er her, er en fuld klik-for-klik-gennemgang per standard;
+> byggeopskriften er identisk med Del C. Rigtige analyzer-optagelser for disse signaler er bænk-opgaven,
+> der spores i issue #230.
 
 ---
 
