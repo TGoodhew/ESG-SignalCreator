@@ -3,8 +3,23 @@ using EsgSignalCreator.Io;
 
 namespace EsgSignalCreator.Personalities.CustomIq
 {
+    /// <summary>How markers are authored onto an imported ARB segment (N7622A R-7).</summary>
+    public enum ImportMarkerMode
+    {
+        /// <summary>No markers are attached.</summary>
+        None = 0,
+        /// <summary>A single one-sample marker at the start of the segment (a segment trigger).</summary>
+        Start = 1,
+        /// <summary>A one-sample marker every <see cref="ImportIqConfig.MarkerPeriodSamples"/> samples.</summary>
+        Periodic = 2,
+        /// <summary>A contiguous marker block of <see cref="ImportIqConfig.MarkerLengthSamples"/> samples
+        /// starting at <see cref="ImportIqConfig.MarkerStartSample"/> (a gate over part of the segment).</summary>
+        Range = 3
+    }
+
     /// <summary>
-    /// Settings for the <see cref="ImportIqPersonality"/>: which file to load and how to interpret it.
+    /// Settings for the <see cref="ImportIqPersonality"/>: which file to load, how to interpret it,
+    /// and optional marker/trigger authoring on the resulting ARB segment.
     /// </summary>
     [DataContract]
     public sealed class ImportIqConfig
@@ -35,5 +50,21 @@ namespace EsgSignalCreator.Personalities.CustomIq
         /// <summary>Multiplier applied to every sample on load.</summary>
         [DataMember(Name = "scale")]
         public double Scale { get; set; } = 1.0;
+
+        /// <summary>Marker/trigger authoring mode for the imported segment (N7622A R-7).</summary>
+        [DataMember(Name = "markerMode")]
+        public ImportMarkerMode MarkerMode { get; set; } = ImportMarkerMode.None;
+
+        /// <summary>Marker period, in samples, for <see cref="ImportMarkerMode.Periodic"/> (>= 1).</summary>
+        [DataMember(Name = "markerPeriodSamples")]
+        public int MarkerPeriodSamples { get; set; } = 1000;
+
+        /// <summary>First sample of the marker block for <see cref="ImportMarkerMode.Range"/> (>= 0).</summary>
+        [DataMember(Name = "markerStartSample")]
+        public int MarkerStartSample { get; set; } = 0;
+
+        /// <summary>Length, in samples, of the marker block for <see cref="ImportMarkerMode.Range"/> (>= 1).</summary>
+        [DataMember(Name = "markerLengthSamples")]
+        public int MarkerLengthSamples { get; set; } = 1;
     }
 }

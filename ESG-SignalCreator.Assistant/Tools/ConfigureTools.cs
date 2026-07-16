@@ -473,13 +473,18 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_import_iq";
             public override string Description =>
                 "Configure the Import-IQ source from a file. IMPORTANT: file_path must be provided by the user — " +
-                "do not invent paths. You may suggest format/sample-rate/resample values. Set the file format, " +
-                "sample rate (Hz), and whether to resample to the target clock.";
+                "do not invent paths. You may suggest format/sample-rate values. Set the file format (incl. " +
+                "AgilentInt14Be for 14-bit big-endian and Mat for MATLAB Level-5 .mat), sample rate (Hz), and " +
+                "optional marker authoring (marker_mode None/Start/Periodic/Range with period/start/length in samples).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("file_path", Schema.Str("path to the I/Q file (user-supplied)"), required: true),
-                Schema.P("format", Schema.Str("container format", new[] { "Auto", "DelimitedText", "RawInt16", "AgilentInt16Be", "Wav" })),
+                Schema.P("format", Schema.Str("container format",
+                    new[] { "Auto", "DelimitedText", "RawInt16", "AgilentInt16Be", "AgilentInt14Be", "Wav", "Mat" })),
                 Schema.P("sample_rate_hz", Schema.Number("source sample rate, Hz")),
-                Schema.P("resample", Schema.Bool("resample to the target sample clock")));
+                Schema.P("marker_mode", Schema.Str("marker authoring", new[] { "None", "Start", "Periodic", "Range" })),
+                Schema.P("marker_period_samples", Schema.Integer("marker period for Periodic, samples")),
+                Schema.P("marker_start_sample", Schema.Integer("marker block start for Range, samples")),
+                Schema.P("marker_length_samples", Schema.Integer("marker block length for Range, samples")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("import_iq", args), "Configured Import-IQ."));

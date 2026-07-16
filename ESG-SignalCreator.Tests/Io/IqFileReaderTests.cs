@@ -261,16 +261,167 @@ namespace EsgSignalCreator.Tests.Io
             finally { File.Delete(path); }
         }
 
+        // --- 14-bit big-endian --------------------------------------------------------
+
         [Fact]
-        public void MatFileThrowsNotSupported()
+        public void ReadsAgilentInt14BigEndian()
+        {
+            // 14-bit sample left-justified in a 16-bit BE word (low 2 bits are markers, masked off).
+            // +0.5 => value14 = 4096 => word 0x4000 (bytes 40 00); -0.5 => word 0xC000 (bytes C0 00).
+            string path = TempPath(".agt");
+            try
+            {
+                File.WriteAllBytes(path, new byte[] { 0x40, 0x03, 0xC0, 0x01 }); // I=0x4000|marker, Q=0xC000|marker
+                WaveformModel m = IqFileReader.Read(path, Rate, format: IqFileReader.IqFormat.AgilentInt14Be);
+
+                Assert.Equal(1, m.Length);
+                Assert.Equal(0.5f, m.I[0], 5);   // 0x4003 >> 2 = 0x1000 = 4096 => 0.5 (marker bits dropped)
+                Assert.Equal(-0.5f, m.Q[0], 5);  // 0xC001 >> 2 (arithmetic) = -4096 => -0.5
+            }
+            finally { File.Delete(path); }
+        }
+
+        // --- MATLAB Level-5 .mat -------------------------------------------------------
+
+        [Fact]
+        public void ReadsMatComplexVector()
+        {
+            // A 1x2 complex double array [1+2i, 3+4i] => I=[1,3], Q=[2,4].
+            string path = TempPath(".mat");
+            try
+            {
+                byte[] elem = BuildMatMatrix(true, 1, 2, new double[] { 1, 3 }, new double[] { 2, 4 }, "iq");
+                File.WriteAllBytes(path, BuildMatFile(elem, true));
+
+                WaveformModel m = IqFileReader.Read(path, Rate, format: IqFileReader.IqFormat.Mat);
+
+                Assert.Equal(2, m.Length);
+                Assert.Equal(1f, m.I[0], 6); Assert.Equal(2f, m.Q[0], 6);
+                Assert.Equal(3f, m.I[1], 6); Assert.Equal(4f, m.Q[1], 6);
+            }
+            finally { File.Delete(path); }
+        }
+
+        [Fact]
+        public void ReadsMatRealTwoByN()
+        {
+            // A real 2x3 array (rows = I, Q); column-major storage [1,4,2,5,3,6].
+            string path = TempPath(".mat");
+            try
+            {
+                byte[] elem = BuildMatMatrix(true, 2, 3, new double[] { 1, 4, 2, 5, 3, 6 }, null, "wf");
+                File.WriteAllBytes(path, BuildMatFile(elem, true));
+
+                WaveformModel m = IqFileReader.Read(path, Rate, format: IqFileReader.IqFormat.Mat);
+
+                Assert.Equal(3, m.Length);
+                Assert.Equal(new float[] { 1, 2, 3 }, m.I);
+                Assert.Equal(new float[] { 4, 5, 6 }, m.Q);
+            }
+            finally { File.Delete(path); }
+        }
+
+        [Fact]
+        public void ReadsMatCompressedElement()
+        {
+            // Same complex vector, but the top-level element is zlib-compressed (miCOMPRESSED),
+            // exercising the inflate path (MATLAB's default v7 save compresses).
+            string path = TempPath(".mat");
+            try
+            {
+                byte[] elem = BuildMatMatrix(true, 1, 2, new double[] { 0.25, -0.5 }, new double[] { 0.75, 1.0 }, "z");
+                byte[] file = BuildMatFileCompressed(elem, true);
+                File.WriteAllBytes(path, file);
+
+                WaveformModel m = IqFileReader.Read(path, Rate, format: IqFileReader.IqFormat.Mat);
+
+                Assert.Equal(2, m.Length);
+                Assert.Equal(0.25f, m.I[0], 6); Assert.Equal(0.75f, m.Q[0], 6);
+                Assert.Equal(-0.5f, m.I[1], 6); Assert.Equal(1.0f, m.Q[1], 6);
+            }
+            finally { File.Delete(path); }
+        }
+
+        [Fact]
+        public void MatAutoDetectsByExtension()
+        {
+            string path = TempPath(".mat");
+            try
+            {
+                byte[] elem = BuildMatMatrix(true, 1, 1, new double[] { 0.1 }, new double[] { 0.2 }, "x");
+                File.WriteAllBytes(path, BuildMatFile(elem, true));
+
+                WaveformModel m = IqFileReader.Read(path, Rate); // Auto => Mat by .mat extension
+                Assert.Equal(1, m.Length);
+                Assert.Equal(0.1f, m.I[0], 6);
+                Assert.Equal(0.2f, m.Q[0], 6);
+            }
+            finally { File.Delete(path); }
+        }
+
+        [Fact]
+        public void ShortMatFileThrowsInvalidData()
         {
             string path = TempPath(".mat");
             try
             {
                 File.WriteAllBytes(path, new byte[] { 1, 2, 3, 4 });
-                Assert.Throws<NotSupportedException>(() => IqFileReader.Read(path, Rate));
+                Assert.Throws<InvalidDataException>(() => IqFileReader.Read(path, Rate));
             }
             finally { File.Delete(path); }
+        }
+
+        // --- marker authoring (N7622A R-7) --------------------------------------------
+
+        [Fact]
+        public void ImportMarkers_start_periodic_and_range()
+        {
+            string path = TempPath(".csv");
+            try
+            {
+                var sb = new StringBuilder();
+                for (int n = 0; n < 20; n++) sb.AppendLine("0.1,0.1");
+                File.WriteAllText(path, sb.ToString());
+
+                byte[] start = MarkersFor(path, new ImportIqConfig { Path = path, SampleRateHz = Rate, MarkerMode = ImportMarkerMode.Start });
+                Assert.Equal(1, start[0]);
+                Assert.Equal(0, start[1]);
+
+                byte[] periodic = MarkersFor(path, new ImportIqConfig { Path = path, SampleRateHz = Rate, MarkerMode = ImportMarkerMode.Periodic, MarkerPeriodSamples = 5 });
+                Assert.Equal(1, periodic[0]);
+                Assert.Equal(1, periodic[5]);
+                Assert.Equal(1, periodic[10]);
+                Assert.Equal(0, periodic[3]);
+
+                byte[] range = MarkersFor(path, new ImportIqConfig { Path = path, SampleRateHz = Rate, MarkerMode = ImportMarkerMode.Range, MarkerStartSample = 4, MarkerLengthSamples = 3 });
+                Assert.Equal(0, range[3]);
+                Assert.Equal(1, range[4]);
+                Assert.Equal(1, range[6]);
+                Assert.Equal(0, range[7]);
+            }
+            finally { File.Delete(path); }
+        }
+
+        [Fact]
+        public void ImportMarkers_none_leaves_no_markers()
+        {
+            string path = TempPath(".csv");
+            try
+            {
+                File.WriteAllText(path, "0.1,0.1\n0.2,0.2\n");
+                var p = new ImportIqPersonality();
+                p.LoadConfig(new ImportIqConfig { Path = path, SampleRateHz = Rate, MarkerMode = ImportMarkerMode.None });
+                WaveformModel m = p.Calculate(null);
+                Assert.Null(m.Markers);
+            }
+            finally { File.Delete(path); }
+        }
+
+        private static byte[] MarkersFor(string path, ImportIqConfig cfg)
+        {
+            var p = new ImportIqPersonality();
+            p.LoadConfig(cfg);
+            return p.Calculate(null).Markers;
         }
 
         // --- Personality --------------------------------------------------------------
@@ -305,6 +456,107 @@ namespace EsgSignalCreator.Tests.Io
             return System.IO.Path.Combine(
                 System.IO.Path.GetTempPath(),
                 "iqtest_" + Guid.NewGuid().ToString("N") + ext);
+        }
+
+        // --- MAT File 5 builders (for the .mat reader tests) --------------------------
+
+        private static byte[] BuildMatFile(byte[] element, bool little)
+        {
+            var f = new System.Collections.Generic.List<byte>();
+            AppendMatHeader(f, little);
+            f.AddRange(element);
+            return f.ToArray();
+        }
+
+        private static byte[] BuildMatFileCompressed(byte[] matrixElement, bool little)
+        {
+            byte[] comp = ZlibCompress(matrixElement);
+            var f = new System.Collections.Generic.List<byte>();
+            AppendMatHeader(f, little);
+            AppendU32(f, 15, little);                 // miCOMPRESSED
+            AppendU32(f, (uint)comp.Length, little);
+            f.AddRange(comp);
+            return f.ToArray();
+        }
+
+        private static void AppendMatHeader(System.Collections.Generic.List<byte> f, bool little)
+        {
+            var header = new byte[128];
+            byte[] text = Encoding.ASCII.GetBytes("MATLAB 5.0 MAT-file (test)");
+            Array.Copy(text, header, text.Length);
+            header[124] = 0x00; header[125] = 0x01;   // version 0x0100
+            header[126] = (byte)(little ? 'I' : 'M'); // endian indicator
+            header[127] = (byte)(little ? 'M' : 'I');
+            f.AddRange(header);
+        }
+
+        /// <summary>Build a numeric miMATRIX element (tag + body) for a real or complex double array.</summary>
+        private static byte[] BuildMatMatrix(bool little, int rows, int cols, double[] re, double[] im, string name)
+        {
+            var body = new System.Collections.Generic.List<byte>();
+
+            // Array flags: class mxDOUBLE (6), complex bit 0x0800 when an imaginary part is present.
+            AppendU32(body, 6, little); AppendU32(body, 8, little);
+            uint flags = 6u | (im != null ? 0x0800u : 0u);
+            AppendU32(body, flags, little); AppendU32(body, 0, little);
+
+            // Dimensions (miINT32, two dims).
+            AppendU32(body, 5, little); AppendU32(body, 8, little);
+            AppendI32(body, rows, little); AppendI32(body, cols, little);
+
+            // Name (miINT8).
+            byte[] nm = Encoding.ASCII.GetBytes(name);
+            AppendU32(body, 1, little); AppendU32(body, (uint)nm.Length, little);
+            body.AddRange(nm); Pad8(body);
+
+            // Real part (miDOUBLE).
+            AppendDoubleElement(body, re, little);
+            // Imaginary part.
+            if (im != null) AppendDoubleElement(body, im, little);
+
+            var elem = new System.Collections.Generic.List<byte>();
+            AppendU32(elem, 14, little);               // miMATRIX
+            AppendU32(elem, (uint)body.Count, little);
+            elem.AddRange(body);
+            return elem.ToArray();
+        }
+
+        private static void AppendDoubleElement(System.Collections.Generic.List<byte> b, double[] v, bool little)
+        {
+            AppendU32(b, 9, little);                    // miDOUBLE
+            AppendU32(b, (uint)(v.Length * 8), little);
+            foreach (double d in v)
+            {
+                byte[] bytes = BitConverter.GetBytes(d);
+                if (little != BitConverter.IsLittleEndian) Array.Reverse(bytes);
+                b.AddRange(bytes);
+            }
+        }
+
+        private static void AppendU32(System.Collections.Generic.List<byte> b, uint v, bool little)
+        {
+            byte[] x = { (byte)v, (byte)(v >> 8), (byte)(v >> 16), (byte)(v >> 24) };
+            if (!little) Array.Reverse(x);
+            b.AddRange(x);
+        }
+
+        private static void AppendI32(System.Collections.Generic.List<byte> b, int v, bool little) => AppendU32(b, (uint)v, little);
+
+        private static void Pad8(System.Collections.Generic.List<byte> b)
+        {
+            while (b.Count % 8 != 0) b.Add(0);
+        }
+
+        private static byte[] ZlibCompress(byte[] raw)
+        {
+            using (var ms = new MemoryStream())
+            {
+                ms.WriteByte(0x78); ms.WriteByte(0x9C); // zlib header
+                using (var ds = new System.IO.Compression.DeflateStream(ms, System.IO.Compression.CompressionMode.Compress, true))
+                    ds.Write(raw, 0, raw.Length);
+                ms.Write(new byte[4], 0, 4);            // Adler-32 placeholder (ignored by the reader)
+                return ms.ToArray();
+            }
         }
 
         private static void WriteWav(string path, int sampleRate, int channels, short[][] frames)

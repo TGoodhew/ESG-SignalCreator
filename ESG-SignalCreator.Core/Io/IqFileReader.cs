@@ -17,10 +17,14 @@ namespace EsgSignalCreator.Io
     ///   <item>Agilent/Keysight interleaved big-endian int16 (.agt) — I,Q,I,Q…, scaled by 1/32768.
     ///         This is the ESG's native ARB byte order (see <c>EsgArbEncoder</c>), so it round-trips
     ///         waveforms exported from Signal Studio Toolkit (N7622A) / the AWU.</item>
+    ///   <item>Agilent/Keysight interleaved big-endian 14-bit (.agt with an explicit 14-bit override) —
+    ///         the 14-bit sample is left-justified in each 16-bit word (low 2 bits are marker/reserved),
+    ///         scaled by 1/8192.</item>
     ///   <item>16-bit PCM WAV (.wav) — stereo maps ch0→I, ch1→Q; mono maps samples→I, Q=0.
     ///         Sample rate is taken from the <c>fmt </c> chunk.</item>
+    ///   <item>MATLAB Level-5 (.mat) — see <see cref="MatFileReader"/>: a complex vector → I/Q, a real
+    ///         2×N/N×2 array → the two rows/columns, a real vector → I only.</item>
     /// </list>
-    /// MAT files are recognized but not supported in P1.
     /// </summary>
     public static class IqFileReader
     {
@@ -37,8 +41,11 @@ namespace EsgSignalCreator.Io
             AgilentInt16Be,
             /// <summary>RIFF/WAVE 16-bit PCM.</summary>
             Wav,
-            /// <summary>MATLAB .mat (not supported in P1).</summary>
-            Mat
+            /// <summary>MATLAB Level-5 .mat (MAT File 5), real 2×N/N×2 or complex vector.</summary>
+            Mat,
+            /// <summary>Agilent/Keysight interleaved big-endian 14-bit I/Q, left-justified in 16-bit words
+            /// (the two LSBs are marker/reserved bits, masked off on read; scaled by 1/8192).</summary>
+            AgilentInt14Be
         }
 
         /// <summary>
@@ -85,6 +92,11 @@ namespace EsgSignalCreator.Io
                     sampleRateHz = RequirePositiveRate(sampleRateHzOverride, "Agilent int16 files carry no sample rate");
                     break;
 
+                case IqFormat.AgilentInt14Be:
+                    ReadAgilentInt14Be(path, out i, out q);
+                    sampleRateHz = RequirePositiveRate(sampleRateHzOverride, "Agilent int14 files carry no sample rate");
+                    break;
+
                 case IqFormat.Wav:
                     double headerRate;
                     ReadWav(path, out i, out q, out headerRate);
@@ -92,8 +104,9 @@ namespace EsgSignalCreator.Io
                     break;
 
                 case IqFormat.Mat:
-                    throw new NotSupportedException(
-                        "MATLAB .mat import is not supported in P1. Export the I/Q as CSV, WAV, or raw interleaved int16 instead.");
+                    MatFileReader.ReadIq(path, out i, out q);
+                    sampleRateHz = RequirePositiveRate(sampleRateHzOverride, "MAT files carry no sample rate in this reader");
+                    break;
 
                 default:
                     throw new NotSupportedException("Unrecognized I/Q file format for '" + path + "'.");
@@ -222,6 +235,26 @@ namespace EsgSignalCreator.Io
                 short sq = (short)((bytes[b + 2] << 8) | bytes[b + 3]);
                 i[n] = si / 32768f;
                 q[n] = sq / 32768f;
+            }
+        }
+
+        // --- Agilent/Keysight interleaved big-endian 14-bit int16 -----------------------
+
+        private static void ReadAgilentInt14Be(string path, out float[] i, out float[] q)
+        {
+            byte[] bytes = File.ReadAllBytes(path);
+            int complete = bytes.Length / 4; // 2 int16 words (I,Q) = 4 bytes per complex sample
+            i = new float[complete];
+            q = new float[complete];
+
+            for (int n = 0; n < complete; n++)
+            {
+                int b = n * 4;
+                short wi = (short)((bytes[b] << 8) | bytes[b + 1]);         // big-endian 16-bit word
+                short wq = (short)((bytes[b + 2] << 8) | bytes[b + 3]);
+                // 14-bit sample is left-justified in the word; the low 2 bits are markers/reserved.
+                i[n] = (wi >> 2) / 8192f; // arithmetic shift keeps the sign; 2^13 = 8192
+                q[n] = (wq >> 2) / 8192f;
             }
         }
 
