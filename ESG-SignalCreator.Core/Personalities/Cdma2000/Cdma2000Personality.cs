@@ -43,6 +43,16 @@ namespace EsgSignalCreator.Personalities.Cdma2000
         public WaveformModel Calculate(IProgress<int> progress)
         {
             Cdma2000Config cfg = _config ?? new Cdma2000Config();
+            if (cfg.CodeChannelCount > cfg.SpreadingFactor)
+                throw new InvalidOperationException("CodeChannelCount must be <= SpreadingFactor.");
+            DsssEngine.CodeChannel[] channels = null;
+            if (cfg.CodeChannelCount > 1)
+            {
+                channels = new DsssEngine.CodeChannel[cfg.CodeChannelCount];
+                for (int k = 0; k < channels.Length; k++)
+                    channels[k] = new DsssEngine.CodeChannel { OvsfIndex = k, PowerDb = 0.0, Modulation = cfg.Modulation, Data = cfg.Data };
+            }
+
             return DsssEngine.Generate(new DsssEngine.Params
             {
                 ChipRateHz = cfg.ChipRateHz,
@@ -55,6 +65,7 @@ namespace EsgSignalCreator.Personalities.Cdma2000
                 Scramble = cfg.Scramble,
                 ScrambleSeed = cfg.ScrambleSeed,
                 Data = cfg.Data,
+                CodeChannels = channels,
                 Name = "cdma2000"
             }, progress);
         }

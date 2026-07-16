@@ -432,13 +432,15 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_cdma2000";
             public override string Description =>
                 "Configure the 3GPP2 CDMA (cdma2000) source: chip rate (Hz, 1.2288M), samples per chip, symbol " +
-                "count, Walsh spreading factor (power of two) and code index, modulation, roll-off, and scrambling.";
+                "count, Walsh spreading factor (power of two) and code index, modulation, roll-off, and scrambling. " +
+                "Set code_channel_count > 1 to sum multiple Walsh code channels (forward-link composite, <= SF).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("chip_rate_hz", Schema.Number("chip rate, Hz")),
                 Schema.P("samples_per_chip", Schema.Integer("oversampling factor")),
                 Schema.P("symbol_count", Schema.Integer("number of data symbols")),
                 Schema.P("spreading_factor", Schema.Integer("Walsh spreading factor (power of 2)")),
-                Schema.P("ovsf_index", Schema.Integer("Walsh code index")),
+                Schema.P("ovsf_index", Schema.Integer("Walsh code index (single-code mode)")),
+                Schema.P("code_channel_count", Schema.Integer("Walsh code channels to sum (1 = single-code; <= SF)")),
                 Schema.P("modulation", Schema.Str("data modulation", new[] { "QPSK", "QAM16" })),
                 Schema.P("rrc_beta", Schema.Number("pulse-shape roll-off (0..1)")),
                 Schema.P("scramble", Schema.Bool("apply complex scrambling")));

@@ -263,11 +263,12 @@ to sum multiple **HS-PDSCH multicodes** (as HSDPA does) into the composite. Repr
 HS-DPCCH, E-DCH channels, H-ARQ, and TTI structure are not yet implemented.
 
 ### 5.14 3GPP2 CDMA (cdma2000)
-A single-code cdma2000 forward-link-style signal (a v1 of Signal Studio for 3GPP2 CDMA, N7601B). Same
-DSSS structure as §5.12 at the **1.2288 Mcps** chip rate: QPSK data spread by a **Walsh** code,
-PN-scrambled, pulse-shaped (RRC approximation of the cdma2000 filter). Parameters mirror W-CDMA FDD.
-Representative single-channel signal — pilot/sync/paging channels, radio configurations, and frame/PCG
-structure are not yet implemented, and the exact cdma2000 baseband filter is approximated by RRC.
+A cdma2000 forward-link-style signal (Signal Studio for 3GPP2 CDMA, N7601B). Same DSSS structure as
+§5.12 at the **1.2288 Mcps** chip rate: QPSK data spread by a **Walsh** code, PN-scrambled, pulse-shaped
+(RRC approximation of the cdma2000 filter). Parameters mirror W-CDMA FDD. **Multi-code** (v2, #185): set
+**code channel count** > 1 to sum several **Walsh code channels** into a multi-channel forward-link
+composite. Representative — pilot/sync/paging channels, radio configurations, and frame/PCG structure
+are not yet implemented, and the exact cdma2000 baseband filter is approximated by RRC.
 
 ### 5.15 TD-SCDMA
 A single-code TD-SCDMA signal (a v1 of Signal Studio for TD-SCDMA, N7612B) at the **1.28 Mcps**
