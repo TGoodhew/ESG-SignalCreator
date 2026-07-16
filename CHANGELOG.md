@@ -6,6 +6,43 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-16
+
+**v2 personality expansion** — the experimental v1 cores from 1.2.0 were extended toward their deferred
+requirements, one personality (branch/PR) at a time. Two tracks landed: the **general-purpose tools**
+and the **OFDM-family standards framing**.
+
+> ⚠️ **Still experimental — representative frames, not standards-compliant, and not bench-verified.**
+> The OFDM-family additions build proper frame structure (sync/reference signals, pilots, per-symbol CP)
+> with spec-accurate sequences, but remain single-antenna-port, without channel coding, and unverified on
+> hardware (tracked in the verification epic, #157). Each requirement doc's status note lists exactly
+> what each personality does and defers.
+
+### OFDM-family standards framing (v2)
+
+Each personality gains an opt-in **frame-structured mode** (a `FrameStructured` config flag); the generic
+v1 OFDM path stays the default. Sync/reference/pilot sequences follow the relevant 3GPP / IEEE / ETSI
+specs and are verified in tests by demodulating the waveform and matching the exact structure.
+
+- **LTE FDD** (N7624B, #188 / PR #203) — a proper **E-UTRA downlink radio-frame**: 10 ms frame / 0.5 ms
+  slots / per-symbol CP (normal **and extended CP**), with correctly-positioned **PSS** (Zadoff-Chu),
+  **SSS**, and **CRS** (antenna port 0) plus a PDSCH data fill, driven by the physical cell ID. Adds a
+  public `Fft.Forward`.
+- **LTE TDD** (N7625B, #189 / PR #205) — the **TDD frame structure** (frame structure type 2): the
+  **D/S/U subframe pattern** (uplink-downlink config 0–6), the **special subframe** DwPTS/GP/UpPTS
+  (special-subframe config 0–9), and the TDD-positioned PSS/SSS.
+- **802.11 WLAN** (N7617B, #191 / PR #206) — a representative **802.11a/g PPDU** (20 MHz): an optional
+  **L-LTF** training preamble, **pilot subcarriers** (±7/±21), and a selectable **guard interval**
+  (long/short).
+- **Fixed WiMAX** (N7613A, #192 / PR #207) — the exact **256-FFT pilot map** (±13/±38/±63/±88, 802.16
+  pilot PRBS) with an optional **preamble** (every-4th-subcarrier → 4× time repetition).
+- **Mobile WiMAX** (N7615B, #193 / PR #208) — a DL-OFDMA frame with a **preamble** (every-3rd-subcarrier
+  PN) and a **DL-PUSC pilot pattern** (two pilots per 14-subcarrier cluster).
+- **T-DMB** (N7616B, #195 / PR #209) — a DAB transmission frame: the **synchronisation channel** (null +
+  phase-reference symbol) followed by **differentially-encoded DQPSK** data symbols.
+- **Digital Video** (N7623B, #196 / PR #210) — the DVB-T **scattered pilots** (boosted BPSK on
+  `k mod 12 == 3·(l mod 4)`, shifting by 3 each symbol; DVB-T reference PRBS).
+
 ### General-tools v2 — deferred features beyond the v1 cores
 
 The four general-purpose (fully-synthesizable) personalities were extended beyond their v1 cores with
