@@ -11,13 +11,14 @@ namespace EsgSignalCreator.Personalities.WimaxMobile
     /// spacing) via the shared <see cref="OfdmEngine"/>. Modelled as plain OFDM.
     /// </summary>
     /// <remarks>
-    /// Representative v1 core, not a standards-compliant 802.16e frame: no OFDMA subchannel permutation
-    /// zones (PUSC/FUSC/AMC), preamble, FCH/DL-MAP/UL-MAP, pilots, MIMO (Matrix A/B), or CTC/CC coding.
-    /// Those are deferred.
+    /// Two modes: the default generic OFDM fill (v1 core), or — with <see cref="WimaxMobileConfig.FrameStructured"/>
+    /// set — a DL-OFDMA-style frame (v2, #193) via <see cref="WimaxMobileFrame"/> with an optional
+    /// preamble symbol and a DL-PUSC pilot pattern. The exact PUSC/FUSC/AMC permutation zones,
+    /// FCH/DL-MAP/UL-MAP, MIMO (Matrix A/B), and CTC/CC coding remain deferred.
     /// </remarks>
     public sealed class WimaxMobilePersonality : IWaveformPersonality
     {
-        private const double SubcarrierSpacingHz = 10.9375e3;
+        internal const double SubcarrierSpacingHz = 10.9375e3;
 
         private WimaxMobileConfig _config = new WimaxMobileConfig();
 
@@ -46,6 +47,9 @@ namespace EsgSignalCreator.Personalities.WimaxMobile
         public WaveformModel Calculate(IProgress<int> progress)
         {
             WimaxMobileConfig cfg = _config ?? new WimaxMobileConfig();
+            if (cfg.FrameStructured)
+                return WimaxMobileFrame.Generate(cfg, progress);
+
             Numerology(cfg.FftSize, out int fft, out int occupied);
             int cp = (int)(fft * WimaxFixedPersonality.CpFraction(cfg.CyclicPrefixRatio));
 
@@ -63,7 +67,7 @@ namespace EsgSignalCreator.Personalities.WimaxMobile
         }
 
         /// <summary>Map the scalable FFT size to (FFT, used subcarriers) — ~82% occupancy, even.</summary>
-        private static void Numerology(WimaxFftSize size, out int fft, out int occupied)
+        internal static void Numerology(WimaxFftSize size, out int fft, out int occupied)
         {
             switch (size)
             {

@@ -39,5 +39,12 @@ namespace EsgSignalCreator.Personalities.WimaxMobile
 
         /// <summary>Payload bit source.</summary>
         [DataMember] public DataSource Data { get; set; } = DataSource.PN9;
+
+        /// <summary>When true, build a DL-OFDMA-style frame with a preamble and a DL-PUSC pilot pattern
+        /// rather than the generic OFDM fill. (N7615B R-1/R-6 frame, R-4 pilots.)</summary>
+        [DataMember] public bool FrameStructured { get; set; } = false;
+
+        /// <summary>When true (frame-structured mode), prepend the OFDMA downlink preamble symbol. (N7615B R-6.)</summary>
+        [DataMember] public bool IncludePreamble { get; set; } = true;
     }
 }

@@ -67,7 +67,8 @@ core library, the WinForms app, and an xUnit test project.
     **802.11 WLAN** (OFDM; v2 optional 802.11a/g PPDU — L-LTF preamble, pilots,
     selectable GI — N7617B), **802.16-2004 WiMAX** (256-FFT OFDM; v2 optional frame —
     exact pilot map + preamble — N7613A),
-    **802.16e Mobile WiMAX** (scalable OFDMA — N7615B), **T-DMB** (DAB COFDM — N7616B),
+    **802.16e Mobile WiMAX** (scalable OFDMA; v2 optional DL frame — preamble +
+    DL-PUSC pilots — N7615B), **T-DMB** (DAB COFDM — N7616B),
     **Digital Video** (DVB-T COFDM — N7623B), **Broadcast Radio** (FM stereo — N7611B)
 - **Verification plots** — I/Q vs time, FFT spectrum, constellation, and CCDF, each
   with a view dropdown and rubber-band zoom.

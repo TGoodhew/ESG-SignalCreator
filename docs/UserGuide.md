@@ -347,12 +347,20 @@ Pilot positions and the pilot PRBS follow IEEE 802.16-2004. Representative frame
 long preamble, FCH, DL/UL-MAP, DCD/UCD, RS-CC channel coding, and MAC framing remain deferred.
 
 ### 5.21 802.16e Mobile WiMAX (OFDMA)
-A mobile-WiMAX (IEEE 802.16e) **scalable-OFDMA** signal (a v1 of Signal Studio for 802.16 WiMAX, N7615B)
-at the fixed **10.9375 kHz** subcarrier spacing, with a selectable **FFT size** (128 / 512 / 1024 / 2048
-for ≈ 1.25 / 5 / 10 / 20 MHz) so the sample rate scales with FFT. Parameters: **FFT size**,
-**cyclic-prefix ratio**, **symbol count**, and **modulation** (QPSK…64QAM). Modelled as plain OFDM (no
-OFDMA subchannel permutation). Representative signal — no PUSC/FUSC/AMC zones, preamble, FCH/MAPs,
-pilots, MIMO, or CTC/CC coding.
+A mobile-WiMAX (IEEE 802.16e) **scalable-OFDMA** signal (Signal Studio for 802.16 WiMAX, N7615B) at the
+fixed **10.9375 kHz** subcarrier spacing, with a selectable **FFT size** (128 / 512 / 1024 / 2048 for
+≈ 1.25 / 5 / 10 / 20 MHz) so the sample rate scales with FFT. Parameters: **FFT size**, **cyclic-prefix
+ratio**, **symbol count**, and **modulation** (QPSK…64QAM). Two modes:
+
+- **Generic** (default) — plain OFDM (no OFDMA subchannel permutation).
+- **Frame-structured** (v2, #193) — enable **frame structured** for a DL-OFDMA-style frame: an optional
+  **preamble** symbol (a BPSK PN carried on every 3rd used subcarrier — the OFDMA-preamble spacing) and
+  data symbols with a **DL-PUSC pilot pattern** (two pilots per 14-subcarrier cluster, at cluster
+  positions 4 and 8).
+
+The preamble's every-3rd-subcarrier layout and the 14-subcarrier DL-PUSC cluster follow the 802.16e
+structure, but this is a representative frame — the exact preamble PN per IDcell, the full
+PUSC/FUSC/AMC subchannel permutation, FCH/DL-MAP/UL-MAP, MIMO, and CTC/CC coding remain deferred.
 
 ### 5.22 T-DMB (DAB COFDM)
 The DAB COFDM signal underlying Terrestrial-DMB (a v1 of Signal Studio for T-DMB, N7616B). Keeps a
