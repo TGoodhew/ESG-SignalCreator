@@ -10,8 +10,9 @@ namespace EsgSignalCreator.Personalities.WimaxFixed
     /// sample rate derived from the channel bandwidth (8/7 sampling factor) and a selectable CP ratio.
     /// </summary>
     /// <remarks>
-    /// Representative v1 core, not a standards-compliant burst: no long/short preamble, FCH, DL/UL-MAP,
-    /// DCD/UCD, pilot patterns, or RS-CC channel coding. Those are deferred.
+    /// Two modes: the default generic OFDM fill (v1 core), or — with <see cref="WimaxFixedConfig.FrameStructured"/>
+    /// set — a frame with the exact 256-FFT pilot map (±13/±38/±63/±88) and an optional preamble
+    /// (see <see cref="WimaxFixedFrame"/>). FCH, DL/UL-MAP, DCD/UCD, and RS-CC channel coding remain deferred.
     /// </remarks>
     public sealed class WimaxFixedPersonality : IWaveformPersonality
     {
@@ -47,6 +48,9 @@ namespace EsgSignalCreator.Personalities.WimaxFixed
             WimaxFixedConfig cfg = _config ?? new WimaxFixedConfig();
             if (cfg.ChannelBandwidthHz <= 0)
                 throw new InvalidOperationException("ChannelBandwidthHz must be positive.");
+
+            if (cfg.FrameStructured)
+                return WimaxFixedFrame.Generate(cfg, progress);
 
             double sampleRate = cfg.ChannelBandwidthHz * 8.0 / 7.0; // WiMAX sampling factor
             double spacing = sampleRate / Fft;

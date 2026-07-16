@@ -38,5 +38,12 @@ namespace EsgSignalCreator.Personalities.WimaxFixed
 
         /// <summary>Payload bit source.</summary>
         [DataMember] public DataSource Data { get; set; } = DataSource.PN9;
+
+        /// <summary>When true, build a frame with the exact 256-FFT pilot map and an optional preamble,
+        /// rather than the generic OFDM fill. (N7613A R-2 pilots / R-1 & R-7 preamble.)</summary>
+        [DataMember] public bool FrameStructured { get; set; } = false;
+
+        /// <summary>When true (frame-structured mode), prepend the downlink preamble symbol. (N7613A R-7.)</summary>
+        [DataMember] public bool IncludePreamble { get; set; } = true;
     }
 }

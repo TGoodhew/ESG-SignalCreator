@@ -294,13 +294,17 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_wimax_fixed";
             public override string Description =>
                 "Configure the 802.16-2004 fixed-WiMAX (256-FFT OFDM) source: channel bandwidth (Hz), cyclic-prefix " +
-                "ratio (OneQuarter/OneEighth/OneSixteenth/OneThirtySecond), number of OFDM symbols, and modulation.";
+                "ratio (OneQuarter/OneEighth/OneSixteenth/OneThirtySecond), number of OFDM symbols, and modulation. " +
+                "Set frame_structured=true for the exact 256-FFT pilot map (±13/±38/±63/±88) with an optional " +
+                "include_preamble (downlink preamble symbol).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("channel_bandwidth_hz", Schema.Number("nominal channel bandwidth, Hz")),
                 Schema.P("cyclic_prefix_ratio", Schema.Str("CP ratio",
                     new[] { "OneQuarter", "OneEighth", "OneSixteenth", "OneThirtySecond" })),
                 Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
-                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "BPSK", "QPSK", "QAM16", "QAM64" })));
+                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "BPSK", "QPSK", "QAM16", "QAM64" })),
+                Schema.P("frame_structured", Schema.Bool("build a frame with the exact pilot map + optional preamble")),
+                Schema.P("include_preamble", Schema.Bool("prepend the downlink preamble symbol")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("wimax_fixed", args), "Configured fixed WiMAX."));
