@@ -94,8 +94,11 @@ namespace EsgSignalCreator.HilHarness
             bool installVerify = flags.Contains("--install-verify");
             bool tutorialCaptures = opts.ContainsKey("--tutorial-captures"); // #150: real N9010A screenshots per tutorial signal
             if (installVerify || tutorialCaptures) closedLoop = true; // both drive the analyzer + RF
+            // --all runs the full battery (every personality, sourced from the canonical
+            // VerificationBattery so a new personality can't be silently skipped) plus the synthetic
+            // I/Q-impairment case. --signal X runs one.
             string[] signals = flags.Contains("--all")
-                ? new[] { "cw", "multitone", "awgn", "custom-mod", "multi-carrier", "iq-impair", "import-iq" }
+                ? VerificationBattery.PersonalityIds.Concat(new[] { "iq-impair" }).ToArray()
                 : new[] { Opt(opts, "--signal") ?? "cw" };
 
             // Screen-capture mode (#143): analyzer-only, no ESG/RF. Grabs the VSA display to an image file.
@@ -878,95 +881,44 @@ namespace EsgSignalCreator.HilHarness
             public double WantedOffsetHz; // tone offset for the image check (image at carrier - offset)
         }
 
-        /// <summary>Generate a signal with a Core personality and capture its expected metrics.</summary>
+        /// <summary>
+        /// Generate a signal with a Core personality and capture its expected metrics. Personality
+        /// waveforms come from the canonical <see cref="VerificationBattery"/> (single source of truth,
+        /// so <c>--all</c> and this switch can't drift); <c>iq-impair</c> is a synthetic harness-only
+        /// case. An unknown id falls back to CW.
+        /// </summary>
         private static SignalCase BuildSignal(string name, double offsetHz)
         {
             var progress = new Progress<int>();
-            switch ((name ?? "cw").ToLowerInvariant())
+            string id = (name ?? "cw").ToLowerInvariant();
+
+            if (id == "iq-impair")
             {
-                case "multitone":
+                // A CW tone at +offset with a deliberate I/Q gain imbalance produces a measurable
+                // image at carrier - offset; verify the image is present and suppressed.
+                var p = new CwPersonality();
+                p.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = offsetHz });
+                WaveformModel imp = IqImpairments.Apply(p.Calculate(progress), new IqImpairmentConfig { GainImbalanceDb = 3.0 });
+                return new SignalCase
                 {
-                    var p = new MultitonePersonality();
-                    p.LoadConfig(new MultitoneConfig
-                    {
-                        SampleRateHz = 10e6, Length = 16384, Phase = PhaseStrategy.Newman,
-                        Tones = MultitonePersonality.AutoSpacing(4, 1e6, 0, 0)
-                    });
-                    WaveformModel wf = p.Calculate(progress);
-                    return new SignalCase { Name = "multitone", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 10e6 };
-                }
-                case "awgn":
-                {
-                    var p = new AwgnPersonality();
-                    p.LoadConfig(new AwgnConfig { SampleRateHz = 10e6, Length = 32768, NoiseBandwidthHz = 2e6, CrestFactorDb = 10 });
-                    WaveformModel wf = p.Calculate(progress);
-                    return new SignalCase { Name = "awgn", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 5e6 };
-                }
-                case "custom-mod":
-                case "qam":
-                {
-                    var p = new CustomModPersonality();
-                    p.LoadConfig(new CustomModConfig
-                    {
-                        Modulation = Modulation.QAM16, SymbolRateHz = 1e6, SamplesPerSymbol = 8, Alpha = 0.35, SymbolCount = 1024
-                    });
-                    WaveformModel wf = p.Calculate(progress);
-                    // Carrier reference BW ≈ symbol rate × (1 + alpha) = 1e6 × 1.35.
-                    return new SignalCase { Name = "custom-mod", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 5e6, AcpCarrierBwHz = 1.35e6, CheckAcp = true };
-                }
-                case "multi-carrier":
-                {
-                    var p = new MultiCarrierPersonality();
-                    p.LoadConfig(new MultiCarrierConfig
-                    {
-                        SampleRateHz = 10e6, Length = 16384,
-                        Carriers = MultiCarrierPersonality.EvenlySpaced(3, 1e6, 0)
-                    });
-                    WaveformModel wf = p.Calculate(progress);
-                    return new SignalCase { Name = "multi-carrier", Waveform = wf, ExpectedPaprDb = Papr(wf), SpanHz = 10e6 };
-                }
-                case "import-iq":
-                {
-                    // Round-trip: generate a CW, export it to an I/Q CSV, re-import it, and verify.
-                    var src = new CwPersonality();
-                    src.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = offsetHz });
-                    string path = Path.Combine(Path.GetTempPath(), "hil-import-iq.csv");
-                    WaveformExporter.SaveCsv(path, src.Calculate(progress));
-                    var p = new ImportIqPersonality();
-                    p.LoadConfig(new ImportIqConfig { Path = path, SampleRateHz = 10e6 });
-                    WaveformModel wf = p.Calculate(progress);
-                    return new SignalCase
-                    {
-                        Name = "import-iq", Waveform = wf, ExpectedPaprDb = Papr(wf),
-                        SpanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6), CheckTone = true
-                    };
-                }
-                case "iq-impair":
-                {
-                    // A CW tone at +offset with a deliberate I/Q gain imbalance produces a measurable
-                    // image at carrier - offset; verify the image is present and suppressed.
-                    var p = new CwPersonality();
-                    p.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = offsetHz });
-                    WaveformModel wf = IqImpairments.Apply(p.Calculate(progress), new IqImpairmentConfig { GainImbalanceDb = 3.0 });
-                    return new SignalCase
-                    {
-                        Name = "iq-impair", Waveform = wf, ExpectedPaprDb = Papr(wf),
-                        SpanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6),
-                        CheckImage = true, WantedOffsetHz = offsetHz
-                    };
-                }
-                default:
-                {
-                    var p = new CwPersonality();
-                    p.LoadConfig(new CwConfig { SampleRateHz = 10e6, Length = 4096, FreqOffsetHz = offsetHz });
-                    WaveformModel wf = p.Calculate(progress);
-                    return new SignalCase
-                    {
-                        Name = "cw", Waveform = wf, ExpectedPaprDb = Papr(wf),
-                        SpanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6), CheckTone = true
-                    };
-                }
+                    Name = "iq-impair", Waveform = imp, ExpectedPaprDb = Papr(imp),
+                    SpanHz = Math.Max(1e6, 4 * Math.Abs(offsetHz) + 1e6),
+                    CheckImage = true, WantedOffsetHz = offsetHz
+                };
             }
+
+            BatteryEntry entry = VerificationBattery.Get(id, offsetHz) ?? VerificationBattery.Get("cw", offsetHz);
+            WaveformModel wf = entry.Build(progress);
+            return new SignalCase
+            {
+                Name = entry.Id,
+                Waveform = wf,
+                ExpectedPaprDb = Papr(wf),
+                SpanHz = entry.SpanHz,
+                AcpCarrierBwHz = entry.AcpCarrierBwHz,
+                CheckTone = entry.CheckTone,
+                CheckAcp = entry.CheckAcp,
+            };
         }
 
         // Expected PAPR of the generated baseband I/Q (the RF envelope should match it). Dsp.Ccdf is
