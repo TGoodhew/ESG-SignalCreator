@@ -35,5 +35,9 @@ namespace EsgSignalCreator.Personalities.DigitalVideo
 
         /// <summary>Payload bit source.</summary>
         [DataMember] public DataSource Data { get; set; } = DataSource.PN9;
+
+        /// <summary>When true, insert the DVB-T scattered pilots (boosted, shifting by 3 each symbol)
+        /// rather than filling every carrier with data. (N7623B R-1/R-3 pilots.)</summary>
+        [DataMember] public bool FrameStructured { get; set; } = false;
     }
 }

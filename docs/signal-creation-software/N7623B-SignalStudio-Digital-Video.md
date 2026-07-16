@@ -3,13 +3,19 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** A **Digital Video (DVB-T COFDM)** personality now ships in the
-> app (`Core/Personalities/DigitalVideo/`, on the shared `Dsp/OfdmEngine`). It generates the DVB-T COFDM
-> PHY for an 8 MHz channel (elementary rate 64/7 MHz, 2K/8K FFT, selectable guard interval, QPSK…64QAM).
-> **Simplified v1, not a standards-compliant transport.** Deferred: TPS/pilot carriers, PRBS energy
-> dispersal, RS/convolutional coding, MPEG-TS framing — and the **many other digital-video standards this
-> product covers** (ISDB-T/Tb, ATSC + ATSC-M/H 8VSB, DVB-C/S/S2 QAM, DTMB/CTTB, CMMB, DVB-H/T2) are **not
-> implemented**. Hardware verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** A **Digital Video (DVB-T COFDM)** personality ships in the app
+> (`Core/Personalities/DigitalVideo/`) with two modes:
+> - **Generic** (v1 core, `Dsp/OfdmEngine`) — the DVB-T COFDM PHY for an 8 MHz channel (elementary rate
+>   64/7 MHz, 2K/8K FFT, selectable guard interval, QPSK…64QAM).
+> - **Frame-structured** (✅ v2, #196, `DigitalVideoFrame`) — inserts the standard DVB-T **scattered
+>   pilots**: on each symbol the carriers where `k mod 12 == 3·(l mod 4)` carry boosted (4/3) BPSK pilots
+>   (the pattern shifts by 3 each symbol), values from the DVB-T reference PRBS (X¹¹+X²+1) — partial
+>   **R-1/R-3**. Follows ETSI EN 300 744.
+>
+> Still representative. **Still deferred** (#196): the continual/TPS carriers, PRBS energy dispersal,
+> RS/convolutional coding (R-4), MPEG-TS payload (R-5), BER frames (R-6), impairments (R-7), and the
+> **many other digital-video standards** (ISDB-T/Tb, ATSC + ATSC-M/H 8VSB, DVB-C/S/S2 QAM, DTMB/CTTB,
+> CMMB, DVB-H/T2 — **R-1**). Hardware verification is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7623B

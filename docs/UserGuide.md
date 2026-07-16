@@ -379,12 +379,20 @@ The null + phase-reference symbols and the differential (DQPSK) encoding follow 
 convolutional coding remain deferred.
 
 ### 5.23 Digital Video (DVB-T COFDM)
-A DVB-T COFDM signal for an 8 MHz channel (a v1 of Signal Studio for Digital Video, N7623B). Parameters:
+A DVB-T COFDM signal for an 8 MHz channel (Signal Studio for Digital Video, N7623B). Parameters:
 **transmission mode** (**2K** = 2048-FFT / **8K** = 8192-FFT), **guard-interval** ratio (1/4…1/32),
 **symbol count**, and **modulation** (QPSK / 16QAM / 64QAM). Sample rate is the DVB-T elementary rate
-(64/7 MHz). Built on the shared OFDM engine. Representative signal — no TPS/pilot carriers, PRBS energy
-dispersal, RS/convolutional coding, or MPEG-TS framing; other digital-video standards (ISDB-T, ATSC
-8VSB, DVB-C/S QAM, DTMB) are not implemented.
+(64/7 MHz). Two modes:
+
+- **Generic** (default) — a plain OFDM data fill of the active carriers.
+- **Frame-structured** (v2, #196) — enable **frame structured** to insert the standard DVB-T **scattered
+  pilots**: on each symbol the carriers where `k mod 12 == 3·(l mod 4)` carry boosted (4/3) BPSK pilots,
+  so the pilot pattern shifts by 3 subcarriers every symbol and repeats every 4 symbols. Pilot values
+  come from the DVB-T reference PRBS (X¹¹ + X² + 1).
+
+The scattered-pilot positions, 4/3 boosting, and reference PRBS follow ETSI EN 300 744. Representative —
+the continual/TPS carriers, PRBS energy dispersal, RS/convolutional coding, and MPEG-TS framing remain
+deferred, and the other digital-video standards (ISDB-T, ATSC 8VSB, DVB-C/S QAM, DTMB) are not implemented.
 
 ### 5.24 Broadcast Radio (FM)
 An analog FM broadcast signal (a v1 of Signal Studio for Broadcast Radio, N7611B). The baseband
