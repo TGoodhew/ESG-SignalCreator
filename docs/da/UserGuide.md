@@ -146,7 +146,12 @@ En GSM-familiebærebølge (Signal Studio for GSM/EDGE, N7602B) med to **modulati
 Parametre: **modulation**, **symbolrate** (Hz, 270,833 ksym/s), **samples pr. symbol**, **antal symboler**, **BT** (GMSK) / **EDGE RRC β**, gaussisk span og **datakilde**. Samplingsrate = symbolrate × samples/symbol. Fuld burst-/træningssekvens-framing og kanalkodning er endnu ikke implementeret.
 
 ### 5.11 Bluetooth (GFSK)
-En GFSK-moduleret Bluetooth-bærebølge (en v1 af Signal Studio for Bluetooth, N7606B). GFSK er Basic Rate-/LE-modulationen — gaussisk-filtreret FSK (BT 0,5) integreret til kontinuert fase ved et konfigurerbart **modulationsindeks** (BR ≈ 0,32, LE ≈ 0,5). Parametre: **symbolrate** (Hz; BR/LE-1M = 1 M, LE-2M = 2 M), **samples pr. symbol**, **antal symboler**, **modulationsindeks**, **BT** og **datakilde**. Deler CPM-motoren med GMSK (GMSK er GFSK ved indeks 0,5). EDR (π/4-DQPSK / 8DPSK), LE coded PHY, pakke-framing og hopping er endnu ikke implementeret.
+En Bluetooth-bærebølge (Signal Studio for Bluetooth, N7606B) med to **modulationer**:
+
+- **GFSK** (Basic Rate / LE) — gaussisk-filtreret FSK (BT 0,5) integreret til kontinuert fase ved et konfigurerbart **modulationsindeks** (BR ≈ 0,32, LE ≈ 0,5); konstant envelope.
+- **EDR** (v2, #190) — differentiel **π/4-DQPSK** (2 Mbps, `Edr2Mbps`) eller **8-DPSK** (3 Mbps, `Edr3Mbps`), pulsformet (RRC β 0,4) og peak-normaliseret; ikke-konstant envelope. EDR bevarer 1 Msym/s-symbolraten (2/3 bit pr. symbol).
+
+Parametre: **modulation**, **symbolrate** (Hz; BR/LE-1M/EDR = 1 M, LE-2M = 2 M), **samples pr. symbol**, **antal symboler**, GFSK-**modulationsindeks** / **BT**, EDR-**RRC β** og **datakilde**. GFSK deler CPM-motoren med GMSK (GMSK er GFSK ved indeks 0,5). LE coded PHY, pakke-framing og hopping er endnu ikke implementeret.
 
 ### 5.12 3GPP W-CDMA FDD
 Et W-CDMA-downlink-lignende signal (Signal Studio for 3GPP W-CDMA FDD, N7600B). Datasymboler spredes med en **OVSF**-(Walsh)-kode, kompleks-**scrambles** af en PN-sekvens og root-raised-cosine-formes (**β** = 0,22) ved **3,84 Mcps** chip-raten. Parametre: **chip-rate**, **samples pr. chip**, **antal symboler**, **spredningsfaktor** (potens af to) og **OVSF-indeks**, **modulation** (QPSK…), **RRC β** og **scramble** (aktivér + seed). Samplingsrate = chip-rate × samples/chip.

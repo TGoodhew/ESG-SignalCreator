@@ -3,16 +3,30 @@ using EsgSignalCreator.Personalities.CustomMod;
 
 namespace EsgSignalCreator.Personalities.Bluetooth
 {
+    /// <summary>Bluetooth modulation: Basic-Rate/LE GFSK, or EDR π/4-DQPSK (2 Mbps) / 8-DPSK (3 Mbps).</summary>
+    public enum BluetoothModulation
+    {
+        /// <summary>GFSK (BR / LE) — Gaussian-filtered FSK, constant envelope.</summary>
+        Gfsk = 0,
+        /// <summary>EDR 2 Mbps — differential π/4-DQPSK (2 bits/symbol), pulse-shaped.</summary>
+        Edr2Mbps = 1,
+        /// <summary>EDR 3 Mbps — differential 8-DPSK (3 bits/symbol), pulse-shaped.</summary>
+        Edr3Mbps = 2
+    }
+
     /// <summary>
-    /// Serializable settings for <see cref="BluetoothPersonality"/> — a GFSK-modulated Bluetooth
-    /// carrier. This v1 implements the Basic Rate / LE GFSK physical layer (Gaussian-filtered FSK
-    /// with a configurable modulation index); EDR (π/4-DQPSK / 8DPSK), LE coded PHY, packet framing,
-    /// and hopping are deferred (see the N7606B requirements doc).
+    /// Serializable settings for <see cref="BluetoothPersonality"/> — a Bluetooth carrier. Implements
+    /// the Basic-Rate / LE **GFSK** physical layer and (v2) **EDR** π/4-DQPSK / 8-DPSK. LE coded PHY,
+    /// packet framing, and hopping are deferred (see the N7606B requirements doc).
     /// </summary>
     [DataContract]
     public sealed class BluetoothConfig
     {
-        /// <summary>Symbol rate, in hertz. Bluetooth BR / LE 1M = 1 Msym/s; LE 2M = 2 Msym/s.</summary>
+        /// <summary>Modulation: GFSK (v1), or EDR π/4-DQPSK (2 Mbps) / 8-DPSK (3 Mbps) (v2). EDR keeps the
+        /// 1 Msym/s symbol rate.</summary>
+        [DataMember] public BluetoothModulation Modulation { get; set; } = BluetoothModulation.Gfsk;
+
+        /// <summary>Symbol rate, in hertz. Bluetooth BR / LE 1M / EDR = 1 Msym/s; LE 2M = 2 Msym/s.</summary>
         [DataMember] public double SymbolRateHz { get; set; } = 1e6;
 
         /// <summary>Oversampling: I/Q samples per symbol. Sample rate = SymbolRate × this.</summary>
@@ -27,8 +41,11 @@ namespace EsgSignalCreator.Personalities.Bluetooth
         /// <summary>Gaussian filter bandwidth-time product. Bluetooth uses BT = 0.5.</summary>
         [DataMember] public double Bt { get; set; } = 0.5;
 
-        /// <summary>Gaussian pulse span, in symbols.</summary>
+        /// <summary>Gaussian pulse span, in symbols (GFSK).</summary>
         [DataMember] public int GaussianSpanSymbols { get; set; } = 3;
+
+        /// <summary>Root-raised-cosine roll-off for the EDR pulse shaping. Bluetooth EDR uses 0.4.</summary>
+        [DataMember] public double EdrRrcBeta { get; set; } = 0.4;
 
         /// <summary>Payload bit source.</summary>
         [DataMember] public DataSource Data { get; set; } = DataSource.PN9;

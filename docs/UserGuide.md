@@ -238,13 +238,19 @@ Parameters: **modulation**, **symbol rate** (Hz, 270.833 ksym/s), **samples per 
 count**, **BT** (GMSK) / **EDGE RRC β**, Gaussian span, and **data source**. Sample rate = symbol rate ×
 samples/symbol. Full burst/training-sequence framing and channel coding are not yet implemented.
 
-### 5.11 Bluetooth (GFSK)
-A GFSK-modulated Bluetooth carrier (a v1 of Signal Studio for Bluetooth, N7606B). GFSK is the Basic
-Rate / LE modulation — Gaussian-filtered FSK (BT 0.5) integrated to continuous phase at a configurable
-**modulation index** (BR ≈ 0.32, LE ≈ 0.5). Parameters: **symbol rate** (Hz; BR/LE-1M = 1 M, LE-2M =
-2 M), **samples per symbol**, **symbol count**, **modulation index**, **BT**, and **data source**. Shares
-the CPM engine with GMSK (GMSK is GFSK at index 0.5). EDR (π/4-DQPSK / 8DPSK), the LE coded PHY, packet
-framing, and hopping are not yet implemented.
+### 5.11 Bluetooth
+A Bluetooth carrier (Signal Studio for Bluetooth, N7606B) with two **modulations**:
+
+- **GFSK** (Basic Rate / LE) — Gaussian-filtered FSK (BT 0.5) integrated to continuous phase at a
+  configurable **modulation index** (BR ≈ 0.32, LE ≈ 0.5); constant envelope.
+- **EDR** (v2, #190) — differential **π/4-DQPSK** (2 Mbps, `Edr2Mbps`) or **8-DPSK** (3 Mbps,
+  `Edr3Mbps`), pulse-shaped (RRC β 0.4) and peak-normalized; non-constant envelope. EDR keeps the
+  1 Msym/s symbol rate (2/3 bits per symbol).
+
+Parameters: **modulation**, **symbol rate** (Hz; BR/LE-1M/EDR = 1 M, LE-2M = 2 M), **samples per
+symbol**, **symbol count**, GFSK **modulation index** / **BT**, EDR **RRC β**, and **data source**. GFSK
+shares the CPM engine with GMSK (GMSK is GFSK at index 0.5). The LE coded PHY, packet framing, and
+hopping are not yet implemented.
 
 ### 5.12 3GPP W-CDMA FDD
 A W-CDMA downlink-style signal (Signal Studio for 3GPP W-CDMA FDD, N7600B). Data
