@@ -145,14 +145,27 @@ BT** (alpha), and a **payload** pattern (PN9/PN15/PN23, all-ones/zeros, random).
 modulation-quality work.
 
 ### 5.5 Pulse Building
-A repeating radar-style pulse train (a v1 of Signal Studio for Pulse Building, N7620A). Parameters:
-**pulse width** (s), **pulse repetition interval / PRI** (s, ≥ pulse width), an optional raised-cosine
-**rise/fall** time (s, 0 = rectangular edges), a **start delay** (s), and the **intra-pulse
-modulation** — **None** (gated CW burst), **Linear FM chirp** (with a swept **bandwidth** in Hz), or a
-**Barker phase code** (length 2/3/4/5/7/11/13). A single pulse is built and tiled at the PRI to fill
-the waveform; a one-sample **marker** is emitted at each pulse start (handy as an ARB trigger/scope
-sync). Used for radar/EW receiver test and pulse-compression work. Advanced N7620A features (per-pulse
-offset tables, staggered/jittered PRI, antenna-scan patterning, CSV import) are not yet implemented.
+A radar-style pulse train (Signal Studio for Pulse Building, N7620A). Parameters:
+**pulse width** (s), nominal **pulse repetition interval / PRI** (s, ≥ pulse width), an optional
+raised-cosine **rise/fall** time (s, 0 = rectangular edges), a **start delay** (s), and the
+**intra-pulse modulation**:
+- **None** (gated CW burst);
+- FM formats — **Linear FM chirp**, **Non-linear FM chirp** (with a **curvature** 0…<1), and
+  **FM step** (stepped frequency) — all using a swept **bandwidth** in Hz; FM/AM step use a
+  **step count**;
+- **AM step** (rising amplitude staircase);
+- phase codes — **BPSK** and **QPSK** (a seedable pseudo-random code with a **chip count** + **seed**)
+  and a **Barker phase code** (length 2/3/4/5/7/11/13);
+- polyphase codes — **Frank** (order N, length N²) and **P4** (configurable length).
+
+**PRI patterning** selects how the gap between pulses is chosen: **Fixed** (the nominal PRI),
+**Staggered** (a repeating pattern of intervals), or **Jittered** (the nominal PRI ± a seeded random
+peak). **Per-pulse offset tables** (frequency in Hz, phase in degrees, power in dB) cycle across the
+train so successive pulses can be frequency-agile, phase-stepped, or power-staircased. A single pulse
+template is tiled to fill the waveform; a one-sample **marker** is emitted at each pulse start (handy as
+an ARB trigger/scope sync). Used for radar/EW receiver test and pulse-compression work. The remaining
+N7620A Option 205/206 features (custom envelope shapes, antenna-scan patterning, pattern nesting, CSV
+import/export, and scenario impairments) are not yet implemented (see issue #179).
 
 ### 5.6 AWGN
 Band-limited additive white Gaussian noise. Parameters: **noise bandwidth** (Hz), **carrier-to-noise

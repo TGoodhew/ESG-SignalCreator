@@ -151,16 +151,34 @@ namespace EsgSignalCreator.Assistant.Tools
         {
             public override string Name => "configure_pulse";
             public override string Description =>
-                "Configure the Pulse Building (radar/EW) source: pulse width (s) and pulse-repetition interval " +
-                "(s), optional raised-cosine rise/fall (s), and intra-pulse modulation (None; LinearFmChirp with " +
-                "a swept bandwidth in Hz; or BarkerPhase with a code length of 2/3/4/5/7/11/13).";
+                "Configure the Pulse Building (radar/EW) source: pulse width (s), nominal pulse-repetition " +
+                "interval (s), optional raised-cosine rise/fall (s), and intra-pulse modulation. FM formats " +
+                "(LinearFmChirp / NonLinearFmChirp / FmStep) use chirp_bandwidth_hz; NonLinearFmChirp adds " +
+                "nlfm_curvature (0=linear..<1); FmStep/AmStep use intra_pulse_step_count; Bpsk/Qpsk use " +
+                "phase_code_chips + phase_code_seed; BarkerPhase uses barker_length (2/3/4/5/7/11/13); " +
+                "FrankCode uses frank_order_n (length N²); PolyphaseP4 uses polyphase_length. PRI patterning: " +
+                "pri_mode Fixed/Staggered/Jittered — Jittered adds pri_jitter_sec (peak) + pri_jitter_seed. " +
+                "Per-pulse offset tables and the staggered-PRI pattern are set in the UI / project file.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("pulse_width_sec", Schema.Number("pulse width (on time), seconds"), required: true),
-                Schema.P("pri_sec", Schema.Number("pulse repetition interval, seconds (>= pulse width)"), required: true),
+                Schema.P("pri_sec", Schema.Number("nominal pulse repetition interval, seconds (>= pulse width)"), required: true),
                 Schema.P("rise_fall_sec", Schema.Number("raised-cosine edge time, seconds (0 = rectangular)")),
-                Schema.P("modulation", Schema.Str("intra-pulse modulation", new[] { "None", "LinearFmChirp", "BarkerPhase" })),
-                Schema.P("chirp_bandwidth_hz", Schema.Number("swept bandwidth for LinearFmChirp, Hz")),
-                Schema.P("barker_length", Schema.Integer("Barker code length (2,3,4,5,7,11,13)")));
+                Schema.P("modulation", Schema.Str("intra-pulse modulation", new[]
+                {
+                    "None", "LinearFmChirp", "NonLinearFmChirp", "FmStep", "AmStep",
+                    "Bpsk", "Qpsk", "BarkerPhase", "FrankCode", "PolyphaseP4"
+                })),
+                Schema.P("chirp_bandwidth_hz", Schema.Number("swept bandwidth for the FM formats, Hz")),
+                Schema.P("nlfm_curvature", Schema.Number("NonLinearFmChirp curvature, 0 (linear) .. <1")),
+                Schema.P("intra_pulse_step_count", Schema.Integer("number of steps for FmStep / AmStep (>= 1)")),
+                Schema.P("phase_code_chips", Schema.Integer("chip count for Bpsk / Qpsk phase codes (>= 1)")),
+                Schema.P("phase_code_seed", Schema.Integer("seed for the Bpsk / Qpsk phase code")),
+                Schema.P("barker_length", Schema.Integer("Barker code length (2,3,4,5,7,11,13)")),
+                Schema.P("frank_order_n", Schema.Integer("Frank code order N (length N²)")),
+                Schema.P("polyphase_length", Schema.Integer("P4 polyphase code length (>= 1)")),
+                Schema.P("pri_mode", Schema.Str("PRI patterning", new[] { "Fixed", "Staggered", "Jittered" })),
+                Schema.P("pri_jitter_sec", Schema.Number("peak PRI jitter for Jittered mode, seconds")),
+                Schema.P("pri_jitter_seed", Schema.Integer("seed for the PRI jitter generator")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("pulse", args), "Configured pulse."));

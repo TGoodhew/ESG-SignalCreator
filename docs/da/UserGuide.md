@@ -108,7 +108,14 @@ Flere uafhængigt placerede bærebølger (hver kan have sin egen modulation), su
 En digitalt moduleret bærebølge. Parametre: **modulationsformat** (BPSK, QPSK, 8PSK, 16/64/256-QAM, MSK…), **symbolrate** (Hz), et **pulsformende filter** (RRC, RC, Gaussian eller intet) med **roll-off / BT** (alpha) og et **payload**-mønster (PN9/PN15/PN23, all-ones/zeros, random). Bruges til ACP/ACPR og modulationskvalitetsarbejde.
 
 ### 5.5 Pulse Building
-Et gentaget radarlignende pulstog (en v1 af Signal Studio for Pulse Building, N7620A). Parametre: **pulsbredde** (s), **pulsgentagelsesinterval / PRI** (s, ≥ pulsbredde), en valgfri raised-cosine **stige-/faldtid** (s, 0 = rektangulære kanter), en **startforsinkelse** (s) og **intra-puls-modulationen** — **None** (gated CW-burst), **Linear FM-chirp** (med en fejet **båndbredde** i Hz) eller en **Barker-fasekode** (længde 2/3/4/5/7/11/13). En enkelt puls bygges og gentages ved PRI'en for at udfylde bølgeformen; en et-samples **markør** udsendes ved hver pulsstart (nyttig som ARB-trigger/scope-sync). Bruges til radar/EW-modtagertest og pulskompressionsarbejde. Avancerede N7620A-funktioner (per-puls-offsettabeller, forskudt/jittret PRI, antennescanningsmønstre, CSV-import) er endnu ikke implementeret.
+Et radarlignende pulstog (Signal Studio for Pulse Building, N7620A). Parametre: **pulsbredde** (s), nominelt **pulsgentagelsesinterval / PRI** (s, ≥ pulsbredde), en valgfri raised-cosine **stige-/faldtid** (s, 0 = rektangulære kanter), en **startforsinkelse** (s) og **intra-puls-modulationen**:
+- **None** (gated CW-burst);
+- FM-formater — **Linear FM-chirp**, **Non-linear FM-chirp** (med en **krumning** 0…<1) og **FM step** (trinvis frekvens) — alle med en fejet **båndbredde** i Hz; FM/AM step bruger et **trinantal**;
+- **AM step** (stigende amplitudetrappe);
+- fasekoder — **BPSK** og **QPSK** (en seedbar pseudotilfældig kode med **chip-antal** + **seed**) og en **Barker-fasekode** (længde 2/3/4/5/7/11/13);
+- polyfasekoder — **Frank** (orden N, længde N²) og **P4** (konfigurerbar længde).
+
+**PRI-mønster** vælger, hvordan afstanden mellem pulser bestemmes: **Fixed** (det nominelle PRI), **Staggered** (et gentaget mønster af intervaller) eller **Jittered** (det nominelle PRI ± et seedet tilfældigt maksimum). **Per-puls-offsettabeller** (frekvens i Hz, fase i grader, effekt i dB) cykler hen over toget, så på hinanden følgende pulser kan være frekvensadaptive, fasetrinsforskudte eller effekttrappede. En enkelt pulsskabelon gentages for at udfylde bølgeformen; en et-samples **markør** udsendes ved hver pulsstart (nyttig som ARB-trigger/scope-sync). Bruges til radar/EW-modtagertest og pulskompressionsarbejde. De resterende N7620A Option 205/206-funktioner (brugerdefinerede kuvertformer, antennescanningsmønstre, mønsterindlejring, CSV-import/-eksport og scenarie-impairments) er endnu ikke implementeret (se issue #179).
 
 ### 5.6 AWGN
 Båndbegrænset additiv hvid gaussisk støj. Parametre: **støjbåndbredde** (Hz), **carrier-to-noise-ratio** (dB) og valgfri **peak clipping**. AWGN har en høj crest-faktor (~10 dB) — en god headroom- og CCDF-test.
