@@ -53,6 +53,18 @@ namespace EsgSignalCreator.Dsp
             }
         }
 
+        /// <summary>In-place forward FFT of a complex sequence whose length is a power of two.</summary>
+        public static void Forward(double[] re, double[] im)
+        {
+            if (re == null) throw new ArgumentNullException(nameof(re));
+            if (im == null) throw new ArgumentNullException(nameof(im));
+            if (re.Length != im.Length) throw new ArgumentException("re and im must have equal length.");
+            int n = re.Length;
+            if (n == 0) return;
+            if ((n & (n - 1)) != 0) throw new ArgumentException("Length must be a power of two.", nameof(re));
+            Transform(re, im);
+        }
+
         /// <summary>
         /// In-place inverse FFT of a complex sequence whose length is a power of two. Uses the
         /// conjugation identity IFFT(x) = conj(FFT(conj(x)))/N so it shares the forward radix-2 core.
