@@ -277,13 +277,17 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_wimax_mobile";
             public override string Description =>
                 "Configure the 802.16e mobile-WiMAX (scalable OFDMA) source: FFT size (Fft128/512/1024/2048 at " +
-                "10.9375 kHz spacing), cyclic-prefix ratio, number of OFDM symbols, and modulation.";
+                "10.9375 kHz spacing), cyclic-prefix ratio, number of OFDM symbols, and modulation. Set " +
+                "frame_structured=true for a DL-OFDMA-style frame with a DL-PUSC pilot pattern and an optional " +
+                "include_preamble (every-3rd-subcarrier OFDMA preamble symbol).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("fft_size", Schema.Str("scalable FFT size", new[] { "Fft128", "Fft512", "Fft1024", "Fft2048" })),
                 Schema.P("cyclic_prefix_ratio", Schema.Str("CP ratio",
                     new[] { "OneQuarter", "OneEighth", "OneSixteenth", "OneThirtySecond" })),
                 Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
-                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "QPSK", "QAM16", "QAM64" })));
+                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "QPSK", "QAM16", "QAM64" })),
+                Schema.P("frame_structured", Schema.Bool("build a DL-OFDMA frame with pilots + optional preamble")),
+                Schema.P("include_preamble", Schema.Bool("prepend the OFDMA downlink preamble symbol")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("wimax_mobile", args), "Configured mobile WiMAX."));

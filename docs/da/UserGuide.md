@@ -191,7 +191,12 @@ Et fixed-WiMAX-(IEEE 802.16-2004)-**256-FFT-OFDM**-signal (Signal Studio for 802
 Pilotpositioner og pilot-PRBS'en følger IEEE 802.16-2004. Repræsentativ ramme — den præcise to-symbols lange præambel, FCH, DL/UL-MAP, DCD/UCD, RS-CC-kanalkodning og MAC-framing er stadig udskudt.
 
 ### 5.21 802.16e Mobile WiMAX (OFDMA)
-Et mobile-WiMAX-(IEEE 802.16e)-**scalable-OFDMA**-signal (en v1 af Signal Studio for 802.16 WiMAX, N7615B) ved den faste **10,9375 kHz** subcarrier-afstand med en valgbar **FFT-størrelse** (128 / 512 / 1024 / 2048 for ≈ 1,25 / 5 / 10 / 20 MHz), så samplingsraten skalerer med FFT. Parametre: **FFT-størrelse**, **cyklisk-præfiks-forhold**, **antal symboler** og **modulation** (QPSK…64QAM). Modelleret som almindelig OFDM (ingen OFDMA-subkanalpermutation). Repræsentativt signal — ingen PUSC/FUSC/AMC-zoner, præambel, FCH/MAPs, piloter, MIMO eller CTC/CC-kodning.
+Et mobile-WiMAX-(IEEE 802.16e)-**scalable-OFDMA**-signal (Signal Studio for 802.16 WiMAX, N7615B) ved den faste **10,9375 kHz** subcarrier-afstand med en valgbar **FFT-størrelse** (128 / 512 / 1024 / 2048 for ≈ 1,25 / 5 / 10 / 20 MHz), så samplingsraten skalerer med FFT. Parametre: **FFT-størrelse**, **cyklisk-præfiks-forhold**, **antal symboler** og **modulation** (QPSK…64QAM). To tilstande:
+
+- **Generisk** (standard) — almindelig OFDM (ingen OFDMA-subkanalpermutation).
+- **Rammestruktureret** (v2, #193) — aktivér **frame structured** for en DL-OFDMA-lignende ramme: et valgfrit **preamble**-symbol (en BPSK-PN båret på hver 3. brugte subcarrier — OFDMA-præamblens afstand) og datasymboler med et **DL-PUSC-pilotmønster** (to piloter pr. 14-subcarrier-klynge, ved klyngepositionerne 4 og 8).
+
+Præamblens hver-3.-subcarrier-layout og den 14-subcarrier DL-PUSC-klynge følger 802.16e-strukturen, men det er en repræsentativ ramme — den præcise præambel-PN pr. IDcell, den fulde PUSC/FUSC/AMC-subkanalpermutation, FCH/DL-MAP/UL-MAP, MIMO og CTC/CC-kodning er stadig udskudt.
 
 ### 5.22 T-DMB (DAB COFDM)
 DAB-COFDM-signalet, der ligger under Terrestrial-DMB (en v1 af Signal Studio for T-DMB, N7616B). Bevarer en **2,048 MHz** signalbåndbredde på tværs af alle fire **transmissionsmodes** (I/II/III/IV), som sætter FFT-størrelsen (2048 / 512 / 256 / 1024), aktive bærebølger og guard-interval. Parametre: **mode**, **antal symboler**, **datakilde**. Modulationen er DQPSK, her tilnærmet med almindelig QPSK. Bygget på den delte OFDM-motor. Repræsentativt signal — ingen null-/fasereferencesymboler, synkroniseringskanal, FIC/MSC-multipleks, differentiel kodning eller foldningskodning.

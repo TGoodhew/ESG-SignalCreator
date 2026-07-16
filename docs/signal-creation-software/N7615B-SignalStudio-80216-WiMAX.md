@@ -3,12 +3,19 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** An **802.16e Mobile WiMAX (OFDMA)** personality now ships in the
-> app (`Core/Personalities/WimaxMobile/`, on the shared `Dsp/OfdmEngine`). It generates a
-> scalable-OFDMA-numerology signal (FFT 128/512/1024/2048 at the fixed 10.9375 kHz spacing, selectable CP
-> ratio, QPSK…64QAM). **Modelled as plain OFDM — not a standards-compliant 802.16e frame.** Deferred:
-> OFDMA subchannel permutation zones (PUSC/FUSC/AMC), preamble, FCH/DL-MAP/UL-MAP, pilots, MIMO
-> (Matrix A/B), and CTC/CC coding. Hardware verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** An **802.16e Mobile WiMAX (OFDMA)** personality ships in the app
+> (`Core/Personalities/WimaxMobile/`) with two modes:
+> - **Generic** (v1 core, `Dsp/OfdmEngine`) — a scalable-OFDMA-numerology signal (FFT 128/512/1024/2048
+>   at the fixed 10.9375 kHz spacing, selectable CP ratio, QPSK…64QAM), modelled as plain OFDM.
+> - **Frame-structured** (✅ v2, #193, `WimaxMobileFrame`) — a DL-OFDMA-style frame: an optional
+>   **preamble** symbol (BPSK PN on every 3rd used subcarrier — the OFDMA-preamble spacing, partial **R-6**)
+>   and data symbols with a **DL-PUSC pilot pattern** (two pilots per 14-subcarrier cluster at positions
+>   4 & 8, partial **R-4/R-6**).
+>
+> Still a representative frame. **Still deferred** (#193): the exact preamble PN per IDcell, the full
+> PUSC/FUSC/AMC subchannel permutation zones (R-4), the complete OFDMA frame — FCH/DL-MAP/UL-MAP/ranging
+> (R-6), MIMO Matrix A/B (R-7), UL collaborative SM (R-8), CTC/CC coding (R-5/R-9), and impairments (R-10).
+> Hardware verification is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7615B (E4438C host connectivity provided via the ESG-targeted fixed license)
