@@ -229,12 +229,15 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_broadcast_radio";
             public override string Description =>
                 "Configure the Broadcast Radio (FM) source: audio test-tone frequency (Hz), stereo (adds 19 kHz " +
-                "pilot + 38 kHz subcarrier), peak deviation (Hz, 75k), sample rate (Hz), and length.";
+                "pilot + 38 kHz subcarrier), peak deviation (Hz, 75k), sample rate (Hz), and length. Set rds=true " +
+                "for the RDS 57 kHz data subcarrier (rds_deviation_hz ~2k).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("audio_tone_hz", Schema.Number("audio test-tone frequency, Hz")),
                 Schema.P("stereo", Schema.Bool("stereo (pilot + subcarrier)")),
                 Schema.P("peak_deviation_hz", Schema.Number("peak FM deviation, Hz")),
-                Schema.P("sample_rate_hz", Schema.Number("sample rate, Hz")));
+                Schema.P("sample_rate_hz", Schema.Number("sample rate, Hz")),
+                Schema.P("rds", Schema.Bool("add the RDS 57 kHz data subcarrier")),
+                Schema.P("rds_deviation_hz", Schema.Number("RDS deviation contribution, Hz (~2k)")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("broadcast_radio", args), "Configured broadcast radio."));

@@ -72,7 +72,7 @@ core library, the WinForms app, and an xUnit test project.
     DL-PUSC pilots — N7615B), **T-DMB** (DAB COFDM; v2 optional DAB frame —
     null + phase-reference symbol, DQPSK — N7616B),
     **Digital Video** (DVB-T COFDM; v2 optional scattered pilots — N7623B),
-    **Broadcast Radio** (FM stereo — N7611B)
+    **Broadcast Radio** (FM stereo; v2 optional RDS 57 kHz subcarrier — N7611B)
 - **Verification plots** — I/Q vs time, FFT spectrum, constellation, and CCDF, each
   with a view dropdown and rubber-band zoom.
 - **Deliberate pipeline** — **Calculate** generates I/Q off the UI thread with a

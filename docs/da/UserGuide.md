@@ -227,7 +227,9 @@ Et DVB-T-COFDM-signal til en 8 MHz-kanal (Signal Studio for Digital Video, N7623
 Scattered-pilot-positionerne, 4/3-boostningen og referens-PRBS'en følger ETSI EN 300 744. Repræsentativt — de kontinuerlige/TPS-bærebølger, PRBS-energispredning, RS-/foldningskodning og MPEG-TS-framing er stadig udskudt, og de andre digital-video-standarder (ISDB-T, ATSC 8VSB, DVB-C/S QAM, DTMB) er ikke implementeret.
 
 ### 5.24 Broadcast Radio (FM)
-Et analogt FM-broadcast-signal (en v1 af Signal Studio for Broadcast Radio, N7611B). Basebånd-multipleksen er en **audio-testtone** (mono), valgfrit med en **19 kHz stereo-pilot** og en **38 kHz DSB-SC**-stereo-subbærebølge, frekvensmoduleret på bærebølgen (konstant envelope). Parametre: **audio-tonefrekvens**, **stereo** til/fra, **peak-deviation** (75 kHz), **samplingsrate** og **længde**. Repræsentativt signal — en enkelt testtone i stedet for programlyd, og ingen RDS (57 kHz), pre-emphasis eller SCA. De digitale broadcast-formater, produktet også dækker (DAB/DAB+ → se §5.22 T-DMB; XM/HD Radio), er ikke implementeret her.
+Et analogt FM-broadcast-signal (Signal Studio for Broadcast Radio, N7611B). Basebånd-multipleksen er en **audio-testtone** (mono), valgfrit med en **19 kHz stereo-pilot** og en **38 kHz DSB-SC**-stereo-subbærebølge, frekvensmoduleret på bærebølgen. Parametre: **audio-tonefrekvens**, **stereo** til/fra, **peak-deviation** (75 kHz), **samplingsrate** og **længde**.
+
+**RDS** (v2, #194): aktivér **RDS** for at tilføje **57 kHz**-datasubbærebølgen — en **1187,5 bps** biphase-(Manchester)-datastrøm (differentielt kodet PRBS), DSB-SC på 57 kHz (3× 19 kHz-piloten), med en konfigurerbar **RDS-deviation** (~2 kHz af de 75 kHz i alt). Repræsentativt — en enkelt testtone i stedet for programlyd, ægte RDS-gruppeindhold (PS/PTY/RT/…), pre-emphasis og SCA er ikke implementeret, og de digitale broadcast-formater (DAB/DAB+ → se §5.22 T-DMB; XM/HD Radio) dækkes andetsteds eller er udskudt.
 
 ---
 
