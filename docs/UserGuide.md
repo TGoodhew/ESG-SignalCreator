@@ -299,10 +299,20 @@ representative frame, not fully conformant: single antenna port, no PBCH/PDCCH p
 coding, no PDSCH scrambling. Uplink, MIMO, HARQ, and carrier aggregation remain out of scope.
 
 ### 5.18 3GPP LTE TDD
-The same downlink OFDM signal as §5.17 (identical LTE OFDM numerology and parameters) — LTE's physical
-layer is common to FDD and TDD (a v1 of Signal Studio for 3GPP LTE TDD, N7625B). The TDD-specific parts
-— DL/UL subframe configurations, the special subframe (DwPTS/GP/UpPTS), and the 10 ms frame structure —
-are not yet implemented.
+The same LTE OFDM numerology and parameters as §5.17 — LTE's physical layer is common to FDD and TDD
+(Signal Studio for 3GPP LTE TDD, N7625B). Two modes, like FDD:
+
+- **Generic** (default) — a plain downlink OFDM data fill.
+- **Frame-structured** (v2, #189) — enable **frame structured** to build a proper **E-UTRA TDD downlink
+  frame** (frame structure type 2): the **D/S/U subframe pattern** of the selected **uplink-downlink
+  configuration** (**0…6**), the **special subframe** split into DwPTS / GP / UpPTS by the
+  **special-subframe configuration** (**0…9**), TDD-positioned **PSS** (in the DwPTS of subframes 1 & 6)
+  and **SSS** (last symbol of subframes 0 & 5), **CRS**, and a **PDSCH** fill on the downlink symbols.
+  Uplink subframes and the GP/UpPTS are transmitted silent (the app is a downlink generator). Also set
+  the **cyclic prefix** (Normal/Extended), **physical cell ID** (0…503), and **subframe count**.
+
+Same scope caveats as FDD (§5.17): representative frame, single antenna port, no channel coding, and
+uplink physical channels / MIMO / HARQ / carrier aggregation remain deferred.
 
 ### 5.19 802.11 WLAN (OFDM)
 A generic 802.11 OFDM signal (a v1 of Signal Studio for 802.11 WLAN, N7617B) with 11a/g/n numerology:

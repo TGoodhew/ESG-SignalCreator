@@ -6,10 +6,14 @@ using EsgSignalCreator.Personalities.CustomMod;
 namespace EsgSignalCreator.Personalities.Lte
 {
     /// <summary>
-    /// Builds a structured 3GPP E-UTRA downlink radio-frame (FDD) — the v2 framing for N7624B (#188).
-    /// It lays out a proper resource grid over the 10 ms frame (0.5 ms slots, per-symbol cyclic prefix,
-    /// normal or extended CP) and places the synchronisation and reference signals at their standard
-    /// positions before inverse-FFT'ing each OFDM symbol:
+    /// Builds a structured 3GPP E-UTRA downlink radio-frame — the v2 framing for LTE FDD (N7624B, #188)
+    /// and, with the TDD flag, LTE TDD (N7625B, #189). It lays out a proper resource grid over
+    /// the 10 ms frame (0.5 ms slots, per-symbol cyclic prefix, normal or extended CP) and places the
+    /// synchronisation and reference signals at their standard positions before inverse-FFT'ing each
+    /// OFDM symbol. In TDD (frame structure type 2) the D/S/U subframe pattern of the selected
+    /// uplink-downlink configuration gates transmission — only downlink symbols (D subframes and the
+    /// DwPTS of the special subframe) are emitted; U subframes and the GP/UpPTS are silent — and PSS/SSS
+    /// move to their TDD positions:
     /// <list type="bullet">
     ///   <item><b>PSS</b> (Zadoff-Chu) on the last symbol of slots 0 and 10, central 62 subcarriers.</item>
     ///   <item><b>SSS</b> (interleaved m-sequences) on the symbol before PSS, central 62 subcarriers.</item>
@@ -27,7 +31,7 @@ namespace EsgSignalCreator.Personalities.Lte
     /// </remarks>
     internal static class LteFrame
     {
-        public static WaveformModel Generate(LteConfig cfg, string name, IProgress<int> progress)
+        public static WaveformModel Generate(LteConfig cfg, string name, IProgress<int> progress, bool tdd = false)
         {
             if (cfg.PhysicalCellId < 0 || cfg.PhysicalCellId > 503)
                 throw new InvalidOperationException("PhysicalCellId must be in 0..503.");
@@ -39,6 +43,23 @@ namespace EsgSignalCreator.Personalities.Lte
             int half = occupied / 2;                 // data subcarriers each side of the (nulled) DC
             bool extended = cfg.CyclicPrefix == LteCyclicPrefix.Extended;
             int symbolsPerSlot = extended ? 6 : 7;
+            int symbolsPerSubframe = symbolsPerSlot * 2;
+
+            // TDD frame structure (frame structure type 2): the D/S/U subframe pattern and the
+            // downlink-pilot length of the special subframe.
+            string ulDl = null;
+            int dwpts = 0;
+            if (tdd)
+            {
+                if (cfg.TddUlDlConfig < 0 || cfg.TddUlDlConfig > 6)
+                    throw new InvalidOperationException("TddUlDlConfig must be in 0..6.");
+                if (cfg.TddSpecialSubframeConfig < 0 || cfg.TddSpecialSubframeConfig > 9)
+                    throw new InvalidOperationException("TddSpecialSubframeConfig must be in 0..9.");
+                if (extended && cfg.TddSpecialSubframeConfig > 6)
+                    throw new InvalidOperationException("Extended-CP special-subframe configs are 0..6.");
+                ulDl = UlDlPattern(cfg.TddUlDlConfig);
+                dwpts = DwptsSymbols(cfg.TddSpecialSubframeConfig, extended);
+            }
 
             // Per-symbol cyclic-prefix lengths, scaled from the 2048-FFT reference values.
             int cp0 = (int)Math.Round(160.0 * fft / 2048.0);   // first symbol of each slot (normal CP)
@@ -73,8 +94,8 @@ namespace EsgSignalCreator.Personalities.Lte
             int[] sssSub0 = Sss(nid1, nid2, subframe5: false);
             int[] sssSub5 = Sss(nid1, nid2, subframe5: true);
 
-            int lPss = symbolsPerSlot - 1;           // last symbol of the slot
-            int lSss = symbolsPerSlot - 2;           // symbol before PSS
+            int lPss = symbolsPerSlot - 1;           // FDD: PSS on the last symbol of the slot
+            int lSss = symbolsPerSlot - 2;           // FDD: SSS on the symbol before PSS
             int lCrs2 = symbolsPerSlot - 3;          // second CRS symbol (l=4 normal, l=3 extended)
 
             long pos = 0;
@@ -83,6 +104,27 @@ namespace EsgSignalCreator.Personalities.Lte
             {
                 int l = i % symbolsPerSlot;
                 int ns = (i / symbolsPerSlot) % 20;  // slot number within the 10 ms frame (0..19)
+                int symInSf = i % symbolsPerSubframe; // OFDM symbol within its 1 ms subframe
+                int sfNum = (i / symbolsPerSubframe) % 10; // subframe number 0..9
+
+                int cp = CpLen(l, extended, cp0, cpN, cpE);
+
+                // In TDD, only downlink symbols transmit: D subframes fully, S subframes for the DwPTS
+                // symbols only; U subframes and the GP/UpPTS of S subframes are silent.
+                bool transmit = true;
+                if (tdd)
+                {
+                    char t = ulDl[sfNum];
+                    transmit = t == 'D' || (t == 'S' && symInSf < dwpts);
+                }
+
+                if (!transmit)
+                {
+                    pos += cp + fft;                 // leave zeros in the buffer for this symbol
+                    if (progress != null && (i % reportEvery == 0))
+                        progress.Report((int)((long)i * 100 / totalSymbols));
+                    continue;
+                }
 
                 var re = new double[fft];
                 var im = new double[fft];
@@ -110,21 +152,26 @@ namespace EsgSignalCreator.Personalities.Lte
                     }
                 }
 
-                // 3) PSS / SSS on the central 62 subcarriers of slots 0 and 10.
-                if (ns == 0 || ns == 10)
+                // 3) PSS / SSS placement. TDD (frame structure type 2): PSS in symbol 2 of the special
+                // subframes 1 & 6 (DwPTS); SSS in the last symbol of subframes 0 & 5. FDD (type 1): PSS
+                // on the last symbol of slots 0 & 10; SSS on the symbol before.
+                if (tdd)
+                {
+                    if ((sfNum == 1 || sfNum == 6) && symInSf == 2)
+                        PlaceCentral62(re, im, fft, half, pssRe, pssIm);
+                    else if ((sfNum == 0 || sfNum == 5) && symInSf == symbolsPerSubframe - 1)
+                        PlaceCentral62Bpsk(re, im, fft, half, sfNum == 0 ? sssSub0 : sssSub5);
+                }
+                else if (ns == 0 || ns == 10)
                 {
                     if (l == lPss)
                         PlaceCentral62(re, im, fft, half, pssRe, pssIm);
                     else if (l == lSss)
-                    {
-                        int[] s = ns == 0 ? sssSub0 : sssSub5;
-                        PlaceCentral62Bpsk(re, im, fft, half, s);
-                    }
+                        PlaceCentral62Bpsk(re, im, fft, half, ns == 0 ? sssSub0 : sssSub5);
                 }
 
                 Fft.Inverse(re, im);
 
-                int cp = CpLen(l, extended, cp0, cpN, cpE);
                 for (int k = 0; k < cp; k++)
                 {
                     int src = fft - cp + k;
@@ -147,6 +194,42 @@ namespace EsgSignalCreator.Personalities.Lte
 
             double sampleRate = fft * 15e3;
             return new WaveformModel(outI, outQ, sampleRate, name);
+        }
+
+        /// <summary>The 10-subframe D/S/U pattern for a TDD uplink-downlink configuration (36.211 Table 4.2-2).</summary>
+        private static string UlDlPattern(int config)
+        {
+            switch (config)
+            {
+                case 0: return "DSUUUDSUUU";
+                case 1: return "DSUUDDSUUD";
+                case 2: return "DSUDDDSUDD";
+                case 3: return "DSUUUDDDDD";
+                case 4: return "DSUUDDDDDD";
+                case 5: return "DSUDDDDDDD";
+                case 6: return "DSUUUDSUUD";
+                default: throw new InvalidOperationException("TddUlDlConfig must be in 0..6.");
+            }
+        }
+
+        /// <summary>DwPTS length (downlink OFDM symbols) of the special subframe (36.211 Table 4.2-1).</summary>
+        private static int DwptsSymbols(int config, bool extended)
+        {
+            if (extended)
+            {
+                switch (config) // total special subframe = 12 symbols (extended CP)
+                {
+                    case 0: return 3; case 1: return 8; case 2: return 9; case 3: return 10;
+                    case 4: return 3; case 5: return 8; case 6: return 9;
+                    default: throw new InvalidOperationException("Extended-CP special-subframe configs are 0..6.");
+                }
+            }
+            switch (config) // total special subframe = 14 symbols (normal CP)
+            {
+                case 0: return 3; case 1: return 9; case 2: return 10; case 3: return 11; case 4: return 12;
+                case 5: return 3; case 6: return 9; case 7: return 10; case 8: return 11; case 9: return 6;
+                default: throw new InvalidOperationException("TddSpecialSubframeConfig must be in 0..9.");
+            }
         }
 
         private static int CpLen(int l, bool extended, int cp0, int cpN, int cpE)

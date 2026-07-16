@@ -326,12 +326,21 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_lte_tdd";
             public override string Description =>
                 "Configure the 3GPP LTE TDD source: channel bandwidth (selects FFT/occupied carriers at 15 kHz " +
-                "spacing), number of OFDM symbols, and subcarrier modulation. Same OFDM numerology as LTE FDD.";
+                "spacing) and subcarrier/PDSCH modulation. Generic OFDM mode uses symbol_count. Set " +
+                "frame_structured=true for a proper E-UTRA TDD downlink frame (PSS/SSS/CRS + PDSCH, with the " +
+                "D/S/U subframe pattern): then set cyclic_prefix (Normal/Extended), physical_cell_id (0..503), " +
+                "subframe_count (10 = one frame), tdd_ul_dl_config (0..6), and tdd_special_subframe_config (0..9).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("bandwidth", Schema.Str("channel bandwidth",
                     new[] { "Bw1_4MHz", "Bw3MHz", "Bw5MHz", "Bw10MHz", "Bw15MHz", "Bw20MHz" })),
-                Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
-                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "QPSK", "QAM16", "QAM64", "QAM256" })));
+                Schema.P("symbol_count", Schema.Integer("number of OFDM symbols (generic mode)")),
+                Schema.P("modulation", Schema.Str("subcarrier/PDSCH modulation", new[] { "QPSK", "QAM16", "QAM64", "QAM256" })),
+                Schema.P("frame_structured", Schema.Bool("build a proper E-UTRA TDD downlink frame")),
+                Schema.P("cyclic_prefix", Schema.Str("cyclic prefix (frame mode)", new[] { "Normal", "Extended" })),
+                Schema.P("physical_cell_id", Schema.Integer("physical-layer cell ID N_cell_ID (0..503)")),
+                Schema.P("subframe_count", Schema.Integer("number of 1 ms subframes (frame mode; 10 = one radio frame)")),
+                Schema.P("tdd_ul_dl_config", Schema.Integer("TDD uplink-downlink configuration (0..6)")),
+                Schema.P("tdd_special_subframe_config", Schema.Integer("TDD special-subframe configuration (0..9)")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("lte_tdd", args), "Configured LTE TDD."));

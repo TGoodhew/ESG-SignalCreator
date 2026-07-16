@@ -3,13 +3,21 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** A **3GPP LTE TDD** personality now ships in the app
-> (`Core/Personalities/Lte/LteTddPersonality.cs`), sharing the LTE OFDM numerology and `OfdmEngine` with
-> the FDD personality (the LTE physical layer is common to FDD and TDD). It produces a downlink OFDM
-> signal at 15 kHz spacing per channel bandwidth (1.4–20 MHz), QPSK/16/64/256QAM. **Simplified v1, not a
-> standards-compliant LTE TDD frame.** Deferred: DL/UL subframe configurations, the special subframe
-> (DwPTS/GP/UpPTS), 10 ms frame structure, plus the same reference-signal/channel-mapping deferrals as
-> FDD. Hardware verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** A **3GPP LTE TDD** personality ships in the app
+> (`Core/Personalities/Lte/LteTddPersonality.cs`), sharing the LTE OFDM numerology and the `LteFrame`
+> builder with the FDD personality. Two modes:
+> - **Generic** (v1 core) — a downlink OFDM signal at 15 kHz spacing per channel bandwidth (1.4–20 MHz),
+>   QPSK/16/64/256QAM, for occupied-bandwidth / PAPR / spectral checks.
+> - **Frame-structured** (✅ v2, #189) — a proper **E-UTRA TDD downlink frame** (frame structure type 2):
+>   the **D/S/U subframe pattern** of the **uplink-downlink configuration** (0–6), the **special subframe**
+>   split into DwPTS / GP / UpPTS by the **special-subframe configuration** (0–9), **TDD-positioned PSS**
+>   (DwPTS of subframes 1 & 6) and **SSS** (last symbol of subframes 0 & 5), **CRS**, and a **PDSCH** fill;
+>   uplink subframes and the GP/UpPTS are silent. Normal & extended CP (**R-2**). Sequences per 3GPP TS 36.211.
+>
+> Still a representative frame, not fully conformant (single antenna port, no channel coding/scrambling).
+> **Still deferred** (#189): dynamic TDD/eIMTA (R-3), E-TM/FRC wizards (R-6), the full DL physical-channel
+> payloads (R-7), uplink physical channels (R-8), MIMO (R-9), HARQ/coded frames (R-10/R-11), carrier
+> aggregation (R-12), and impairments (R-13). Hardware verification is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7625B; E4438C ESG connectivity provided by option **N7625B-1FP** ("Connect to E4438C ESG signal generator").

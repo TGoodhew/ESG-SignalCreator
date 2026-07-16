@@ -9,9 +9,11 @@ namespace EsgSignalCreator.Personalities.Lte
     /// mapping) — the physical-layer OFDM numerology is identical for FDD and TDD.
     /// </summary>
     /// <remarks>
-    /// The TDD-specific parts — DL/UL subframe configurations, the special subframe
-    /// (DwPTS/GP/UpPTS), and the 10 ms frame structure — are deferred, as are the reference/sync
-    /// signals and channel mapping (same deferrals as the FDD personality).
+    /// Two modes: the default generic OFDM fill (v1 core), or — with <see cref="LteConfig.FrameStructured"/>
+    /// set — a proper E-UTRA TDD downlink frame (v2, #189) built by <see cref="LteFrame"/>: the D/S/U
+    /// subframe pattern of the selected uplink-downlink configuration, the special subframe (DwPTS
+    /// transmits downlink; GP/UpPTS are silent), TDD-positioned PSS/SSS, CRS, and a PDSCH data fill.
+    /// Uplink physical channels, MIMO, HARQ, and carrier aggregation remain deferred.
     /// </remarks>
     public sealed class LteTddPersonality : IWaveformPersonality
     {
@@ -39,7 +41,12 @@ namespace EsgSignalCreator.Personalities.Lte
         }
 
         /// <inheritdoc/>
-        public WaveformModel Calculate(IProgress<int> progress) =>
-            LteWaveform.Generate(_config ?? new LteConfig(), "LTE TDD", progress);
+        public WaveformModel Calculate(IProgress<int> progress)
+        {
+            LteConfig cfg = _config ?? new LteConfig();
+            return cfg.FrameStructured
+                ? LteFrame.Generate(cfg, "LTE TDD", progress, tdd: true)
+                : LteWaveform.Generate(cfg, "LTE TDD", progress);
+        }
     }
 }
