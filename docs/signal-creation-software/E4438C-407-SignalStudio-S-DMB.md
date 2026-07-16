@@ -3,20 +3,20 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟠 **Implementation status (v1, approximate — air interface still UNVERIFIED):** An **S-DMB (CDM,
-> approx.)** personality ships in the app (`Core/Personalities/Sdmb/`, on the shared `Dsp/DsssEngine`).
-> It generates a *representative* CDM signal (QPSK spread by an OVSF code, scrambled, RRC-shaped) —
-> **explicitly NOT a verified S-DMB waveform.** Chip rate, spreading, FEC, and framing are placeholders.
+> 🔴 **Implementation status: NOT IMPLEMENTED (placeholder removed 2026-07-16).** The app no longer
+> ships an S-DMB personality. The earlier v1 was an *unverified* CDM approximation (QPSK spread by an
+> OVSF code, scrambled, RRC-shaped) whose chip rate, spreading, FEC, and framing were placeholders —
+> **not a verified S-DMB waveform.** It was **removed** (#197) rather than left as a partial, because the
+> physical layer cannot be confirmed without a primary specification.
 >
 > **v2 confirmation attempt (#197, 2026-07-16):** a web-research pass *confirmed the standard designation*
 > — S-DMB uses **ITU-R BO.1130-4 "System E"**, a CDM/CDMA satellite-broadcasting air interface (Korean
 > TU Media / Japanese MBCo), S-band downlink ~2170–2200 MHz, ~15–25 MHz bandwidth. But the **exact
 > baseband physical-layer parameters (chip rate in Mcps, spreading factor/codes, modulation, channel
 > coding, interleaving, frame structure) are held in the paid ITU-R BO.1130-4 and ARIB STD-B41 standards
-> and could NOT be recovered from accessible secondary sources.** So the personality is **still not
-> implementable as a *verified* S-DMB waveform** — the v1 remains a flagged CDM placeholder, and #197 is
-> blocked on obtaining a primary S-DMB specification (a standards procurement, not a coding task).
-> Hardware verification is tracked in the epic.
+> and could NOT be recovered from accessible secondary sources.** **Blocked on procuring a primary S-DMB
+> specification** before any (re-)implementation; this remains a standards-procurement task, not a coding
+> task. See §8 for the research trail.
 
 ## 1. Product identity
 - **Model / option number:** E4438C-407 (instrument option, not an N-series standalone product)

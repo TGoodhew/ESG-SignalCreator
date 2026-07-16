@@ -64,7 +64,7 @@ namespace EsgSignalCreator.Tests.Assistant
         public void All_configure_tools_are_configure_effect()
         {
             Assert.All(ConfigureTools.All(), t => Assert.Equal(ToolEffect.Configure, t.Effect));
-            Assert.Equal(27, ConfigureTools.All().Count());
+            Assert.Equal(26, ConfigureTools.All().Count());
         }
 
         [Fact]
@@ -158,14 +158,6 @@ namespace EsgSignalCreator.Tests.Assistant
             var host = new FakeConfigureHost();
             await Run("configure_lte_fdd", new JObject { ["bandwidth"] = "Bw10MHz", ["modulation"] = "QAM64" }, host);
             Assert.Equal("lte_fdd", host.LastConfigureArea);
-        }
-
-        [Fact]
-        public async Task Configure_s_dmb_routes_args_to_host_with_area()
-        {
-            var host = new FakeConfigureHost();
-            await Run("configure_s_dmb", new JObject { ["symbol_count"] = 128 }, host);
-            Assert.Equal("s_dmb", host.LastConfigureArea);
         }
 
         [Fact]

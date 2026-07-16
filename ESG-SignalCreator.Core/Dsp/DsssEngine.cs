@@ -6,7 +6,7 @@ namespace EsgSignalCreator.Dsp
 {
     /// <summary>
     /// A shared direct-sequence spread-spectrum (DSSS) baseband generator for the CDMA-family
-    /// personalities (W-CDMA / HSPA, cdma2000, TD-SCDMA, S-DMB). It builds a single code channel:
+    /// personalities (W-CDMA / HSPA, cdma2000, TD-SCDMA). It builds a single code channel:
     /// data symbols (QPSK/QAM) are spread by an OVSF (Walsh) code, optionally complex-scrambled by a
     /// PN sequence, upsampled, and root-raised-cosine pulse-shaped at the chip rate.
     /// </summary>

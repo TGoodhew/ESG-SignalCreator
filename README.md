@@ -61,7 +61,7 @@ core library, the WinForms app, and an xUnit test project.
     **Bluetooth** (GFSK + v2 EDR π/4-DQPSK/8-DPSK — N7606B), **3GPP W-CDMA FDD** (OVSF-spread QPSK; v2 optional
     multi-code composite — N7600B),
     **W-CDMA HSPA** (16QAM HS-PDSCH; v2 optional multicode — E4438C-419), **3GPP2 CDMA** (cdma2000; v2 optional multi-code — N7601B),
-    **TD-SCDMA** (1.28 Mcps; v2 optional multi-code — N7612B), **S-DMB** (CDM, approx. — E4438C-407),
+    **TD-SCDMA** (1.28 Mcps; v2 optional multi-code — N7612B),
     **3GPP LTE FDD** (OFDM, 1.4–20 MHz; v2 optional E-UTRA frame — PSS/SSS/CRS + PDSCH,
     normal/extended CP — N7624B), **LTE TDD** (v2 optional E-UTRA TDD frame —
     D/S/U subframe pattern + special subframe DwPTS/GP/UpPTS, PSS/SSS/CRS — N7625B),

@@ -598,7 +598,6 @@ namespace EsgSignalCreator.Ui
                     case "wcdma_hspa": case "hspa": case "w-cdma-hspa": return "wcdma-hspa";
                     case "cdma2000": case "3gpp2": return "cdma2000";
                     case "td_scdma": case "td-scdma": return "td-scdma";
-                    case "s_dmb": case "s-dmb": case "sdmb": return "s-dmb";
                     case "lte_fdd": case "lte-fdd": case "lte": return "lte-fdd";
                     case "lte_tdd": case "lte-tdd": return "lte-tdd";
                     case "wlan": case "wlan_80211": case "80211": return "wlan-80211";
