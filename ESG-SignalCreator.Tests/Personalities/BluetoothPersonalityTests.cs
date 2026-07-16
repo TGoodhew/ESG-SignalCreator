@@ -75,6 +75,48 @@ namespace EsgSignalCreator.Tests.Personalities
             return d;
         }
 
+        // ---- v2 (#190): EDR (π/4-DQPSK / 8-DPSK) ----
+
+        [Theory]
+        [InlineData(BluetoothModulation.Edr2Mbps)]
+        [InlineData(BluetoothModulation.Edr3Mbps)]
+        public void Edr_length_sample_rate_and_unit_peak(BluetoothModulation mod)
+        {
+            var cfg = new BluetoothConfig { Modulation = mod, SymbolCount = 256, SamplesPerSymbol = 16 };
+            WaveformModel wf = Calc(cfg);
+            Assert.Equal(256 * 16, wf.Length);
+            Assert.Equal(cfg.SymbolRateHz * 16, wf.SampleRateHz, 3);
+            Assert.Equal(1.0, wf.PeakMagnitude(), 4);
+        }
+
+        [Fact]
+        public void Edr_is_not_constant_envelope_unlike_gfsk()
+        {
+            var edr = Calc(new BluetoothConfig { Modulation = BluetoothModulation.Edr2Mbps, SymbolCount = 400, SamplesPerSymbol = 16 });
+            var gfsk = Calc(new BluetoothConfig { Modulation = BluetoothModulation.Gfsk, SymbolCount = 400, SamplesPerSymbol = 16 });
+            Assert.True(MinEnvelope(gfsk) > 0.95, "GFSK should be (near) constant envelope");
+            Assert.True(MinEnvelope(edr) < 0.7, "EDR (π/4-DQPSK) should have envelope variation");
+        }
+
+        [Fact]
+        public void Edr_two_and_three_mbps_differ()
+        {
+            var e2 = Calc(new BluetoothConfig { Modulation = BluetoothModulation.Edr2Mbps, SymbolCount = 256, SamplesPerSymbol = 16 });
+            var e3 = Calc(new BluetoothConfig { Modulation = BluetoothModulation.Edr3Mbps, SymbolCount = 256, SamplesPerSymbol = 16 });
+            double maxDiff = 0;
+            for (int s = 0; s < e2.Length; s++) maxDiff = Math.Max(maxDiff, Math.Abs(e2.I[s] - e3.I[s]));
+            Assert.True(maxDiff > 0.1, "π/4-DQPSK and 8-DPSK must differ");
+        }
+
+        private static double MinEnvelope(WaveformModel wf)
+        {
+            double min = double.MaxValue;
+            int guard = 64;
+            for (int s = guard; s < wf.Length - guard; s++)
+                min = Math.Min(min, Math.Sqrt(wf.I[s] * wf.I[s] + wf.Q[s] * wf.Q[s]));
+            return min;
+        }
+
         private static WaveformModel Calc(BluetoothConfig cfg)
         {
             var p = new BluetoothPersonality();

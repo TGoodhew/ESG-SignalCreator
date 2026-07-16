@@ -500,14 +500,16 @@ namespace EsgSignalCreator.Assistant.Tools
         {
             public override string Name => "configure_bluetooth";
             public override string Description =>
-                "Configure the Bluetooth (GFSK) source: symbol rate (Hz, BR/LE-1M = 1M, LE-2M = 2M), samples " +
-                "per symbol, symbol count, modulation index (BR ~0.32, LE ~0.5), Gaussian BT (0.5), and data source.";
+                "Configure the Bluetooth source: modulation (Gfsk = BR/LE constant-envelope; Edr2Mbps = EDR " +
+                "π/4-DQPSK; Edr3Mbps = EDR 8-DPSK — EDR keeps 1 Msym/s), symbol rate (Hz), samples per symbol, " +
+                "symbol count, GFSK modulation index (BR ~0.32, LE ~0.5), Gaussian BT (0.5), and data source.";
             public override JObject InputSchema => Schema.Object(
+                Schema.P("modulation", Schema.Str("modulation", new[] { "Gfsk", "Edr2Mbps", "Edr3Mbps" })),
                 Schema.P("symbol_rate_hz", Schema.Number("symbol rate, Hz")),
                 Schema.P("samples_per_symbol", Schema.Integer("oversampling factor")),
                 Schema.P("symbol_count", Schema.Integer("number of symbols")),
                 Schema.P("modulation_index", Schema.Number("GFSK modulation index")),
-                Schema.P("bt", Schema.Number("Gaussian bandwidth-time product")),
+                Schema.P("bt", Schema.Number("Gaussian bandwidth-time product (GFSK)")),
                 Schema.P("data", Schema.Str("payload data source", new[] { "PN9", "PN15", "PN23", "AllZeros", "AllOnes" })));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>

@@ -59,6 +59,9 @@ namespace EsgSignalCreator.Personalities.Bluetooth
             if (cfg.GaussianSpanSymbols < 1)
                 throw new InvalidOperationException("GaussianSpanSymbols must be at least 1.");
 
+            if (cfg.Modulation != BluetoothModulation.Gfsk)
+                return GenerateEdr(cfg, progress);
+
             int sps = cfg.SamplesPerSymbol;
             int n = cfg.SymbolCount * sps;
             double sampleRate = cfg.SymbolRateHz * sps;
@@ -95,6 +98,63 @@ namespace EsgSignalCreator.Personalities.Bluetooth
             progress?.Report(100);
 
             return new WaveformModel(i, q, sampleRate, "Bluetooth");
+        }
+
+        /// <summary>
+        /// EDR modulation: differential π/4-DQPSK (2 Mbps, 2 bits/symbol) or 8-DPSK (3 Mbps, 3 bits/symbol)
+        /// at the 1 Msym/s symbol rate, zero-stuffed and RRC pulse-shaped, peak-normalized. Unlike GFSK
+        /// this is not constant-envelope.
+        /// </summary>
+        private static WaveformModel GenerateEdr(BluetoothConfig cfg, IProgress<int> progress)
+        {
+            if (cfg.EdrRrcBeta < 0 || cfg.EdrRrcBeta > 1)
+                throw new InvalidOperationException("EdrRrcBeta must be in [0,1].");
+
+            bool eightDpsk = cfg.Modulation == BluetoothModulation.Edr3Mbps;
+            int bitsPerSym = eightDpsk ? 3 : 2;
+            int sps = cfg.SamplesPerSymbol;
+            int n = cfg.SymbolCount * sps;
+            double sampleRate = cfg.SymbolRateHz * sps;
+
+            progress?.Report(10);
+
+            Func<int> bit = Prbs.CreateBitGenerator(cfg.Data);
+            var upI = new double[n];
+            var upQ = new double[n];
+            double phase = 0.0;
+            const double q = Math.PI / 4.0;
+
+            for (int k = 0; k < cfg.SymbolCount; k++)
+            {
+                int idx = 0;
+                for (int b = 0; b < bitsPerSym; b++) idx = (idx << 1) | bit();
+                // Differential phase step: 8-DPSK uses multiples of π/4; π/4-DQPSK uses the odd multiples.
+                double delta = eightDpsk ? idx * q : (2 * idx + 1) * q;
+                phase += delta;
+                upI[k * sps] = Math.Cos(phase);
+                upQ[k * sps] = Math.Sin(phase);
+            }
+
+            progress?.Report(50);
+
+            double[] taps = Fir.RootRaisedCosine(cfg.EdrRrcBeta, sps, cfg.GaussianSpanSymbols);
+            Fir.ApplyComplex(upI, upQ, taps, out double[] fi, out double[] fq);
+
+            progress?.Report(85);
+
+            double peak = 0.0;
+            for (int s = 0; s < n; s++)
+            {
+                double m = Math.Sqrt(fi[s] * fi[s] + fq[s] * fq[s]);
+                if (m > peak) peak = m;
+            }
+            var i2 = new float[n];
+            var q2 = new float[n];
+            double scale = peak > 0 ? 1.0 / peak : 1.0;
+            for (int s = 0; s < n; s++) { i2[s] = (float)(fi[s] * scale); q2[s] = (float)(fq[s] * scale); }
+
+            progress?.Report(100);
+            return new WaveformModel(i2, q2, sampleRate, eightDpsk ? "Bluetooth EDR 8DPSK" : "Bluetooth EDR π/4-DQPSK");
         }
     }
 }
