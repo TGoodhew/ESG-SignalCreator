@@ -279,12 +279,24 @@ S-DMB waveform.** Chip rate, spreading, FEC, and framing are placeholders; treat
 spread-spectrum signal." Parameters mirror the other CDMA-family personalities.
 
 ### 5.17 3GPP LTE FDD
-A downlink OFDM signal with LTE numerology (a v1 of Signal Studio for 3GPP LTE, N7624B). Uses a **15 kHz**
+A downlink OFDM signal with LTE numerology (Signal Studio for 3GPP LTE, N7624B). Uses a **15 kHz**
 subcarrier spacing and the standard **FFT size / occupied-subcarrier count** for the selected
-**channel bandwidth** (1.4 / 3 / 5 / 10 / 15 / 20 MHz → 128…2048-point FFT, RB×12 subcarriers), with a
-normal cyclic prefix. Parameters: **bandwidth**, **symbol count**, and subcarrier **modulation**
-(QPSK / 16QAM / 64QAM / 256QAM). Built on the shared OFDM engine. Representative signal — no PSS/SSS,
-reference signals, PBCH/PDCCH/PDSCH mapping, resource-block scheduling, or 10 ms frame structure.
+**channel bandwidth** (1.4 / 3 / 5 / 10 / 15 / 20 MHz → 128…2048-point FFT, RB×12 subcarriers).
+Parameters: **bandwidth**, **symbol count**, and subcarrier/PDSCH **modulation** (QPSK / 16QAM / 64QAM /
+256QAM). Two modes:
+
+- **Generic** (default) — a plain OFDM data fill on all occupied subcarriers, for occupied-bandwidth /
+  PAPR / spectral checks.
+- **Frame-structured** (v2, #188) — enable **frame structured** to build a proper **E-UTRA downlink
+  radio-frame**: a 10 ms frame of 0.5 ms slots with **per-symbol cyclic prefix** (**Normal** = 7
+  symbols/slot, or **Extended** = 6), the **PSS** (Zadoff-Chu) and **SSS** synchronisation signals on
+  their standard symbols (central 62 subcarriers of slots 0 and 10), **CRS** cell-specific reference
+  signals (antenna port 0) at the standard positions, and a **PDSCH** data fill on the rest — all
+  driven by the **physical cell ID** (0…503). Set the **subframe count** (10 = one radio frame).
+
+The frame-structured mode follows 3GPP TS 36.211 for the PSS/SSS/CRS sequences and positions; it is a
+representative frame, not fully conformant: single antenna port, no PBCH/PDCCH payloads or channel
+coding, no PDSCH scrambling. Uplink, MIMO, HARQ, and carrier aggregation remain out of scope.
 
 ### 5.18 3GPP LTE TDD
 The same downlink OFDM signal as §5.17 (identical LTE OFDM numerology and parameters) — LTE's physical

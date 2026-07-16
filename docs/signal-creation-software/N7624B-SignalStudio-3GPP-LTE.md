@@ -3,13 +3,21 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** A **3GPP LTE FDD** personality now ships in the app
-> (`Core/Personalities/Lte/`, on a new shared `Dsp/OfdmEngine` + `Fft.Inverse`). It generates a downlink
-> OFDM signal with LTE numerology — **15 kHz** spacing and the standard FFT/occupied-subcarrier count per
-> **channel bandwidth** (1.4–20 MHz), normal CP, QPSK/16/64/256QAM — for occupied-bandwidth / PAPR /
-> spectral checks. **Simplified v1, not a standards-compliant LTE frame.** Deferred: PSS/SSS, reference
-> signals (CRS/DMRS), PBCH/PDCCH/PDSCH mapping, resource-block scheduling, 10 ms radio-frame/slot
-> structure, MIMO, and carrier aggregation. Hardware verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** A **3GPP LTE FDD** personality ships in the app
+> (`Core/Personalities/Lte/`, on the shared `Dsp/OfdmEngine` + `Fft.Inverse`) with two modes:
+> - **Generic** (v1 core) — a downlink OFDM signal with LTE numerology (**15 kHz** spacing, standard
+>   FFT/occupied-subcarrier count per **channel bandwidth** 1.4–20 MHz, QPSK/16/64/256QAM) for
+>   occupied-bandwidth / PAPR / spectral checks.
+> - **Frame-structured** (✅ v2, #188, `LteFrame`) — a proper **E-UTRA downlink radio-frame**: 10 ms
+>   frame / 0.5 ms slots / **per-symbol CP** with **normal & extended CP** (**R-2**), and correctly-positioned
+>   **PSS** (Zadoff-Chu), **SSS** (interleaved m-sequences), and **CRS** (antenna port 0) plus a **PDSCH**
+>   data fill — driven by the physical cell ID (**R-6 core**). PSS/SSS/CRS sequences follow 3GPP TS 36.211.
+>
+> Still a representative frame, not fully conformant: single antenna port, no PBCH/PDCCH/PCFICH/PHICH
+> payloads or channel coding, no PDSCH scrambling, symmetric DC-nulled layout. **Still deferred** (#188):
+> E-TM/FRC wizards (R-4/R-5), uplink physical channels (R-7), MIMO (R-8/R-9), HARQ/fully-coded frames
+> (R-10/R-11), real-time (R-12), carrier aggregation (R-13), and impairments (R-14). Hardware verification
+> is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7624B; E4438C ESG connectivity provided by option **N7624B-1FP** ("Connect to E4438C ESG signal generator").

@@ -11,9 +11,11 @@ namespace EsgSignalCreator.Personalities.Lte
     /// <see cref="OfdmEngine"/>.
     /// </summary>
     /// <remarks>
-    /// Representative v1 core, not a standards-compliant LTE frame: no PSS/SSS, reference signals
-    /// (CRS/DMRS), PBCH/PDCCH/PDSCH mapping, resource-block scheduling, or 10 ms radio-frame / slot
-    /// structure. Those are deferred. Shared with <see cref="LteTddPersonality"/>.
+    /// Two modes: the default generic OFDM fill (v1 core), or — with <see cref="LteConfig.FrameStructured"/>
+    /// set — a proper E-UTRA downlink radio-frame (v2, #188) with a 10 ms frame / 0.5 ms slots /
+    /// per-symbol CP (normal or extended), correctly-positioned PSS/SSS and CRS (antenna port 0), and a
+    /// PDSCH data fill (see <see cref="LteFrame"/>). Uplink, MIMO, HARQ, and carrier aggregation remain
+    /// deferred. The generic path is shared with <see cref="LteTddPersonality"/>.
     /// </remarks>
     public sealed class LteFddPersonality : IWaveformPersonality
     {
@@ -41,8 +43,13 @@ namespace EsgSignalCreator.Personalities.Lte
         }
 
         /// <inheritdoc/>
-        public WaveformModel Calculate(IProgress<int> progress) =>
-            LteWaveform.Generate(_config ?? new LteConfig(), "LTE FDD", progress);
+        public WaveformModel Calculate(IProgress<int> progress)
+        {
+            LteConfig cfg = _config ?? new LteConfig();
+            return cfg.FrameStructured
+                ? LteFrame.Generate(cfg, "LTE FDD", progress)
+                : LteWaveform.Generate(cfg, "LTE FDD", progress);
+        }
     }
 
     /// <summary>Shared LTE OFDM parameter mapping used by both the FDD and TDD personalities.</summary>
