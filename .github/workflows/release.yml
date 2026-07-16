@@ -29,6 +29,12 @@ jobs:
   build-release:
     runs-on: [ self-hosted, windows ]
 
+    # Run every PowerShell step with an explicit ExecutionPolicy Bypass, so the build works regardless
+    # of the machine/service-account execution policy (a service-installed runner defaults to Restricted).
+    defaults:
+      run:
+        shell: powershell -ExecutionPolicy Bypass -Command ". '{0}'"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,7 +44,6 @@ jobs:
 
       - name: Determine version and tag
         id: ver
-        shell: powershell
         run: |
           $input = "${{ github.event.inputs.version }}"
           $ref = "${{ github.ref }}"
@@ -66,15 +71,12 @@ jobs:
           Write-Host "version=$version tag=$tag prerelease=$prerelease"
 
       - name: Build solution (Release)
-        shell: powershell
         run: msbuild ESG-SignalCreator.sln -t:Restore,Build -p:Configuration=Release -v:minimal -nologo
 
       - name: Run tests
-        shell: powershell
         run: dotnet vstest ESG-SignalCreator.Tests\bin\Release\ESG-SignalCreator.Tests.dll
 
       - name: Build MSI (WiX v5)
-        shell: powershell
         run: |
           $harvest = Join-Path $env:GITHUB_WORKSPACE 'ESG-SignalCreator.App\bin\Release'
           dotnet build ESG-SignalCreator.Installer\ESG-SignalCreator.Installer.wixproj -c Release `
@@ -82,7 +84,6 @@ jobs:
 
       - name: Locate MSI
         id: msi
-        shell: powershell
         run: |
           $msi = Get-ChildItem ESG-SignalCreator.Installer\bin -Recurse -Filter *.msi |
                  Sort-Object LastWriteTime -Descending | Select-Object -First 1
@@ -92,14 +93,12 @@ jobs:
           "sha256=$sha" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - name: Build bootstrapper (chains .NET Framework 4.7.2)
-        shell: powershell
         run: |
           dotnet build ESG-SignalCreator.Bundle\ESG-SignalCreator.Bundle.wixproj -c Release `
             -p:ProductVersion=${{ steps.ver.outputs.version }} -p:MsiPath=${{ steps.msi.outputs.path }}
 
       - name: Locate bootstrapper
         id: exe
-        shell: powershell
         run: |
           $exe = Get-ChildItem ESG-SignalCreator.Bundle\bin -Recurse -Filter *.exe |
                  Sort-Object LastWriteTime -Descending | Select-Object -First 1
