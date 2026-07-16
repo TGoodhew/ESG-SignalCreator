@@ -116,7 +116,10 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Description =>
                 "Configure the Multitone Distortion (IMD/NPR) source: number of tones (2..4097), tone spacing " +
                 "(Hz), centre offset (Hz), phase preset (Parabolic minimizes PAPR; Random; Constant is aligned " +
-                "and high PAPR), and an optional NPR notch (enable, width Hz, offset Hz from band centre).";
+                "and high PAPR), and an optional NPR notch (enable, width Hz, offset Hz from band centre). " +
+                "Per-tone tables (magnitude dB / phase deg) cycle across the comb and override the uniform " +
+                "power / phase preset. Pre-distortion (predistortion_enabled) subtracts the measured per-tone " +
+                "magnitude/phase error tables from the base values to pre-invert a measured channel response.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("tone_count", Schema.Integer("number of tones (2..4097)"), required: true),
                 Schema.P("tone_spacing_hz", Schema.Number("tone spacing, Hz")),
@@ -124,7 +127,12 @@ namespace EsgSignalCreator.Assistant.Tools
                 Schema.P("phase", Schema.Str("phase preset", new[] { "Parabolic", "Random", "Constant" })),
                 Schema.P("notch_enabled", Schema.Bool("clear an NPR notch")),
                 Schema.P("notch_width_hz", Schema.Number("NPR notch width, Hz")),
-                Schema.P("notch_offset_hz", Schema.Number("NPR notch offset from comb centre, Hz")));
+                Schema.P("notch_offset_hz", Schema.Number("NPR notch offset from comb centre, Hz")),
+                Schema.P("per_tone_magnitude_db", Schema.Array(Schema.Number(), "per-tone magnitude table, dB (cyclic)")),
+                Schema.P("per_tone_phase_deg", Schema.Array(Schema.Number(), "per-tone phase table, degrees (cyclic)")),
+                Schema.P("predistortion_enabled", Schema.Bool("apply in-band pre-distortion correction")),
+                Schema.P("measured_tone_magnitude_error_db", Schema.Array(Schema.Number(), "measured per-tone magnitude error, dB (cyclic)")),
+                Schema.P("measured_tone_phase_error_deg", Schema.Array(Schema.Number(), "measured per-tone phase error, degrees (cyclic)")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("multitone_distortion", args), "Configured multitone distortion."));

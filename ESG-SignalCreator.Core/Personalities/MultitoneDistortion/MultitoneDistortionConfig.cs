@@ -25,9 +25,12 @@ namespace EsgSignalCreator.Personalities.MultitoneDistortion
     /// with an optional cleared notch.
     /// </summary>
     /// <remarks>
-    /// Models the core of Signal Studio for Multitone Distortion (N7621B). Spectrum-analyzer-assisted
-    /// pre-distortion correction (N7621B R-7) is out of scope for this v1; it needs a measure-and-correct
-    /// loop against a signal analyzer and is tracked as a follow-up.
+    /// Models Signal Studio for Multitone Distortion (N7621B): the equally-spaced comb + phase preset +
+    /// NPR notch, plus (v2, #180) per-tone magnitude/phase tables and in-band pre-distortion correction.
+    /// The pre-distortion here <em>applies</em> a measured per-tone error (the inverse channel response) —
+    /// the measurement itself comes from a signal analyzer (the closed-loop Verify path / an external
+    /// tool), not from this personality. Out-of-band IMD-cancellation (correction tones inside the NPR
+    /// notch) remains a follow-up on #180.
     /// </remarks>
     [DataContract]
     public sealed class MultitoneDistortionConfig
@@ -47,10 +50,22 @@ namespace EsgSignalCreator.Personalities.MultitoneDistortion
         /// <summary>Frequency offset of the comb centre from baseband centre, in hertz.</summary>
         [DataMember] public double CenterOffsetHz { get; set; } = 0.0;
 
-        /// <summary>Relative power assigned to every tone, in dB.</summary>
+        /// <summary>Relative power assigned to every tone, in dB (the uniform default when no
+        /// <see cref="PerToneMagnitudeDb"/> table is supplied).</summary>
         [DataMember] public double PowerDbPerTone { get; set; } = 0.0;
 
-        /// <summary>Per-tone phase preset (drives composite PAPR / crest factor).</summary>
+        /// <summary>Optional per-tone magnitude table, in dB, applied cyclically across the comb
+        /// (tone <c>k</c> uses element <c>k mod length</c>) and overriding <see cref="PowerDbPerTone"/>.
+        /// Null/empty = uniform power. (N7621B R-4.)</summary>
+        [DataMember] public double[] PerToneMagnitudeDb { get; set; }
+
+        /// <summary>Optional per-tone phase table, in degrees, applied cyclically across the comb.
+        /// When non-empty the phase preset is overridden with these explicit phases. Null/empty = use
+        /// <see cref="Phase"/>. (N7621B R-4.)</summary>
+        [DataMember] public double[] PerTonePhaseDeg { get; set; }
+
+        /// <summary>Per-tone phase preset (drives composite PAPR / crest factor) — used when no
+        /// <see cref="PerTonePhaseDeg"/> table is supplied.</summary>
         [DataMember] public MultitonePhasePreset Phase { get; set; } = MultitonePhasePreset.Parabolic;
 
         /// <summary>Seed for <see cref="MultitonePhasePreset.Random"/> so results are reproducible.</summary>
@@ -64,5 +79,20 @@ namespace EsgSignalCreator.Personalities.MultitoneDistortion
 
         /// <summary>NPR notch centre offset from the comb centre, in hertz.</summary>
         [DataMember] public double NotchOffsetHz { get; set; } = 0.0;
+
+        /// <summary>When true, apply in-band pre-distortion: subtract the measured per-tone magnitude/phase
+        /// error (see below) from the base per-tone values, pre-inverting the measured channel response so
+        /// the emitted comb lands flat (or on target). (N7621B R-7.)</summary>
+        [DataMember] public bool PredistortionEnabled { get; set; } = false;
+
+        /// <summary>Measured per-tone magnitude error, in dB (analyzer reading minus target), applied
+        /// cyclically. When <see cref="PredistortionEnabled"/>, this is subtracted from each tone's
+        /// magnitude. Null/empty = no magnitude correction.</summary>
+        [DataMember] public double[] MeasuredToneMagnitudeErrorDb { get; set; }
+
+        /// <summary>Measured per-tone phase error, in degrees, applied cyclically. When
+        /// <see cref="PredistortionEnabled"/>, this is subtracted from each tone's phase (forcing the
+        /// manual per-tone phase path). Null/empty = no phase correction.</summary>
+        [DataMember] public double[] MeasuredTonePhaseErrorDeg { get; set; }
     }
 }

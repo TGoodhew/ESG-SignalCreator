@@ -16,7 +16,10 @@ namespace EsgSignalCreator.Personalities.Multitone
         Equal,
 
         /// <summary>Newman/Schroeder quadratic phasing: phase = pi * k^2 / N for the k-th of N tones.</summary>
-        Newman
+        Newman,
+
+        /// <summary>Use each tone's explicit <see cref="Tone.PhaseDeg"/> (per-tone phase table).</summary>
+        Manual
     }
 
     /// <summary>
@@ -33,7 +36,9 @@ namespace EsgSignalCreator.Personalities.Multitone
         /// <summary>Relative tone power in dB; linear amplitude is 10^(PowerDb/20).</summary>
         [DataMember] public double PowerDb { get; set; }
 
-        /// <summary>Explicit starting phase in degrees (used only for informational/round-trip purposes).</summary>
+        /// <summary>Explicit starting phase in degrees. Honoured when the config's
+        /// <see cref="PhaseStrategy"/> is <see cref="Multitone.PhaseStrategy.Manual"/>; otherwise
+        /// informational / round-trip only.</summary>
         [DataMember] public double PhaseDeg { get; set; }
 
         /// <summary>When false, the tone is skipped during calculation.</summary>

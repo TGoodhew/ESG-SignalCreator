@@ -63,7 +63,7 @@ namespace EsgSignalCreator.Personalities.Multitone
             int n = cfg.Length;
             int count = enabled.Count;
 
-            double[] phase0 = ComputeStartPhases(cfg, count);
+            double[] phase0 = ComputeStartPhases(cfg, enabled, count);
             double[] amp = new double[count];
             double[] omega = new double[count]; // radians per sample
             for (int k = 0; k < count; k++)
@@ -125,13 +125,18 @@ namespace EsgSignalCreator.Personalities.Multitone
         /// Compute the starting phase (radians) for each of <paramref name="count"/> enabled tones
         /// according to the configured strategy.
         /// </summary>
-        private static double[] ComputeStartPhases(MultitoneConfig cfg, int count)
+        private static double[] ComputeStartPhases(MultitoneConfig cfg, List<Tone> enabled, int count)
         {
             var phases = new double[count];
             switch (cfg.Phase)
             {
                 case PhaseStrategy.Equal:
                     // already all zero
+                    break;
+
+                case PhaseStrategy.Manual:
+                    for (int k = 0; k < count; k++)
+                        phases[k] = enabled[k].PhaseDeg * Math.PI / 180.0;
                     break;
 
                 case PhaseStrategy.Random:
