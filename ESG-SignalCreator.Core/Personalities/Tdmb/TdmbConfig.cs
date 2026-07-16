@@ -27,10 +27,16 @@ namespace EsgSignalCreator.Personalities.Tdmb
         /// <summary>DAB transmission mode.</summary>
         [DataMember] public DabMode Mode { get; set; } = DabMode.ModeI;
 
-        /// <summary>Number of OFDM symbols to generate.</summary>
+        /// <summary>Number of data OFDM symbols to generate (excludes the null + phase-reference symbols
+        /// in frame-structured mode).</summary>
         [DataMember] public int SymbolCount { get; set; } = 16;
 
         /// <summary>Payload bit source.</summary>
         [DataMember] public DataSource Data { get; set; } = DataSource.PN9;
+
+        /// <summary>When true, build a DAB transmission frame — a null symbol + phase-reference symbol
+        /// (the synchronisation channel) followed by differentially-encoded DQPSK data symbols — rather
+        /// than the generic QPSK OFDM fill. (N7616B R-3 sync channel / R-1 DQPSK.)</summary>
+        [DataMember] public bool FrameStructured { get; set; } = false;
     }
 }

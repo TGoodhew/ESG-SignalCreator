@@ -3,13 +3,19 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** A **T-DMB (DAB COFDM)** personality now ships in the app
-> (`Core/Personalities/Tdmb/`, on the shared `Dsp/OfdmEngine`). It generates the DAB COFDM signal
-> underlying T-DMB — a 2.048 MHz signal across all four transmission **modes** (I/II/III/IV, setting
-> FFT/carriers/guard). Modulation is DQPSK, approximated by plain QPSK. **Simplified v1, not a
-> standards-compliant DAB frame.** Deferred: null/phase-reference symbols, synchronisation channel,
-> FIC/MSC multiplex, differential (DQPSK) encoding, and convolutional coding. Hardware verification is
-> tracked in the epic.
+> 🟡 **Implementation status (v2):** A **T-DMB (DAB COFDM)** personality ships in the app
+> (`Core/Personalities/Tdmb/`) with two modes:
+> - **Generic** (v1 core, `Dsp/OfdmEngine`) — the DAB COFDM signal underlying T-DMB (2.048 MHz across all
+>   four transmission **modes** I/II/III/IV), DQPSK approximated by plain QPSK.
+> - **Frame-structured** (✅ v2, #195, `TdmbFrame`) — a DAB transmission frame: the **synchronisation
+>   channel** (a **null symbol** + a **phase-reference symbol**) — partial **R-3** — followed by
+>   **differentially-encoded DQPSK** data symbols — partial **R-1**. Follows the DAB frame structure
+>   (ETSI EN 300 401).
+>
+> Still representative. **Still deferred** (#195): the exact phase-reference table, SI/FIC/TII content
+> (R-3), the FIC/MSC multiplex configuration (R-4), payload sources (R-5), long BER frames (R-6), the
+> emission-suppression filter (R-7), impairments (R-9), and convolutional coding. Hardware verification
+> is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7616B (successor to N7616A)

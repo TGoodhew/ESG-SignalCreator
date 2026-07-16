@@ -262,11 +262,14 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_tdmb";
             public override string Description =>
                 "Configure the T-DMB (DAB COFDM) source: DAB transmission mode (ModeI/II/III/IV, sets FFT/carriers/" +
-                "guard at 2.048 MHz bandwidth), number of OFDM symbols, and data source. Modulation is DQPSK (QPSK-approx).";
+                "guard at 2.048 MHz bandwidth), number of OFDM symbols, and data source. Set frame_structured=true " +
+                "for a DAB transmission frame — a null symbol + phase-reference symbol (the sync channel) + " +
+                "differentially-encoded DQPSK data symbols. Generic mode uses plain QPSK.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("mode", Schema.Str("DAB transmission mode", new[] { "ModeI", "ModeII", "ModeIII", "ModeIV" })),
-                Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
-                Schema.P("data", Schema.Str("payload data source", new[] { "PN9", "PN15", "PN23", "AllZeros", "AllOnes" })));
+                Schema.P("symbol_count", Schema.Integer("number of data OFDM symbols")),
+                Schema.P("data", Schema.Str("payload data source", new[] { "PN9", "PN15", "PN23", "AllZeros", "AllOnes" })),
+                Schema.P("frame_structured", Schema.Bool("build a DAB frame (null + phase-reference symbol + DQPSK)")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("t_dmb", args), "Configured T-DMB."));
