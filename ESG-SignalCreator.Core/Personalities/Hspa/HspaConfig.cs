@@ -23,8 +23,12 @@ namespace EsgSignalCreator.Personalities.Hspa
         /// <summary>OVSF spreading factor. HS-PDSCH uses SF = 16.</summary>
         [DataMember] public int SpreadingFactor { get; set; } = 16;
 
-        /// <summary>OVSF code index within the spreading factor.</summary>
+        /// <summary>OVSF code index within the spreading factor (single-code mode).</summary>
         [DataMember] public int OvsfIndex { get; set; } = 1;
+
+        /// <summary>Number of HS-PDSCH multicodes to sum into the composite (1 = single-code v1). HSDPA
+        /// uses several SF-16 codes; channels use OVSF codes 0…N-1 at equal power, N ≤ SF. (E4438C-419 R-2.)</summary>
+        [DataMember] public int CodeChannelCount { get; set; } = 1;
 
         /// <summary>HS-PDSCH modulation: QPSK or 16QAM (64QAM in later releases).</summary>
         [DataMember] public Modulation Modulation { get; set; } = Modulation.QAM16;

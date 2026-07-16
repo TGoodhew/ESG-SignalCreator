@@ -255,11 +255,12 @@ one signal (raising the PAPR). Still representative — the named physical chann
 slot/frame structure, TFCI, transmit diversity, and HSPA channels are not yet implemented.
 
 ### 5.13 3GPP W-CDMA HSPA
-An HS-PDSCH-style HSPA signal (a v1 of Signal Studio for 3GPP W-CDMA HSPA, E4438C-419). Same DSSS
+An HS-PDSCH-style HSPA signal (Signal Studio for 3GPP W-CDMA HSPA, E4438C-419). Same DSSS
 structure as §5.12 but defaulting to **16QAM** on an **SF-16** code — the defining HSPA feature is
 higher-order modulation on the high-speed shared channel. Parameters mirror W-CDMA FDD plus a
-**modulation** choice (QPSK / 16QAM / 64QAM). Representative single-channel signal — HS-SCCH/HS-DPCCH,
-E-DCH channels, H-ARQ, and TTI structure are not yet implemented.
+**modulation** choice (QPSK / 16QAM / 64QAM). **Multi-code** (v2, #184): set **code channel count** > 1
+to sum multiple **HS-PDSCH multicodes** (as HSDPA does) into the composite. Representative — HS-SCCH/
+HS-DPCCH, E-DCH channels, H-ARQ, and TTI structure are not yet implemented.
 
 ### 5.14 3GPP2 CDMA (cdma2000)
 A single-code cdma2000 forward-link-style signal (a v1 of Signal Studio for 3GPP2 CDMA, N7601B). Same
