@@ -412,13 +412,15 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_td_scdma";
             public override string Description =>
                 "Configure the TD-SCDMA source: chip rate (Hz, 1.28M), samples per chip, symbol count, OVSF " +
-                "spreading factor and code index, modulation (QPSK/QAM16/QAM64), RRC roll-off (0.22), and scrambling.";
+                "spreading factor and code index, modulation (QPSK/QAM16/QAM64), RRC roll-off (0.22), and scrambling. " +
+                "Set code_channel_count > 1 to sum multiple code channels within a timeslot (<= SF).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("chip_rate_hz", Schema.Number("chip rate, Hz")),
                 Schema.P("samples_per_chip", Schema.Integer("oversampling factor")),
                 Schema.P("symbol_count", Schema.Integer("number of data symbols")),
                 Schema.P("spreading_factor", Schema.Integer("OVSF spreading factor (power of 2)")),
-                Schema.P("ovsf_index", Schema.Integer("OVSF code index")),
+                Schema.P("ovsf_index", Schema.Integer("OVSF code index (single-code mode)")),
+                Schema.P("code_channel_count", Schema.Integer("code channels to sum (1 = single-code; <= SF)")),
                 Schema.P("modulation", Schema.Str("data modulation", new[] { "QPSK", "QAM16", "QAM64" })),
                 Schema.P("rrc_beta", Schema.Number("RRC roll-off (0..1)")),
                 Schema.P("scramble", Schema.Bool("apply complex scrambling")));

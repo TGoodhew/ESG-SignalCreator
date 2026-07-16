@@ -271,9 +271,10 @@ composite. Representative — pilot/sync/paging channels, radio configurations, 
 are not yet implemented, and the exact cdma2000 baseband filter is approximated by RRC.
 
 ### 5.15 TD-SCDMA
-A single-code TD-SCDMA signal (a v1 of Signal Studio for TD-SCDMA, N7612B) at the **1.28 Mcps**
+A TD-SCDMA signal (Signal Studio for TD-SCDMA, N7612B) at the **1.28 Mcps**
 low-chip-rate: QPSK/16QAM/64QAM data spread by an OVSF code, scrambled, RRC-shaped (β = 0.22).
-Parameters mirror W-CDMA FDD. Representative single-channel signal — the 5 ms sub-frame / 7-timeslot
+Parameters mirror W-CDMA FDD. **Multi-code** (v2, #187): set **code channel count** > 1 to sum several
+code channels within a timeslot into the composite. Representative — the 5 ms sub-frame / 7-timeslot
 TDD burst structure (DwPTS/UpPTS/GP), midamble codes, switching points, and HSDPA channels are not yet
 implemented.
 
