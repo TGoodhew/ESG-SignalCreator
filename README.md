@@ -46,8 +46,9 @@ core library, the WinForms app, and an xUnit test project.
   - **Jitter Injection** (jittered clock: periodic sinusoidal/square/triangle/saw/exp
     + Gaussian random + composite jitter, in UI — E4438C-SP1 v1)
   - **AWGN** (band-limited Gaussian noise with crest-factor clipping)
-  - **Import I/Q** (CSV/TSV, raw interleaved int16, Agilent/Keysight big-endian int16, WAV — the
-    N7622A Toolkit "bring your own I/Q" role)
+  - **Import I/Q** (CSV/TSV, raw interleaved int16, Agilent/Keysight big-endian int16 & 14-bit, WAV,
+    MATLAB Level-5 `.mat` incl. compressed, plus marker/trigger authoring — the N7622A Toolkit
+    "bring your own I/Q" role, v2)
   - **Standards personalities** (v1 cores derived from the legacy Signal Studio catalogue — see
     [docs/signal-creation-software/](docs/signal-creation-software/)): **GSM/EDGE** (GMSK — N7602B),
     **Bluetooth** (GFSK — N7606B), **3GPP W-CDMA FDD** (OVSF-spread QPSK — N7600B),

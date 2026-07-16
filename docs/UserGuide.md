@@ -176,11 +176,20 @@ and CCDF test.
 Load I/Q from a file — the app's equivalent of the Signal Studio Toolkit (N7622A) "bring your own I/Q"
 workflow. Parameters: **file path** (you supply it), **format** (**Auto**-detect by extension, delimited
 text CSV/TSV, raw interleaved little-endian **Int16** `.bin`/`.iq`, Agilent/Keysight big-endian
-**Int16** `.agt` — the ESG's native ARB byte order — or 16-bit PCM **WAV**), source **sample rate** (Hz),
-optional **I/Q swap**, and a **scale** multiplier. Set the format explicitly to force the Agilent
-big-endian byte order when an extension is ambiguous. Lets you replay externally-captured or
-externally-generated (MATLAB/C++) signals. *(MATLAB `.mat` import is not yet supported — export to CSV,
-WAV, or a 16-bit binary format.)*
+**Int16** `.agt` — the ESG's native ARB byte order — Agilent/Keysight big-endian **14-bit**
+(`AgilentInt14Be`; the 14-bit sample is left-justified in each 16-bit word, low 2 bits are markers),
+16-bit PCM **WAV**, or **MATLAB Level-5** `.mat`), source **sample rate** (Hz), optional **I/Q swap**,
+and a **scale** multiplier. Set the format explicitly to force a byte order when an extension is
+ambiguous. Lets you replay externally-captured or externally-generated (MATLAB/C++) signals.
+
+**MATLAB `.mat` (MAT File 5)** — both uncompressed (`save -v6`) and the default zlib-compressed (v7)
+files are read. The first suitable numeric array is used: a **complex** vector maps to I/Q, a real
+**2×N or N×2** array maps its two rows/columns to I and Q, and a real vector maps to I (Q = 0).
+
+**Marker / trigger authoring** — attach a marker bit stream to the imported ARB segment: **None**,
+**Start** (a single marker at sample 0 — a segment trigger), **Periodic** (a marker every *period*
+samples), or **Range** (a marker block of *length* samples from *start*). The markers drive the ESG's
+EVENT/marker output on playback.
 
 ### 5.8 Multitone Distortion
 A dense multitone / noise-power-ratio (NPR) stimulus for amplifier and converter linearity testing
