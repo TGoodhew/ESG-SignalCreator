@@ -178,6 +178,206 @@ namespace EsgSignalCreator.Tests.Personalities
             Assert.Equal(100, last);
         }
 
+        // ---- v2 (#179): additional intra-pulse modulations ----
+
+        [Theory]
+        [InlineData(IntraPulseModulation.NonLinearFmChirp)]
+        [InlineData(IntraPulseModulation.FmStep)]
+        [InlineData(IntraPulseModulation.AmStep)]
+        [InlineData(IntraPulseModulation.Bpsk)]
+        [InlineData(IntraPulseModulation.Qpsk)]
+        [InlineData(IntraPulseModulation.FrankCode)]
+        [InlineData(IntraPulseModulation.PolyphaseP4)]
+        public void New_intra_pulse_modulations_produce_unit_peak_finite_output(IntraPulseModulation mod)
+        {
+            var cfg = new PulseConfig
+            {
+                SampleRateHz = 50e6,
+                Length = 16384,
+                PulseWidthSec = 4e-6,
+                PriSec = 12e-6,
+                ChirpBandwidthHz = 8e6,
+                Modulation = mod
+            };
+
+            WaveformModel wf = Calc(cfg);
+
+            Assert.Equal(1.0, wf.PeakMagnitude(), 4);
+            for (int s = 0; s < wf.Length; s++)
+            {
+                Assert.False(float.IsNaN(wf.I[s]) || float.IsNaN(wf.Q[s]), "sample must be finite");
+                Assert.False(float.IsInfinity(wf.I[s]) || float.IsInfinity(wf.Q[s]), "sample must be finite");
+            }
+        }
+
+        [Fact]
+        public void Phase_only_codes_have_constant_pulse_magnitude()
+        {
+            // BPSK/QPSK/Frank/P4 are pure phase codes: the on-pulse envelope magnitude stays 1.0.
+            foreach (var mod in new[] { IntraPulseModulation.Bpsk, IntraPulseModulation.Qpsk,
+                                        IntraPulseModulation.FrankCode, IntraPulseModulation.PolyphaseP4 })
+            {
+                var cfg = new PulseConfig
+                {
+                    SampleRateHz = 50e6, Length = 8192, PulseWidthSec = 4e-6, PriSec = 12e-6,
+                    Modulation = mod, RiseFallSec = 0.0
+                };
+                WaveformModel wf = Calc(cfg);
+                // Sample well inside the first pulse (200 samples = 4 us pulse is 200 samples).
+                double mag = Math.Sqrt(wf.I[10] * wf.I[10] + wf.Q[10] * wf.Q[10]);
+                Assert.Equal(1.0, mag, 3);
+            }
+        }
+
+        [Fact]
+        public void Bpsk_code_is_repeatable_by_seed_and_varies_with_seed()
+        {
+            PulseConfig Make(int seed) => new PulseConfig
+            {
+                SampleRateHz = 50e6, Length = 4096, PulseWidthSec = 4e-6, PriSec = 12e-6,
+                Modulation = IntraPulseModulation.Bpsk, PhaseCodeChips = 13, PhaseCodeSeed = seed
+            };
+
+            WaveformModel a1 = Calc(Make(7));
+            WaveformModel a2 = Calc(Make(7));
+            WaveformModel b = Calc(Make(8));
+
+            for (int s = 0; s < 200; s++) Assert.Equal(a1.I[s], a2.I[s], 6); // same seed => identical
+            bool anyDiff = false;
+            for (int s = 0; s < 200; s++) if (Math.Abs(a1.I[s] - b.I[s]) > 1e-6) { anyDiff = true; break; }
+            Assert.True(anyDiff, "a different seed should change the code");
+        }
+
+        [Fact]
+        public void Frank_code_uses_n_squared_chips()
+        {
+            // Frank order 4 => 16 chips, phases multiples of 2*pi/4.
+            var cfg = new PulseConfig
+            {
+                SampleRateHz = 50e6, Length = 4096, PulseWidthSec = 4e-6, PriSec = 12e-6,
+                Modulation = IntraPulseModulation.FrankCode, FrankOrderN = 4
+            };
+            WaveformModel wf = Calc(cfg);
+            // The first N=4 chips of a Frank code (m=0 row) are all phase 0 => Q ~ 0 there.
+            Assert.Equal(0.0, wf.Q[5], 3);
+        }
+
+        // ---- v2 (#179): per-pulse offset tables (R-3) ----
+
+        [Fact]
+        public void Per_pulse_power_offset_makes_the_lower_pulse_quieter_after_normalization()
+        {
+            // Two pulses per period-pattern: 0 dB then -6 dB. After peak-normalization the loud pulse
+            // is 1.0 and the quiet one ~0.5.
+            var cfg = new PulseConfig
+            {
+                SampleRateHz = 50e6, Length = 4096, PulseWidthSec = 2e-6 /*100 samples*/, PriSec = 20e-6 /*1000*/,
+                Modulation = IntraPulseModulation.None,
+                PerPulsePowerOffsetsDb = new[] { 0.0, -6.0206 }  // 0.5 in linear
+            };
+            WaveformModel wf = Calc(cfg);
+
+            double p0 = Math.Sqrt(wf.I[10] * wf.I[10] + wf.Q[10] * wf.Q[10]);       // first pulse
+            double p1 = Math.Sqrt(wf.I[1010] * wf.I[1010] + wf.Q[1010] * wf.Q[1010]); // second pulse
+            Assert.Equal(1.0, p0, 3);
+            Assert.Equal(0.5, p1, 2);
+        }
+
+        [Fact]
+        public void Per_pulse_phase_offset_rotates_a_pulse_into_quadrature()
+        {
+            var cfg = new PulseConfig
+            {
+                SampleRateHz = 50e6, Length = 4096, PulseWidthSec = 2e-6, PriSec = 20e-6,
+                Modulation = IntraPulseModulation.None,
+                PerPulsePhaseOffsetsDeg = new[] { 0.0, 90.0 }
+            };
+            WaveformModel wf = Calc(cfg);
+
+            // First pulse: phase 0 => energy on I. Second pulse: +90 deg => energy on Q.
+            Assert.True(Math.Abs(wf.I[10]) > 0.5 && Math.Abs(wf.Q[10]) < 1e-3);
+            Assert.True(Math.Abs(wf.Q[1010]) > 0.5 && Math.Abs(wf.I[1010]) < 1e-3);
+        }
+
+        // ---- v2 (#179): PRI patterning (R-4) ----
+
+        [Fact]
+        public void Staggered_pri_places_pulses_at_the_pattern_intervals()
+        {
+            // Pattern 10us, 20us (=> 500, 1000 samples) cycling from start 0:
+            // starts at 0, 500, 1500, 2000, 3000, ...
+            var cfg = new PulseConfig
+            {
+                SampleRateHz = 50e6, Length = 3600, PulseWidthSec = 1e-6, PriSec = 10e-6,
+                PriMode = PriMode.Staggered, StaggerPatternSec = new[] { 10e-6, 20e-6 },
+                EmitPulseMarkers = true
+            };
+            WaveformModel wf = Calc(cfg);
+
+            Assert.Equal(1, wf.Markers[0]);
+            Assert.Equal(1, wf.Markers[500]);
+            Assert.Equal(1, wf.Markers[1500]);
+            Assert.Equal(1, wf.Markers[2000]);
+            Assert.Equal(1, wf.Markers[3000]);
+        }
+
+        [Fact]
+        public void Jittered_pri_is_repeatable_and_stays_within_bounds()
+        {
+            PulseConfig Make() => new PulseConfig
+            {
+                SampleRateHz = 50e6, Length = 40000, PulseWidthSec = 1e-6, PriSec = 10e-6,
+                PriMode = PriMode.Jittered, PriJitterSec = 2e-6, PriJitterSeed = 42,
+                EmitPulseMarkers = true
+            };
+
+            WaveformModel a = Calc(Make());
+            WaveformModel b = Calc(Make());
+
+            int[] StartsOf(WaveformModel wf)
+            {
+                var list = new System.Collections.Generic.List<int>();
+                for (int s = 0; s < wf.Length; s++) if (wf.Markers[s] != 0) list.Add(s);
+                return list.ToArray();
+            }
+
+            int[] sa = StartsOf(a), sb = StartsOf(b);
+            Assert.Equal(sa, sb); // same seed => identical placement
+
+            // Every gap is within PRI ± jitter (8..12 us => 400..600 samples), allowing 1-sample rounding.
+            for (int k = 1; k < sa.Length; k++)
+            {
+                int gap = sa[k] - sa[k - 1];
+                Assert.InRange(gap, 400 - 1, 600 + 1);
+            }
+        }
+
+        [Fact]
+        public void Staggered_pattern_value_below_pulse_width_is_rejected()
+        {
+            var cfg = new PulseConfig
+            {
+                SampleRateHz = 50e6, Length = 4096, PulseWidthSec = 5e-6, PriSec = 10e-6,
+                PriMode = PriMode.Staggered, StaggerPatternSec = new[] { 10e-6, 1e-6 } // 1us < 5us pulse
+            };
+            var p = new PulsePersonality();
+            p.LoadConfig(cfg);
+            Assert.Throws<InvalidOperationException>(() => p.Calculate(null));
+        }
+
+        [Fact]
+        public void Jitter_that_could_overlap_pulses_is_rejected()
+        {
+            var cfg = new PulseConfig
+            {
+                SampleRateHz = 50e6, Length = 4096, PulseWidthSec = 9e-6, PriSec = 10e-6,
+                PriMode = PriMode.Jittered, PriJitterSec = 2e-6 // 10-2=8us < 9us pulse
+            };
+            var p = new PulsePersonality();
+            p.LoadConfig(cfg);
+            Assert.Throws<InvalidOperationException>(() => p.Calculate(null));
+        }
+
         private static WaveformModel Calc(PulseConfig cfg)
         {
             var p = new PulsePersonality();

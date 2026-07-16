@@ -41,7 +41,8 @@ core library, the WinForms app, and an xUnit test project.
   - **Custom digital modulation** (BPSK/QPSK/8PSK/16–256-QAM/MSK, PN9/15/23 data,
     RRC/RC/Gaussian pulse shaping)
   - **Pulse Building** (radar-style pulse train: PRI/width, raised-cosine edges,
-    intra-pulse LFM chirp or Barker phase codes, per-pulse markers — N7620A v1)
+    intra-pulse LFM/NLFM chirp, FM/AM step, BPSK/QPSK/Barker/Frank/P4 codes,
+    per-pulse frequency/phase/power offsets, staggered/jittered PRI, markers — N7620A v2)
   - **Jitter Injection** (jittered clock: periodic sinusoidal/square/triangle/saw/exp
     + Gaussian random + composite jitter, in UI — E4438C-SP1 v1)
   - **AWGN** (band-limited Gaussian noise with crest-factor clipping)
