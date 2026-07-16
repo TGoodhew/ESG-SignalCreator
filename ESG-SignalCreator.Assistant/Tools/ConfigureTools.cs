@@ -311,11 +311,16 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_wlan";
             public override string Description =>
                 "Configure the 802.11 WLAN (OFDM) source: bandwidth (Bw20MHz = 64-FFT, Bw40MHz = 128-FFT at " +
-                "312.5 kHz spacing), number of OFDM symbols, and subcarrier modulation.";
+                "312.5 kHz spacing), number of OFDM symbols, and subcarrier modulation. Set frame_structured=true " +
+                "(20 MHz only) for a representative 802.11a/g PPDU with pilot subcarriers, a selectable " +
+                "guard_interval (Long/Short), and an optional include_ltf_preamble (L-LTF training field).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("bandwidth", Schema.Str("channel bandwidth", new[] { "Bw20MHz", "Bw40MHz" })),
                 Schema.P("symbol_count", Schema.Integer("number of OFDM symbols")),
-                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "BPSK", "QPSK", "QAM16", "QAM64", "QAM256" })));
+                Schema.P("modulation", Schema.Str("subcarrier modulation", new[] { "BPSK", "QPSK", "QAM16", "QAM64", "QAM256" })),
+                Schema.P("frame_structured", Schema.Bool("build a representative 802.11a/g PPDU (20 MHz)")),
+                Schema.P("guard_interval", Schema.Str("data-symbol guard interval", new[] { "Long", "Short" })),
+                Schema.P("include_ltf_preamble", Schema.Bool("prepend the L-LTF training preamble")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("wlan", args), "Configured WLAN."));
