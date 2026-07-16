@@ -3,15 +3,22 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟢 **Implementation status (v1):** A **Multitone Distortion** personality now ships in the app
+> 🟢 **Implementation status (v2):** A **Multitone Distortion** personality ships in the app
 > (`Core/Personalities/MultitoneDistortion/`). It generates 2–4097 equally-spaced tones with a
 > configurable spacing/centre, per-tone phase preset (random / parabolic / constant), and an optional
-> cleared **NPR notch** (width + offset) — covering **R-1**, **R-2**, **R-3**, **R-4/R-5** (phase-preset
-> PAPR control; full per-tone magnitude/phase tables deferred), **R-6** (notch geometry; the >60 dBc
-> depth / ±0.5 dB flatness are hardware-verification targets), **R-8** (CCDF/spectrum plots), and
-> **R-9** (shared ARB download). **Deferred:** spectrum-analyzer-assisted pre-distortion correction
-> (**R-7**) and the COM/.NET automation API (**R-10**, though the Assistant `configure_multitone_distortion`
-> tool provides scripted config). Hardware verification is tracked in the verification epic.
+> cleared **NPR notch** (width + offset) — covering **R-1**, **R-2**, **R-3**, **R-6** (notch geometry;
+> the >60 dBc depth / ±0.5 dB flatness are hardware-verification targets), **R-8** (CCDF/spectrum plots),
+> and **R-9** (shared ARB download).
+> - **R-4/R-5** (✅ v2, #180): full **per-tone magnitude/phase tables** (cyclic), honoured by the shared
+>   multitone engine's new `Manual` phase strategy — beyond the phase-preset PAPR control.
+> - **R-7** (✅ v2, #180, in-band): **pre-distortion correction** — subtracts a measured per-tone
+>   magnitude/phase error (the inverse channel response) from the base per-tone values. The measurement
+>   itself is supplied by the signal analyzer (closed-loop Verify / external tool), not this personality.
+>
+> **Still deferred** (tracked in #180): out-of-band IMD-notch cancellation (injecting anti-phase
+> correction tones inside the NPR notch) and the COM/.NET automation API (**R-10** — the Assistant
+> `configure_multitone_distortion` tool provides scripted config in the interim). Hardware verification is
+> tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7621B (earlier revision: N7621A)

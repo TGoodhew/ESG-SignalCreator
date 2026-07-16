@@ -116,7 +116,10 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Description =>
                 "Configure the Multitone Distortion (IMD/NPR) source: number of tones (2..4097), tone spacing " +
                 "(Hz), centre offset (Hz), phase preset (Parabolic minimizes PAPR; Random; Constant is aligned " +
-                "and high PAPR), and an optional NPR notch (enable, width Hz, offset Hz from band centre).";
+                "and high PAPR), and an optional NPR notch (enable, width Hz, offset Hz from band centre). " +
+                "Per-tone tables (magnitude dB / phase deg) cycle across the comb and override the uniform " +
+                "power / phase preset. Pre-distortion (predistortion_enabled) subtracts the measured per-tone " +
+                "magnitude/phase error tables from the base values to pre-invert a measured channel response.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("tone_count", Schema.Integer("number of tones (2..4097)"), required: true),
                 Schema.P("tone_spacing_hz", Schema.Number("tone spacing, Hz")),
@@ -124,7 +127,12 @@ namespace EsgSignalCreator.Assistant.Tools
                 Schema.P("phase", Schema.Str("phase preset", new[] { "Parabolic", "Random", "Constant" })),
                 Schema.P("notch_enabled", Schema.Bool("clear an NPR notch")),
                 Schema.P("notch_width_hz", Schema.Number("NPR notch width, Hz")),
-                Schema.P("notch_offset_hz", Schema.Number("NPR notch offset from comb centre, Hz")));
+                Schema.P("notch_offset_hz", Schema.Number("NPR notch offset from comb centre, Hz")),
+                Schema.P("per_tone_magnitude_db", Schema.Array(Schema.Number(), "per-tone magnitude table, dB (cyclic)")),
+                Schema.P("per_tone_phase_deg", Schema.Array(Schema.Number(), "per-tone phase table, degrees (cyclic)")),
+                Schema.P("predistortion_enabled", Schema.Bool("apply in-band pre-distortion correction")),
+                Schema.P("measured_tone_magnitude_error_db", Schema.Array(Schema.Number(), "measured per-tone magnitude error, dB (cyclic)")),
+                Schema.P("measured_tone_phase_error_deg", Schema.Array(Schema.Number(), "measured per-tone phase error, degrees (cyclic)")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("multitone_distortion", args), "Configured multitone distortion."));
@@ -151,16 +159,34 @@ namespace EsgSignalCreator.Assistant.Tools
         {
             public override string Name => "configure_pulse";
             public override string Description =>
-                "Configure the Pulse Building (radar/EW) source: pulse width (s) and pulse-repetition interval " +
-                "(s), optional raised-cosine rise/fall (s), and intra-pulse modulation (None; LinearFmChirp with " +
-                "a swept bandwidth in Hz; or BarkerPhase with a code length of 2/3/4/5/7/11/13).";
+                "Configure the Pulse Building (radar/EW) source: pulse width (s), nominal pulse-repetition " +
+                "interval (s), optional raised-cosine rise/fall (s), and intra-pulse modulation. FM formats " +
+                "(LinearFmChirp / NonLinearFmChirp / FmStep) use chirp_bandwidth_hz; NonLinearFmChirp adds " +
+                "nlfm_curvature (0=linear..<1); FmStep/AmStep use intra_pulse_step_count; Bpsk/Qpsk use " +
+                "phase_code_chips + phase_code_seed; BarkerPhase uses barker_length (2/3/4/5/7/11/13); " +
+                "FrankCode uses frank_order_n (length N²); PolyphaseP4 uses polyphase_length. PRI patterning: " +
+                "pri_mode Fixed/Staggered/Jittered — Jittered adds pri_jitter_sec (peak) + pri_jitter_seed. " +
+                "Per-pulse offset tables and the staggered-PRI pattern are set in the UI / project file.";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("pulse_width_sec", Schema.Number("pulse width (on time), seconds"), required: true),
-                Schema.P("pri_sec", Schema.Number("pulse repetition interval, seconds (>= pulse width)"), required: true),
+                Schema.P("pri_sec", Schema.Number("nominal pulse repetition interval, seconds (>= pulse width)"), required: true),
                 Schema.P("rise_fall_sec", Schema.Number("raised-cosine edge time, seconds (0 = rectangular)")),
-                Schema.P("modulation", Schema.Str("intra-pulse modulation", new[] { "None", "LinearFmChirp", "BarkerPhase" })),
-                Schema.P("chirp_bandwidth_hz", Schema.Number("swept bandwidth for LinearFmChirp, Hz")),
-                Schema.P("barker_length", Schema.Integer("Barker code length (2,3,4,5,7,11,13)")));
+                Schema.P("modulation", Schema.Str("intra-pulse modulation", new[]
+                {
+                    "None", "LinearFmChirp", "NonLinearFmChirp", "FmStep", "AmStep",
+                    "Bpsk", "Qpsk", "BarkerPhase", "FrankCode", "PolyphaseP4"
+                })),
+                Schema.P("chirp_bandwidth_hz", Schema.Number("swept bandwidth for the FM formats, Hz")),
+                Schema.P("nlfm_curvature", Schema.Number("NonLinearFmChirp curvature, 0 (linear) .. <1")),
+                Schema.P("intra_pulse_step_count", Schema.Integer("number of steps for FmStep / AmStep (>= 1)")),
+                Schema.P("phase_code_chips", Schema.Integer("chip count for Bpsk / Qpsk phase codes (>= 1)")),
+                Schema.P("phase_code_seed", Schema.Integer("seed for the Bpsk / Qpsk phase code")),
+                Schema.P("barker_length", Schema.Integer("Barker code length (2,3,4,5,7,11,13)")),
+                Schema.P("frank_order_n", Schema.Integer("Frank code order N (length N²)")),
+                Schema.P("polyphase_length", Schema.Integer("P4 polyphase code length (>= 1)")),
+                Schema.P("pri_mode", Schema.Str("PRI patterning", new[] { "Fixed", "Staggered", "Jittered" })),
+                Schema.P("pri_jitter_sec", Schema.Number("peak PRI jitter for Jittered mode, seconds")),
+                Schema.P("pri_jitter_seed", Schema.Integer("seed for the PRI jitter generator")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("pulse", args), "Configured pulse."));
@@ -484,13 +510,18 @@ namespace EsgSignalCreator.Assistant.Tools
             public override string Name => "configure_import_iq";
             public override string Description =>
                 "Configure the Import-IQ source from a file. IMPORTANT: file_path must be provided by the user — " +
-                "do not invent paths. You may suggest format/sample-rate/resample values. Set the file format, " +
-                "sample rate (Hz), and whether to resample to the target clock.";
+                "do not invent paths. You may suggest format/sample-rate values. Set the file format (incl. " +
+                "AgilentInt14Be for 14-bit big-endian and Mat for MATLAB Level-5 .mat), sample rate (Hz), and " +
+                "optional marker authoring (marker_mode None/Start/Periodic/Range with period/start/length in samples).";
             public override JObject InputSchema => Schema.Object(
                 Schema.P("file_path", Schema.Str("path to the I/Q file (user-supplied)"), required: true),
-                Schema.P("format", Schema.Str("container format", new[] { "Auto", "DelimitedText", "RawInt16", "AgilentInt16Be", "Wav" })),
+                Schema.P("format", Schema.Str("container format",
+                    new[] { "Auto", "DelimitedText", "RawInt16", "AgilentInt16Be", "AgilentInt14Be", "Wav", "Mat" })),
                 Schema.P("sample_rate_hz", Schema.Number("source sample rate, Hz")),
-                Schema.P("resample", Schema.Bool("resample to the target sample clock")));
+                Schema.P("marker_mode", Schema.Str("marker authoring", new[] { "None", "Start", "Periodic", "Range" })),
+                Schema.P("marker_period_samples", Schema.Integer("marker period for Periodic, samples")),
+                Schema.P("marker_start_sample", Schema.Integer("marker block start for Range, samples")),
+                Schema.P("marker_length_samples", Schema.Integer("marker block length for Range, samples")));
 
             public override Task<ToolResult> ExecuteAsync(JObject args, ToolContext ctx, CancellationToken ct) =>
                 Task.FromResult(Done(Host(ctx).Configure("import_iq", args), "Configured Import-IQ."));

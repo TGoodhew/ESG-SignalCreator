@@ -145,14 +145,27 @@ BT** (alpha), and a **payload** pattern (PN9/PN15/PN23, all-ones/zeros, random).
 modulation-quality work.
 
 ### 5.5 Pulse Building
-A repeating radar-style pulse train (a v1 of Signal Studio for Pulse Building, N7620A). Parameters:
-**pulse width** (s), **pulse repetition interval / PRI** (s, ≥ pulse width), an optional raised-cosine
-**rise/fall** time (s, 0 = rectangular edges), a **start delay** (s), and the **intra-pulse
-modulation** — **None** (gated CW burst), **Linear FM chirp** (with a swept **bandwidth** in Hz), or a
-**Barker phase code** (length 2/3/4/5/7/11/13). A single pulse is built and tiled at the PRI to fill
-the waveform; a one-sample **marker** is emitted at each pulse start (handy as an ARB trigger/scope
-sync). Used for radar/EW receiver test and pulse-compression work. Advanced N7620A features (per-pulse
-offset tables, staggered/jittered PRI, antenna-scan patterning, CSV import) are not yet implemented.
+A radar-style pulse train (Signal Studio for Pulse Building, N7620A). Parameters:
+**pulse width** (s), nominal **pulse repetition interval / PRI** (s, ≥ pulse width), an optional
+raised-cosine **rise/fall** time (s, 0 = rectangular edges), a **start delay** (s), and the
+**intra-pulse modulation**:
+- **None** (gated CW burst);
+- FM formats — **Linear FM chirp**, **Non-linear FM chirp** (with a **curvature** 0…<1), and
+  **FM step** (stepped frequency) — all using a swept **bandwidth** in Hz; FM/AM step use a
+  **step count**;
+- **AM step** (rising amplitude staircase);
+- phase codes — **BPSK** and **QPSK** (a seedable pseudo-random code with a **chip count** + **seed**)
+  and a **Barker phase code** (length 2/3/4/5/7/11/13);
+- polyphase codes — **Frank** (order N, length N²) and **P4** (configurable length).
+
+**PRI patterning** selects how the gap between pulses is chosen: **Fixed** (the nominal PRI),
+**Staggered** (a repeating pattern of intervals), or **Jittered** (the nominal PRI ± a seeded random
+peak). **Per-pulse offset tables** (frequency in Hz, phase in degrees, power in dB) cycle across the
+train so successive pulses can be frequency-agile, phase-stepped, or power-staircased. A single pulse
+template is tiled to fill the waveform; a one-sample **marker** is emitted at each pulse start (handy as
+an ARB trigger/scope sync). Used for radar/EW receiver test and pulse-compression work. The remaining
+N7620A Option 205/206 features (custom envelope shapes, antenna-scan patterning, pattern nesting, CSV
+import/export, and scenario impairments) are not yet implemented (see issue #179).
 
 ### 5.6 AWGN
 Band-limited additive white Gaussian noise. Parameters: **noise bandwidth** (Hz), **carrier-to-noise
@@ -163,20 +176,36 @@ and CCDF test.
 Load I/Q from a file — the app's equivalent of the Signal Studio Toolkit (N7622A) "bring your own I/Q"
 workflow. Parameters: **file path** (you supply it), **format** (**Auto**-detect by extension, delimited
 text CSV/TSV, raw interleaved little-endian **Int16** `.bin`/`.iq`, Agilent/Keysight big-endian
-**Int16** `.agt` — the ESG's native ARB byte order — or 16-bit PCM **WAV**), source **sample rate** (Hz),
-optional **I/Q swap**, and a **scale** multiplier. Set the format explicitly to force the Agilent
-big-endian byte order when an extension is ambiguous. Lets you replay externally-captured or
-externally-generated (MATLAB/C++) signals. *(MATLAB `.mat` import is not yet supported — export to CSV,
-WAV, or a 16-bit binary format.)*
+**Int16** `.agt` — the ESG's native ARB byte order — Agilent/Keysight big-endian **14-bit**
+(`AgilentInt14Be`; the 14-bit sample is left-justified in each 16-bit word, low 2 bits are markers),
+16-bit PCM **WAV**, or **MATLAB Level-5** `.mat`), source **sample rate** (Hz), optional **I/Q swap**,
+and a **scale** multiplier. Set the format explicitly to force a byte order when an extension is
+ambiguous. Lets you replay externally-captured or externally-generated (MATLAB/C++) signals.
+
+**MATLAB `.mat` (MAT File 5)** — both uncompressed (`save -v6`) and the default zlib-compressed (v7)
+files are read. The first suitable numeric array is used: a **complex** vector maps to I/Q, a real
+**2×N or N×2** array maps its two rows/columns to I and Q, and a real vector maps to I (Q = 0).
+
+**Marker / trigger authoring** — attach a marker bit stream to the imported ARB segment: **None**,
+**Start** (a single marker at sample 0 — a segment trigger), **Periodic** (a marker every *period*
+samples), or **Range** (a marker block of *length* samples from *start*). The markers drive the ESG's
+EVENT/marker output on playback.
 
 ### 5.8 Multitone Distortion
-A dense multitone / noise-power-ratio (NPR) stimulus for amplifier and converter linearity testing (a
-v1 of Signal Studio for Multitone Distortion, N7621B). Parameters: **tone count** (2 up to 4097), **tone
+A dense multitone / noise-power-ratio (NPR) stimulus for amplifier and converter linearity testing
+(Signal Studio for Multitone Distortion, N7621B). Parameters: **tone count** (2 up to 4097), **tone
 spacing** (Hz), **centre offset** (Hz), a **phase preset** — **Parabolic** (Newman, low PAPR), **Random**,
 or **Constant** (aligned, high PAPR) — and an optional **NPR notch** (enable, **width** Hz, **offset** Hz
 from band centre) that clears a band of tones so you can measure intermodulation/noise falling into the
-notch. Composite bandwidth ≈ tone count × spacing; live PAPR is reported. Spectrum-analyzer-assisted
-pre-distortion correction is not yet implemented.
+notch. Composite bandwidth ≈ tone count × spacing; live PAPR is reported.
+
+**Per-tone tables.** Optional **per-tone magnitude** (dB) and **per-tone phase** (degrees) tables cycle
+across the comb (tone *k* uses element *k* mod length), overriding the uniform power and the phase preset
+— use them to shape the comb or hand-tune the crest factor. **Pre-distortion correction** (enable) takes
+**measured per-tone magnitude/phase error** tables (from a signal analyzer, e.g. via the closed-loop
+Verify path) and subtracts them from the base per-tone values, pre-inverting the measured channel response
+so the emitted comb lands flat and IMD in the NPR notch is suppressed. Out-of-band notch-cancellation
+(injecting correction tones inside the notch) is not yet implemented.
 
 ### 5.9 Jitter Injection
 A jittered clock/tone for receiver jitter-tolerance testing (Signal Studio for Jitter Injection,

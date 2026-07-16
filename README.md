@@ -37,17 +37,19 @@ core library, the WinForms app, and an xUnit test project.
   - **CW / single tone** (frequency-offset, seamless-looping)
   - **Multitone** (tone table, auto-spacing, random/equal/Newman phasing, live PAPR)
   - **Multitone Distortion** (IMD/NPR stimulus: up to 4097 tones, phase presets, clearable
-    NPR notch — N7621B v1)
+    NPR notch, per-tone magnitude/phase tables, in-band pre-distortion correction — N7621B v2)
   - **Custom digital modulation** (BPSK/QPSK/8PSK/16–256-QAM/MSK, PN9/15/23 data,
     RRC/RC/Gaussian pulse shaping)
   - **Pulse Building** (radar-style pulse train: PRI/width, raised-cosine edges,
-    intra-pulse LFM chirp or Barker phase codes, per-pulse markers — N7620A v1)
+    intra-pulse LFM/NLFM chirp, FM/AM step, BPSK/QPSK/Barker/Frank/P4 codes,
+    per-pulse frequency/phase/power offsets, staggered/jittered PRI, markers — N7620A v2)
   - **Jitter Injection** (jittered clock: periodic sinusoidal/square/triangle/saw/exp/custom
     + Gaussian random + composite jitter, SJ frequency sweep with tolerance masks
     (custom + approx. ITU-T G.8251), range enforcement, in UI — E4438C-SP1 v2)
   - **AWGN** (band-limited Gaussian noise with crest-factor clipping)
-  - **Import I/Q** (CSV/TSV, raw interleaved int16, Agilent/Keysight big-endian int16, WAV — the
-    N7622A Toolkit "bring your own I/Q" role)
+  - **Import I/Q** (CSV/TSV, raw interleaved int16, Agilent/Keysight big-endian int16 & 14-bit, WAV,
+    MATLAB Level-5 `.mat` incl. compressed, plus marker/trigger authoring — the N7622A Toolkit
+    "bring your own I/Q" role, v2)
   - **Standards personalities** (v1 cores derived from the legacy Signal Studio catalogue — see
     [docs/signal-creation-software/](docs/signal-creation-software/)): **GSM/EDGE** (GMSK — N7602B),
     **Bluetooth** (GFSK — N7606B), **3GPP W-CDMA FDD** (OVSF-spread QPSK — N7600B),

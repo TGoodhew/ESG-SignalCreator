@@ -38,6 +38,10 @@ namespace EsgSignalCreator.Personalities.MultitoneDistortion
         /// <summary>Composite comb bandwidth (ToneCount × spacing), in hertz, of the last configuration.</summary>
         public double LastNoiseBandwidthHz { get; private set; }
 
+        /// <summary>Whether the most recent <see cref="Calculate"/> used explicit per-tone phases
+        /// (a per-tone phase table or pre-distortion phase correction) rather than the phase preset.</summary>
+        public bool LastUsedManualPhase { get; private set; }
+
         /// <inheritdoc/>
         public object GetConfig() => _config;
 
@@ -72,6 +76,15 @@ namespace EsgSignalCreator.Personalities.MultitoneDistortion
             Tone[] tones = MultitonePersonality.AutoSpacing(
                 cfg.ToneCount, cfg.ToneSpacingHz, cfg.CenterOffsetHz, cfg.PowerDbPerTone);
 
+            // Apply the per-tone magnitude/phase tables and (if enabled) pre-distortion correction.
+            ComputePerTone(cfg, tones.Length, out double[] magDb, out double[] phaseDeg, out bool manualPhase);
+            for (int k = 0; k < tones.Length; k++)
+            {
+                tones[k].PowerDb = magDb[k];
+                if (manualPhase) tones[k].PhaseDeg = phaseDeg[k];
+            }
+            LastUsedManualPhase = manualPhase;
+
             int active = tones.Length;
             if (cfg.NotchEnabled && cfg.NotchWidthHz > 0)
             {
@@ -93,7 +106,7 @@ namespace EsgSignalCreator.Personalities.MultitoneDistortion
             {
                 SampleRateHz = cfg.SampleRateHz,
                 Length = cfg.Length,
-                Phase = MapPhase(cfg.Phase),
+                Phase = manualPhase ? PhaseStrategy.Manual : MapPhase(cfg.Phase),
                 RandomSeed = cfg.RandomSeed,
                 Tones = tones
             });
@@ -107,6 +120,47 @@ namespace EsgSignalCreator.Personalities.MultitoneDistortion
 
             return wf;
         }
+
+        /// <summary>
+        /// Compute the effective per-tone magnitude (dB) and phase (deg) for a <paramref name="toneCount"/>-tone
+        /// comb, combining the per-tone tables (or the uniform power / phase preset) with pre-distortion
+        /// correction. This is the correction math, decoupled from waveform synthesis so it can be tested.
+        /// </summary>
+        /// <param name="magnitudeDb">Effective per-tone magnitude, in dB (length = <paramref name="toneCount"/>).</param>
+        /// <param name="phaseDeg">Effective per-tone phase, in degrees (meaningful only when <paramref name="manualPhase"/> is true).</param>
+        /// <param name="manualPhase">True when explicit per-tone phases are in play (a per-tone phase table
+        /// and/or pre-distortion phase correction) and the phase preset should be bypassed.</param>
+        public static void ComputePerTone(MultitoneDistortionConfig cfg, int toneCount,
+            out double[] magnitudeDb, out double[] phaseDeg, out bool manualPhase)
+        {
+            bool hasMagTable = cfg.PerToneMagnitudeDb != null && cfg.PerToneMagnitudeDb.Length > 0;
+            bool hasPhaseTable = cfg.PerTonePhaseDeg != null && cfg.PerTonePhaseDeg.Length > 0;
+            bool predistort = cfg.PredistortionEnabled;
+            bool hasMagErr = predistort && cfg.MeasuredToneMagnitudeErrorDb != null && cfg.MeasuredToneMagnitudeErrorDb.Length > 0;
+            bool hasPhaseErr = predistort && cfg.MeasuredTonePhaseErrorDeg != null && cfg.MeasuredTonePhaseErrorDeg.Length > 0;
+
+            manualPhase = hasPhaseTable || hasPhaseErr;
+            magnitudeDb = new double[toneCount];
+            phaseDeg = new double[toneCount];
+
+            for (int k = 0; k < toneCount; k++)
+            {
+                double mag = hasMagTable ? Cycle(cfg.PerToneMagnitudeDb, k) : cfg.PowerDbPerTone;
+                if (hasMagErr) mag -= Cycle(cfg.MeasuredToneMagnitudeErrorDb, k); // invert the measured error
+                magnitudeDb[k] = mag;
+
+                if (manualPhase)
+                {
+                    double ph = hasPhaseTable ? Cycle(cfg.PerTonePhaseDeg, k) : 0.0;
+                    if (hasPhaseErr) ph -= Cycle(cfg.MeasuredTonePhaseErrorDeg, k);
+                    phaseDeg[k] = ph;
+                }
+            }
+        }
+
+        /// <summary>Cyclically index a table (returns 0 for a null/empty table).</summary>
+        private static double Cycle(double[] table, int index)
+            => (table != null && table.Length > 0) ? table[index % table.Length] : 0.0;
 
         /// <summary>Map the N7621B-style phase preset onto the multitone engine's phase strategy.</summary>
         private static PhaseStrategy MapPhase(MultitonePhasePreset preset)

@@ -6,8 +6,9 @@ namespace EsgSignalCreator.Personalities.CustomIq
 {
     /// <summary>
     /// Signal source that loads a baseband I/Q waveform from an external file (CSV/TSV, raw
-    /// interleaved int16, or 16-bit PCM WAV) via <see cref="IqFileReader"/>. Output samples are
-    /// clamped to [-1, +1] after any configured scaling.
+    /// interleaved int16, Agilent big-endian 16-/14-bit, 16-bit PCM WAV, or MATLAB .mat) via
+    /// <see cref="IqFileReader"/>. Output samples are clamped to [-1, +1] after any configured scaling,
+    /// and optional markers/triggers can be authored onto the resulting segment.
     /// </summary>
     public sealed class ImportIqPersonality : IWaveformPersonality
     {
@@ -57,9 +58,45 @@ namespace EsgSignalCreator.Personalities.CustomIq
                 q[n] = Clamp(q[n]);
             }
 
+            byte[] markers = BuildMarkers(Config, i.Length);
+
             progress?.Report(100);
 
-            return new WaveformModel(i, q, raw.SampleRateHz, raw.Name);
+            return new WaveformModel(i, q, raw.SampleRateHz, raw.Name, markers);
+        }
+
+        /// <summary>
+        /// Author a marker bit stream for the imported segment per the configured
+        /// <see cref="ImportMarkerMode"/>, or return null when no markers are requested.
+        /// </summary>
+        internal static byte[] BuildMarkers(ImportIqConfig cfg, int length)
+        {
+            if (cfg == null || length <= 0 || cfg.MarkerMode == ImportMarkerMode.None) return null;
+
+            var markers = new byte[length];
+            switch (cfg.MarkerMode)
+            {
+                case ImportMarkerMode.Start:
+                    markers[0] = 1;
+                    break;
+
+                case ImportMarkerMode.Periodic:
+                {
+                    int period = Math.Max(1, cfg.MarkerPeriodSamples);
+                    for (int n = 0; n < length; n += period) markers[n] = 1;
+                    break;
+                }
+
+                case ImportMarkerMode.Range:
+                {
+                    int start = Math.Max(0, cfg.MarkerStartSample);
+                    int len = Math.Max(1, cfg.MarkerLengthSamples);
+                    int end = Math.Min(length, (long)start + len > int.MaxValue ? length : start + len);
+                    for (int n = start; n < end; n++) markers[n] = 1;
+                    break;
+                }
+            }
+            return markers;
         }
 
         private static float Clamp(float v)

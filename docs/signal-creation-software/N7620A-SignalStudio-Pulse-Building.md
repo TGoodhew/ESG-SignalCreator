@@ -3,16 +3,20 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟢 **Implementation status (v1, pilot):** A **Pulse Building** personality now ships in the app
-> (`Core/Personalities/Pulse/`). It covers a uniform pulse train with configurable pulse width, PRI,
-> start delay, raised-cosine rise/fall edges, per-pulse markers, and intra-pulse modulation of
-> **None**, **Linear FM chirp**, and **Barker phase code** — i.e. **R-1** (partial: rectangular +
-> raised-cosine envelope), **R-2** (partial: LFM chirp + Barker; non-linear FM / Frank / polyphase
-> deferred), **R-3** (partial: uniform PRI + rep count via length; per-pulse frequency/phase/power
-> offset tables deferred), **R-8** (16-bit ARB via the shared encoder), and **R-10** (I/Q + spectrum
-> plots). **Deferred to follow-ups** (N7620A Options 205/206): staggered/jittered PRI (**R-4**),
+> 🟢 **Implementation status (v2):** A **Pulse Building** personality ships in the app
+> (`Core/Personalities/Pulse/`). It builds a pulse — configurable width, start delay, raised-cosine
+> rise/fall edges, per-pulse markers — and tiles it across the waveform. Coverage:
+> - **R-1** (partial): rectangular + raised-cosine envelope (custom/imported envelope *shapes* deferred).
+> - **R-2** (✅ v2, #179): the full intra-pulse modulation set — **None**, **Linear FM chirp**,
+>   **Non-linear FM chirp** (cubic law), **FM step**, **AM step**, **BPSK**, **QPSK**,
+>   **Barker phase code**, **Frank code**, and **P4 polyphase code**.
+> - **R-3** (✅ v2, #179): **per-pulse frequency/phase/power offset tables** (cycling across the train).
+> - **R-4** (✅ v2, #179): **PRI patterning** — Fixed / Staggered (interval pattern) / Jittered (seeded ± peak).
+> - **R-8** (16-bit ARB via the shared encoder) and **R-10** (I/Q + spectrum plots).
+>
+> **Still deferred** (N7620A Options 205/206, tracked in #179): custom envelope *shapes* (R-1),
 > antenna scan/radiation patterning (**R-5**), pattern nesting (**R-6**), CSV import/export (**R-7**),
-> and scenario impairments (**R-9**). Hardware verification is tracked in the verification epic.
+> and scenario impairments (**R-9**). Hardware verification is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7620A (advanced capability add-ons: Option 205, Option 206)

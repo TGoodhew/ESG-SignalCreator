@@ -34,6 +34,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.IO.Compression" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
     <!-- Vendor-neutral VISA: the IVI VISA.NET Shared Components only (installed by ANY VISA provider:
