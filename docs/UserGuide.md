@@ -332,11 +332,19 @@ L-STF/L-SIG fields, channel coding/interleaving, MAC framing, MIMO, and 80/160 M
 exceed the ESG) remain deferred.
 
 ### 5.20 802.16-2004 WiMAX (OFDM)
-A fixed-WiMAX (IEEE 802.16-2004) **256-FFT OFDM** signal (a v1 of Signal Studio for 802.16-2004, N7613A)
-with 200 used subcarriers. Parameters: **channel bandwidth** (Hz; sample rate ≈ bandwidth × 8/7),
-**cyclic-prefix ratio** (1/4, 1/8, 1/16, 1/32), **symbol count**, and **modulation** (BPSK…64QAM).
-Built on the shared OFDM engine. Representative signal — no long/short preamble, FCH, DL/UL-MAP,
-DCD/UCD, pilot patterns, or RS-CC coding.
+A fixed-WiMAX (IEEE 802.16-2004) **256-FFT OFDM** signal (Signal Studio for 802.16-2004, N7613A) with
+200 used subcarriers. Parameters: **channel bandwidth** (Hz; sample rate ≈ bandwidth × 8/7),
+**cyclic-prefix ratio** (1/4, 1/8, 1/16, 1/32), **symbol count**, and **modulation** (BPSK…64QAM). Two
+modes:
+
+- **Generic** (default) — a plain OFDM fill of the 200 used subcarriers.
+- **Frame-structured** (v2, #192) — enable **frame structured** for the exact 256-FFT map with the eight
+  **pilot subcarriers** (±13, ±38, ±63, ±88; BPSK, modulated by the standard 802.16 pilot PRBS), and an
+  optional **preamble** symbol (energy on every 4th subcarrier → four identical quarter-symbol
+  repetitions in time, the WiMAX-preamble hallmark).
+
+Pilot positions and the pilot PRBS follow IEEE 802.16-2004. Representative frame — the exact two-symbol
+long preamble, FCH, DL/UL-MAP, DCD/UCD, RS-CC channel coding, and MAC framing remain deferred.
 
 ### 5.21 802.16e Mobile WiMAX (OFDMA)
 A mobile-WiMAX (IEEE 802.16e) **scalable-OFDMA** signal (a v1 of Signal Studio for 802.16 WiMAX, N7615B)

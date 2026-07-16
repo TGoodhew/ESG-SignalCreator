@@ -3,12 +3,18 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** An **802.16-2004 WiMAX (OFDM)** personality now ships in the app
-> (`Core/Personalities/WimaxFixed/`, on the shared `Dsp/OfdmEngine`). It generates the fixed-WiMAX
-> **256-FFT OFDM** PHY (200 used subcarriers) with a channel-bandwidth-derived sample rate (8/7 factor)
-> and a selectable CP ratio (1/4…1/32), BPSK…64QAM. **Simplified v1, not a standards-compliant burst.**
-> Deferred: long/short preamble, FCH, DL/UL-MAP, DCD/UCD, pilot patterns, and RS-CC channel coding.
-> Hardware verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** An **802.16-2004 WiMAX (OFDM)** personality ships in the app
+> (`Core/Personalities/WimaxFixed/`) with two modes:
+> - **Generic** (v1 core, `Dsp/OfdmEngine`) — the fixed-WiMAX **256-FFT OFDM** PHY (200 used subcarriers),
+>   channel-bandwidth-derived sample rate (8/7 factor), selectable CP ratio (1/4…1/32), BPSK…64QAM.
+> - **Frame-structured** (✅ v2, #192, `WimaxFixedFrame`) — the exact 256-FFT map with the eight **pilot
+>   subcarriers** (±13/±38/±63/±88, BPSK, modulated by the 802.16 pilot PRBS 1+X⁹+X¹¹) — **R-2** — plus an
+>   optional representative **downlink preamble** symbol (every-4th-subcarrier → 4× time repetition) —
+>   partial **R-1/R-7**.
+>
+> Still a representative burst. **Still deferred** (#192): the exact two-symbol long preamble, FCH +
+> DL/UL-MAP + DCD/UCD (R-8), full DL/UL frame (R-7), RS-CC channel coding (R-4), MAC PDUs (R-9), and I/Q
+> impairments (R-10). Hardware verification is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7613A (E4438C host connectivity provided via the N7613A ESG option / `-1FP`-style fixed license)

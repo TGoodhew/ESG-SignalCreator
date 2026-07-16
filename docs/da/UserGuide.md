@@ -183,7 +183,12 @@ Et 802.11-OFDM-signal (Signal Studio for 802.11 WLAN, N7617B) med 11a/g/n-numero
 L-LTF-sekvensen og pilotpositioner/-polaritet følger IEEE 802.11. Det er en repræsentativ PPDU — L-STF/L-SIG-felterne, kanalkodning/interleaving, MAC-framing, MIMO og 80/160 MHz (11ac/ax, som overstiger ESG'en) er stadig udskudt.
 
 ### 5.20 802.16-2004 WiMAX (OFDM)
-Et fixed-WiMAX-(IEEE 802.16-2004)-**256-FFT-OFDM**-signal (en v1 af Signal Studio for 802.16-2004, N7613A) med 200 brugte subcarriers. Parametre: **kanalbåndbredde** (Hz; samplingsrate ≈ båndbredde × 8/7), **cyklisk-præfiks-forhold** (1/4, 1/8, 1/16, 1/32), **antal symboler** og **modulation** (BPSK…64QAM). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen long/short-præambel, FCH, DL/UL-MAP, DCD/UCD, pilotmønstre eller RS-CC-kodning.
+Et fixed-WiMAX-(IEEE 802.16-2004)-**256-FFT-OFDM**-signal (Signal Studio for 802.16-2004, N7613A) med 200 brugte subcarriers. Parametre: **kanalbåndbredde** (Hz; samplingsrate ≈ båndbredde × 8/7), **cyklisk-præfiks-forhold** (1/4, 1/8, 1/16, 1/32), **antal symboler** og **modulation** (BPSK…64QAM). To tilstande:
+
+- **Generisk** (standard) — en almindelig OFDM-fyldning af de 200 brugte subcarriers.
+- **Rammestruktureret** (v2, #192) — aktivér **frame structured** for det præcise 256-FFT-kort med de otte **pilot-subcarriers** (±13, ±38, ±63, ±88; BPSK, moduleret af den standardiserede 802.16-pilot-PRBS) og et valgfrit **preamble**-symbol (energi på hver 4. subcarrier → fire identiske kvart-symbol-gentagelser i tid, WiMAX-præamblens kendetegn).
+
+Pilotpositioner og pilot-PRBS'en følger IEEE 802.16-2004. Repræsentativ ramme — den præcise to-symbols lange præambel, FCH, DL/UL-MAP, DCD/UCD, RS-CC-kanalkodning og MAC-framing er stadig udskudt.
 
 ### 5.21 802.16e Mobile WiMAX (OFDMA)
 Et mobile-WiMAX-(IEEE 802.16e)-**scalable-OFDMA**-signal (en v1 af Signal Studio for 802.16 WiMAX, N7615B) ved den faste **10,9375 kHz** subcarrier-afstand med en valgbar **FFT-størrelse** (128 / 512 / 1024 / 2048 for ≈ 1,25 / 5 / 10 / 20 MHz), så samplingsraten skalerer med FFT. Parametre: **FFT-størrelse**, **cyklisk-præfiks-forhold**, **antal symboler** og **modulation** (QPSK…64QAM). Modelleret som almindelig OFDM (ingen OFDMA-subkanalpermutation). Repræsentativt signal — ingen PUSC/FUSC/AMC-zoner, præambel, FCH/MAPs, piloter, MIMO eller CTC/CC-kodning.
