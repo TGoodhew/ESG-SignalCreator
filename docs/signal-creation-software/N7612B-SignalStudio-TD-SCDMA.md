@@ -3,12 +3,16 @@
 > Source category: **PC-based signal creation software**, from the Agilent E4438C ESG Vector Signal Generator Data Sheet (literature no. 5988-4039EN).
 > Purpose: capture this product's capabilities as candidate requirements for the ESG-SignalCreator app (a modern reimplementation of Signal Studio for the E4438C).
 
-> 🟡 **Implementation status (v1 core):** A **TD-SCDMA** personality now ships in the app
-> (`Core/Personalities/TdScdma/`, on the shared `Dsp/DsssEngine`). It generates a single-code
-> **1.28 Mcps** signal — QPSK/16QAM/64QAM spread by an OVSF code, scrambled, RRC-shaped (β 0.22) — for
-> chip-rate/occupied-bandwidth checks. **Simplified v1, not standards-compliant.** Deferred: the 5 ms
-> sub-frame / 7-timeslot TDD burst structure (DwPTS/UpPTS/GP), midamble codes, switching points, cell
-> parameters, and HSDPA channels. Hardware verification is tracked in the epic.
+> 🟡 **Implementation status (v2):** A **TD-SCDMA** personality ships in the app
+> (`Core/Personalities/TdScdma/`, on the shared `Dsp/DsssEngine`). Default single-code **1.28 Mcps**
+> signal — QPSK/16QAM/64QAM spread by an OVSF code, scrambled, RRC-shaped (β 0.22).
+> - **Multi-code** (✅ v2, #187): `CodeChannelCount` > 1 sums several **code channels within a timeslot**
+>   into the composite via the shared engine's multi-code path — partial **R-4** (code-domain).
+>
+> Still representative, not standards-compliant. **Still deferred** (#187): the 5 ms sub-frame /
+> 7-timeslot TDD burst structure (DwPTS/UpPTS/GP) + midamble codes (R-1), phys/transport channels + HSDPA
+> (R-2), switching points (R-3), cell-ID/code-domain-power *config* (R-4), RMC/FRC (R-6), multicarrier
+> (R-7), and coding (R-9). Hardware verification is tracked in the verification epic (#157).
 
 ## 1. Product identity
 - **Model / option number:** N7612B (branded "Signal Studio for TD-SCDMA/HSPA" / "TD-SCDMA/HSDPA")

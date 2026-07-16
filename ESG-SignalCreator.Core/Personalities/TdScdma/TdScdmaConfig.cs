@@ -23,8 +23,12 @@ namespace EsgSignalCreator.Personalities.TdScdma
         /// <summary>OVSF spreading factor (power of two). TD-SCDMA uses 1…16.</summary>
         [DataMember] public int SpreadingFactor { get; set; } = 16;
 
-        /// <summary>OVSF code index within the spreading factor.</summary>
+        /// <summary>OVSF code index within the spreading factor (single-code mode).</summary>
         [DataMember] public int OvsfIndex { get; set; } = 1;
+
+        /// <summary>Number of code channels to sum into a multi-code composite within a timeslot
+        /// (1 = single-code v1). Channels use OVSF codes 0…N-1 at equal power, N ≤ SF. (N7612B R-4.)</summary>
+        [DataMember] public int CodeChannelCount { get; set; } = 1;
 
         /// <summary>Data modulation (TD-SCDMA supports QPSK / 16QAM / 64QAM).</summary>
         [DataMember] public Modulation Modulation { get; set; } = Modulation.QPSK;
