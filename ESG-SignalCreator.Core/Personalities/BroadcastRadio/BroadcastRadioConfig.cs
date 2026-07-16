@@ -25,5 +25,15 @@ namespace EsgSignalCreator.Personalities.BroadcastRadio
 
         /// <summary>Peak frequency deviation, in hertz (FM broadcast is 75 kHz).</summary>
         [DataMember] public double PeakDeviationHz { get; set; } = 75e3;
+
+        /// <summary>When true, add the RDS 57 kHz subcarrier — a 1187.5 bps biphase (Manchester) data
+        /// stream, DSB-SC on 57 kHz (3× the 19 kHz pilot). (N7611B R-2/R-3.)</summary>
+        [DataMember] public bool Rds { get; set; } = false;
+
+        /// <summary>RDS frequency deviation contribution, in hertz (typically ~1–4 kHz of the 75 kHz total).</summary>
+        [DataMember] public double RdsDeviationHz { get; set; } = 2e3;
+
+        /// <summary>Seed for the RDS payload PRBS (repeatable).</summary>
+        [DataMember] public int RdsSeed { get; set; } = 1;
     }
 }

@@ -18,6 +18,8 @@ namespace EsgSignalCreator.Personalities.BroadcastRadio
     {
         private const double PilotHz = 19e3;
         private const double StereoSubHz = 38e3;
+        private const double RdsSubHz = 57e3;      // 3 × the 19 kHz pilot
+        private const double RdsBitRate = 1187.5;  // RDS data rate (57000 / 48), bps
 
         private BroadcastRadioConfig _config = new BroadcastRadioConfig();
 
@@ -63,6 +65,27 @@ namespace EsgSignalCreator.Personalities.BroadcastRadio
             var i = new float[n];
             var q = new float[n];
 
+            // RDS: a differentially-encoded PRBS at 1187.5 bps, one bit per RDS bit period.
+            int[] rdsBits = null;
+            double rdsWeight = 0.0;
+            if (cfg.Rds)
+            {
+                if (cfg.RdsDeviationHz < 0)
+                    throw new InvalidOperationException("RdsDeviationHz must be >= 0.");
+                int numBits = (int)Math.Ceiling(n / fs * RdsBitRate) + 1;
+                rdsBits = new int[numBits];
+                var rng = new Random(cfg.RdsSeed);
+                int prev = 1;
+                for (int b = 0; b < numBits; b++)
+                {
+                    int data = rng.Next(0, 2);          // raw payload bit
+                    prev = data ^ (prev == 1 ? 0 : 1);  // differential encoding (representative)
+                    // store as ±1
+                    rdsBits[b] = prev == 1 ? 1 : -1;
+                }
+                rdsWeight = cfg.PeakDeviationHz > 0 ? cfg.RdsDeviationHz / cfg.PeakDeviationHz : 0.0;
+            }
+
             double phase = 0.0;
             double twoPi = 2.0 * Math.PI;
             int reportEvery = Math.Max(1, n / 100);
@@ -84,6 +107,18 @@ namespace EsgSignalCreator.Personalities.BroadcastRadio
                     mpx = audio;
                 }
 
+                if (rdsBits != null)
+                {
+                    // Biphase (Manchester) symbol: +d for the first half of the bit, -d for the second,
+                    // DSB-SC modulated onto the 57 kHz subcarrier.
+                    double bitPos = t * RdsBitRate;
+                    int bitIdx = (int)bitPos;
+                    if (bitIdx >= rdsBits.Length) bitIdx = rdsBits.Length - 1;
+                    double frac = bitPos - Math.Floor(bitPos);
+                    double biphase = (frac < 0.5 ? 1.0 : -1.0) * rdsBits[bitIdx];
+                    mpx += rdsWeight * biphase * Math.Sin(twoPi * RdsSubHz * t);
+                }
+
                 phase += twoPi * cfg.PeakDeviationHz * mpx / fs;
                 i[s] = (float)Math.Cos(phase);
                 q[s] = (float)Math.Sin(phase);
@@ -96,7 +131,8 @@ namespace EsgSignalCreator.Personalities.BroadcastRadio
             }
 
             progress?.Report(100);
-            return new WaveformModel(i, q, fs, cfg.Stereo ? "FM Stereo" : "FM Mono");
+            string name = (cfg.Stereo ? "FM Stereo" : "FM Mono") + (cfg.Rds ? " + RDS" : "");
+            return new WaveformModel(i, q, fs, name);
         }
     }
 }
