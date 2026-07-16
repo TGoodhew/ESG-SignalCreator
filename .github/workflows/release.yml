@@ -79,8 +79,10 @@ jobs:
       - name: Build MSI (WiX v5)
         run: |
           $harvest = Join-Path $env:GITHUB_WORKSPACE 'ESG-SignalCreator.App\bin\Release'
+          # SuppressValidation skips WiX ICE validation, which needs the Windows Installer service —
+          # inaccessible to the runner's (service) account. The MSI itself is unaffected.
           dotnet build ESG-SignalCreator.Installer\ESG-SignalCreator.Installer.wixproj -c Release `
-            -p:ProductVersion=${{ steps.ver.outputs.version }} -p:HarvestPath=$harvest
+            -p:ProductVersion=${{ steps.ver.outputs.version }} -p:HarvestPath=$harvest -p:SuppressValidation=true
 
       - name: Locate MSI
         id: msi
