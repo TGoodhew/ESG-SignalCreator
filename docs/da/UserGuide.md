@@ -199,7 +199,12 @@ Et mobile-WiMAX-(IEEE 802.16e)-**scalable-OFDMA**-signal (Signal Studio for 802.
 Præamblens hver-3.-subcarrier-layout og den 14-subcarrier DL-PUSC-klynge følger 802.16e-strukturen, men det er en repræsentativ ramme — den præcise præambel-PN pr. IDcell, den fulde PUSC/FUSC/AMC-subkanalpermutation, FCH/DL-MAP/UL-MAP, MIMO og CTC/CC-kodning er stadig udskudt.
 
 ### 5.22 T-DMB (DAB COFDM)
-DAB-COFDM-signalet, der ligger under Terrestrial-DMB (en v1 af Signal Studio for T-DMB, N7616B). Bevarer en **2,048 MHz** signalbåndbredde på tværs af alle fire **transmissionsmodes** (I/II/III/IV), som sætter FFT-størrelsen (2048 / 512 / 256 / 1024), aktive bærebølger og guard-interval. Parametre: **mode**, **antal symboler**, **datakilde**. Modulationen er DQPSK, her tilnærmet med almindelig QPSK. Bygget på den delte OFDM-motor. Repræsentativt signal — ingen null-/fasereferencesymboler, synkroniseringskanal, FIC/MSC-multipleks, differentiel kodning eller foldningskodning.
+DAB-COFDM-signalet, der ligger under Terrestrial-DMB (Signal Studio for T-DMB, N7616B). Bevarer en **2,048 MHz** signalbåndbredde på tværs af alle fire **transmissionsmodes** (I/II/III/IV), som sætter FFT-størrelsen (2048 / 512 / 256 / 1024), aktive bærebølger og guard-interval. Parametre: **mode**, **antal symboler**, **datakilde**. To tilstande:
+
+- **Generisk** (standard) — en almindelig QPSK-OFDM-fyldning (DQPSK tilnærmet med QPSK).
+- **Rammestruktureret** (v2, #195) — aktivér **frame structured** for en DAB-transmissionsramme: **synkroniseringskanalen** (et **null-symbol** af stilhed til rammesynkronisering og derefter et **fasereferencesymbol** med en kendt fase pr. bærebølge) efterfulgt af **differentielt kodede DQPSK**-datasymboler (hver bærebølges fase akkumulerer QPSK-data-deltaet fra det foregående symbol).
+
+Null- + fasereferencesymbolerne og den differentielle (DQPSK) kodning følger DAB-rammestrukturen (ETSI EN 300 401). Repræsentativt — den præcise fasereferencetabel, FIC/MSC-multipleks, TII og foldningskodning er stadig udskudt.
 
 ### 5.23 Digital Video (DVB-T COFDM)
 Et DVB-T-COFDM-signal til en 8 MHz-kanal (en v1 af Signal Studio for Digital Video, N7623B). Parametre: **transmissionsmode** (**2K** = 2048-FFT / **8K** = 8192-FFT), **guard-interval**-forhold (1/4…1/32), **antal symboler** og **modulation** (QPSK / 16QAM / 64QAM). Samplingsraten er DVB-T-elementærraten (64/7 MHz). Bygget på den delte OFDM-motor. Repræsentativt signal — ingen TPS-/pilotbærebølger, PRBS-energispredning, RS-/foldningskodning eller MPEG-TS-framing; andre digital-video-standarder (ISDB-T, ATSC 8VSB, DVB-C/S QAM, DTMB) er ikke implementeret.

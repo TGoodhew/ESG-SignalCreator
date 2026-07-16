@@ -11,13 +11,15 @@ namespace EsgSignalCreator.Personalities.Tdmb
     /// <see cref="OfdmEngine"/>. DQPSK modulation is approximated with plain QPSK.
     /// </summary>
     /// <remarks>
-    /// Representative v1 core, not a standards-compliant DAB frame: no null/phase-reference symbols,
-    /// synchronisation channel, FIC/MSC multiplex, differential (DQPSK) encoding, or convolutional
-    /// coding. Those are deferred.
+    /// Two modes: the default generic OFDM fill with plain QPSK (v1 core), or — with
+    /// <see cref="TdmbConfig.FrameStructured"/> set — a DAB transmission frame (v2, #195) via
+    /// <see cref="TdmbFrame"/>: a **null symbol** + **phase-reference symbol** (the synchronisation
+    /// channel) followed by **differentially-encoded DQPSK** data symbols. FIC/MSC multiplex, the
+    /// synchronisation TII, and convolutional coding remain deferred.
     /// </remarks>
     public sealed class TdmbPersonality : IWaveformPersonality
     {
-        private const double SignalBandwidthHz = 2.048e6;
+        internal const double SignalBandwidthHz = 2.048e6;
 
         private TdmbConfig _config = new TdmbConfig();
 
@@ -46,6 +48,9 @@ namespace EsgSignalCreator.Personalities.Tdmb
         public WaveformModel Calculate(IProgress<int> progress)
         {
             TdmbConfig cfg = _config ?? new TdmbConfig();
+            if (cfg.FrameStructured)
+                return TdmbFrame.Generate(cfg, progress);
+
             Numerology(cfg.Mode, out int fft, out int occupied, out int cp);
             double spacing = SignalBandwidthHz / fft; // keeps a 2.048 MHz sample rate for all modes
 
@@ -63,7 +68,7 @@ namespace EsgSignalCreator.Personalities.Tdmb
         }
 
         /// <summary>Map a DAB mode to (FFT size, active carriers, guard-interval length).</summary>
-        private static void Numerology(DabMode mode, out int fft, out int occupied, out int cp)
+        internal static void Numerology(DabMode mode, out int fft, out int occupied, out int cp)
         {
             switch (mode)
             {

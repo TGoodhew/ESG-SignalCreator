@@ -363,12 +363,20 @@ structure, but this is a representative frame — the exact preamble PN per IDce
 PUSC/FUSC/AMC subchannel permutation, FCH/DL-MAP/UL-MAP, MIMO, and CTC/CC coding remain deferred.
 
 ### 5.22 T-DMB (DAB COFDM)
-The DAB COFDM signal underlying Terrestrial-DMB (a v1 of Signal Studio for T-DMB, N7616B). Keeps a
+The DAB COFDM signal underlying Terrestrial-DMB (Signal Studio for T-DMB, N7616B). Keeps a
 **2.048 MHz** signal bandwidth across all four **transmission modes** (I/II/III/IV), which set the FFT
 size (2048 / 512 / 256 / 1024), active carriers, and guard interval. Parameters: **mode**, **symbol
-count**, **data source**. Modulation is DQPSK, approximated here by plain QPSK. Built on the shared OFDM
-engine. Representative signal — no null/phase-reference symbols, synchronisation channel, FIC/MSC
-multiplex, differential encoding, or convolutional coding.
+count**, **data source**. Two modes:
+
+- **Generic** (default) — a plain-QPSK OFDM fill (DQPSK approximated by QPSK).
+- **Frame-structured** (v2, #195) — enable **frame structured** for a DAB transmission frame: the
+  **synchronisation channel** (a **null symbol** of silence for frame sync, then a **phase-reference
+  symbol** carrying a known per-carrier phase) followed by **differentially-encoded DQPSK** data symbols
+  (each carrier's phase accumulates the QPSK data delta from the previous symbol).
+
+The null + phase-reference symbols and the differential (DQPSK) encoding follow the DAB frame structure
+(ETSI EN 300 401). Representative — the exact phase-reference table, the FIC/MSC multiplex, the TII, and
+convolutional coding remain deferred.
 
 ### 5.23 Digital Video (DVB-T COFDM)
 A DVB-T COFDM signal for an 8 MHz channel (a v1 of Signal Studio for Digital Video, N7623B). Parameters:
