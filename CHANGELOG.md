@@ -6,6 +6,41 @@ and the project aims to follow [Semantic Versioning](https://semver.org/spec/v2.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-16
+
+**Coverage & verification hardening** — a review of the test harnesses, generators, and documentation
+against the enlarged 1.4.0 surface (23 personalities + their v2 modes) closed the gaps it found. No new
+signal features this release; the focus is making coverage complete and drift-proof. The test suite grew
+639 → **721**.
+
+### Added
+- **Registry-driven verification battery** (`ESG-SignalCreator.Core/Verify/VerificationBattery.cs`) — one
+  representative short waveform per personality, exercising each v2 mode (multi-code, frame-structured
+  OFDM, EDGE-8PSK, EDR, RDS). The HIL closed-loop harness (`--all`) now sources from it, so all 23
+  personalities are covered and a newly added one can't be silently skipped. A drift-guard + offline-build
+  test enforces it (#227 / PR #231).
+- **Tutorials "Part I — Signal personality reference"** (EN + DA) — concise reference entries for the 17
+  standards/broadcast/utility personalities that previously had no tutorial, each with its key parameters,
+  its v2 option, and an app-rendered spectrum. The tutorial image harness is now registry-aware and
+  renders one spectrum per personality (23 new `ref-*-spectrum.png`), so image coverage tracks the
+  personality set automatically (#228 / PR #232).
+- **Assistant v2-parameter coverage tests** — every v2 tool parameter (multi-code `code_channel_count`,
+  frame-structured OFDM, RDS, EDGE/EDR modulation, `.mat`/14-bit markers, per-tone / PRI / jitter-sweep)
+  is asserted declared in-schema, accepted by the validator, and forwarded to the host; plus a
+  personality-surface drift guard freezing the 23-personality set (#226).
+
+### Changed
+- Documentation brought fully current and checked for EN⟷DA parity against the 1.4.0 surface: README
+  personality list (added **Multi-Carrier**), DA README personality list brought to parity, requirements
+  index now records implementation status (20/21 shipped; S-DMB not implemented), and `Packaging.md`
+  documents the self-hosted service-runner requirement plus the two service-account CI fixes
+  (PowerShell `-ExecutionPolicy Bypass` #212, WiX `SuppressValidation` #213) (#224 / PR #233).
+
+### Fixed
+- README / DA README stale test count (356 → 721); DA UserGuide `5.10`/`5.11` headings still carrying
+  `(GMSK)`/`(GFSK)` though they document EDGE-8PSK / EDR; ManualVerification N9010A gate default
+  (`+25` → `+30` dBm, matching `AnalyzerInputLimits`); S-DMB removal attribution (PR #222) (#233).
+
 ## [1.4.0] - 2026-07-16
 
 **v2 personality expansion, cont'd** — the cellular and short-range/broadcast personalities gained their
